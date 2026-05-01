@@ -80,8 +80,13 @@ class Tsubakuro_Post_Types {
 			$pages = is_array( $data['related_pages'] )
 				? array_map( 'absint', $data['related_pages'] )
 				: array_map( 'absint', explode( ',', $data['related_pages'] ) );
-			$pages = array_filter( $pages );
-			update_post_meta( $task_id, '_tsubakuro_related_pages', implode( ',', $pages ) );
+			$pages = array_unique( array_filter( $pages ) );
+
+			// Store each related page as a separate meta row for accurate querying.
+			delete_post_meta( $task_id, '_tsubakuro_related_page' );
+			foreach ( $pages as $page_id ) {
+				add_post_meta( $task_id, '_tsubakuro_related_page', $page_id );
+			}
 		}
 	}
 
@@ -109,8 +114,7 @@ class Tsubakuro_Post_Types {
 	public static function format_task( $post ) {
 		$status        = get_post_meta( $post->ID, '_tsubakuro_status', true ) ?: 'todo';
 		$assignee_id   = (int) get_post_meta( $post->ID, '_tsubakuro_assignee', true );
-		$related_raw   = get_post_meta( $post->ID, '_tsubakuro_related_pages', true );
-		$related_pages = $related_raw ? array_map( 'intval', explode( ',', $related_raw ) ) : array();
+		$related_pages = array_map( 'intval', get_post_meta( $post->ID, '_tsubakuro_related_page' ) );
 
 		$assignee = null;
 		if ( $assignee_id ) {
@@ -165,9 +169,10 @@ class Tsubakuro_Post_Types {
 		if ( ! empty( $args['related_page'] ) ) {
 			$page_id = absint( $args['related_page'] );
 			$defaults['meta_query'][] = array(
-				'key'     => '_tsubakuro_related_pages',
+				'key'     => '_tsubakuro_related_page',
 				'value'   => $page_id,
-				'compare' => 'LIKE',
+				'compare' => '=',
+				'type'    => 'NUMERIC',
 			);
 			unset( $args['related_page'] );
 		}
