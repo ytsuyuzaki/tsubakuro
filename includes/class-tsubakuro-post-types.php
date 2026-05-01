@@ -1,0 +1,185 @@
+<?php
+/**
+ * Register the tsubakuro_task custom post type and its taxonomies/meta.
+ *
+ * Task meta fields:
+ *   _tsubakuro_status        – todo | in_progress | completed
+ *   _tsubakuro_assignee      – WordPress user ID
+ *   _tsubakuro_related_pages – comma-separated post/page IDs
+ *
+ * @package Tsubakuro
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Tsubakuro_Post_Types {
+
+	/** All valid task statuses. */
+	const STATUSES = array(
+		'todo'        => 'ToDo',
+		'in_progress' => '実行中',
+		'completed'   => '実行完了',
+	);
+
+	public static function init() {
+		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+	}
+
+	public static function register_post_type() {
+		$labels = array(
+			'name'               => 'タスク',
+			'singular_name'      => 'タスク',
+			'add_new'            => '新規追加',
+			'add_new_item'       => '新しいタスクを追加',
+			'edit_item'          => 'タスクを編集',
+			'new_item'           => '新しいタスク',
+			'view_item'          => 'タスクを表示',
+			'search_items'       => 'タスクを検索',
+			'not_found'          => 'タスクが見つかりません',
+			'not_found_in_trash' => 'ゴミ箱にタスクはありません',
+		);
+
+		$args = array(
+			'labels'              => $labels,
+			'public'              => false,
+			'publicly_queryable'  => false,
+			'show_ui'             => false, // We build our own admin UI.
+			'show_in_menu'        => false,
+			'query_var'           => false,
+			'rewrite'             => false,
+			'capability_type'     => 'post',
+			'has_archive'         => false,
+			'hierarchical'        => false,
+			'supports'            => array( 'title', 'editor', 'author' ),
+			'show_in_rest'        => true,
+			'rest_base'           => 'tsubakuro-tasks',
+		);
+
+		register_post_type( 'tsubakuro_task', $args );
+	}
+
+	/**
+	 * Save task meta from an array of data.
+	 *
+	 * @param int   $task_id Post ID.
+	 * @param array $data    Assoc array with keys: status, assignee, related_pages.
+	 */
+	public static function save_meta( $task_id, $data ) {
+		if ( isset( $data['status'] ) && array_key_exists( $data['status'], self::STATUSES ) ) {
+			update_post_meta( $task_id, '_tsubakuro_status', sanitize_text_field( $data['status'] ) );
+		}
+
+		if ( isset( $data['assignee'] ) ) {
+			update_post_meta( $task_id, '_tsubakuro_assignee', absint( $data['assignee'] ) );
+		}
+
+		if ( isset( $data['related_pages'] ) ) {
+			// Accept array or comma-separated string.
+			$pages = is_array( $data['related_pages'] )
+				? array_map( 'absint', $data['related_pages'] )
+				: array_map( 'absint', explode( ',', $data['related_pages'] ) );
+			$pages = array_filter( $pages );
+			update_post_meta( $task_id, '_tsubakuro_related_pages', implode( ',', $pages ) );
+		}
+	}
+
+	/**
+	 * Get full task data including meta.
+	 *
+	 * @param int $task_id Post ID.
+	 * @return array|null
+	 */
+	public static function get_task( $task_id ) {
+		$post = get_post( $task_id );
+		if ( ! $post || 'tsubakuro_task' !== $post->post_type ) {
+			return null;
+		}
+
+		return self::format_task( $post );
+	}
+
+	/**
+	 * Format a WP_Post into a structured task array.
+	 *
+	 * @param WP_Post $post
+	 * @return array
+	 */
+	public static function format_task( $post ) {
+		$status        = get_post_meta( $post->ID, '_tsubakuro_status', true ) ?: 'todo';
+		$assignee_id   = (int) get_post_meta( $post->ID, '_tsubakuro_assignee', true );
+		$related_raw   = get_post_meta( $post->ID, '_tsubakuro_related_pages', true );
+		$related_pages = $related_raw ? array_map( 'intval', explode( ',', $related_raw ) ) : array();
+
+		$assignee = null;
+		if ( $assignee_id ) {
+			$user = get_user_by( 'id', $assignee_id );
+			if ( $user ) {
+				$assignee = array(
+					'id'           => $user->ID,
+					'display_name' => $user->display_name,
+				);
+			}
+		}
+
+		return array(
+			'id'             => $post->ID,
+			'title'          => $post->post_title,
+			'content'        => $post->post_content,
+			'status'         => $status,
+			'status_label'   => self::STATUSES[ $status ] ?? $status,
+			'assignee'       => $assignee,
+			'related_pages'  => $related_pages,
+			'created_at'     => $post->post_date,
+			'updated_at'     => $post->post_modified,
+			'author_id'      => (int) $post->post_author,
+		);
+	}
+
+	/**
+	 * Query tasks with optional filters.
+	 *
+	 * @param array $args Optional WP_Query compatible args.
+	 * @return array
+	 */
+	public static function get_tasks( $args = array() ) {
+		$defaults = array(
+			'post_type'      => 'tsubakuro_task',
+			'post_status'    => 'publish',
+			'posts_per_page' => 50,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
+
+		if ( ! empty( $args['status'] ) ) {
+			$defaults['meta_query'] = array(
+				array(
+					'key'   => '_tsubakuro_status',
+					'value' => sanitize_text_field( $args['status'] ),
+				),
+			);
+			unset( $args['status'] );
+		}
+
+		if ( ! empty( $args['related_page'] ) ) {
+			$page_id = absint( $args['related_page'] );
+			$defaults['meta_query'][] = array(
+				'key'     => '_tsubakuro_related_pages',
+				'value'   => $page_id,
+				'compare' => 'LIKE',
+			);
+			unset( $args['related_page'] );
+		}
+
+		$query_args = array_merge( $defaults, $args );
+		$query      = new WP_Query( $query_args );
+
+		$tasks = array();
+		foreach ( $query->posts as $post ) {
+			$tasks[] = self::format_task( $post );
+		}
+
+		return $tasks;
+	}
+}

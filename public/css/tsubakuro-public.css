@@ -1,0 +1,386 @@
+/* ==========================================================================
+   Tsubakuro – Frontend Task Panel Styles
+   ========================================================================== */
+
+/* FAB button */
+#tsubakuro-fab {
+	position: fixed;
+	bottom: 28px;
+	right: 28px;
+	width: 52px;
+	height: 52px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+	z-index: 99998;
+	transition: background 0.2s, transform 0.2s;
+	user-select: none;
+}
+
+#tsubakuro-fab:hover {
+	background: #135e96;
+	transform: scale(1.08);
+}
+
+#tsubakuro-fab .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+}
+
+/* Panel */
+.tsubakuro-panel {
+	position: fixed;
+	bottom: 92px;
+	right: 28px;
+	width: 380px;
+	max-width: calc(100vw - 40px);
+	max-height: 75vh;
+	background: #fff;
+	border-radius: 10px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+	z-index: 99999;
+	display: flex;
+	flex-direction: column;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-size: 14px;
+	overflow: hidden;
+}
+
+.tsubakuro-panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: #2271b1;
+	color: #fff;
+	font-weight: 600;
+	font-size: 15px;
+	border-radius: 10px 10px 0 0;
+}
+
+.tsubakuro-panel-close {
+	background: none;
+	border: none;
+	color: #fff;
+	font-size: 20px;
+	cursor: pointer;
+	line-height: 1;
+	padding: 0;
+	opacity: 0.85;
+}
+
+.tsubakuro-panel-close:hover {
+	opacity: 1;
+}
+
+/* Tabs */
+.tsubakuro-tabs {
+	display: flex;
+	border-bottom: 2px solid #e5e7eb;
+	background: #f9fafb;
+}
+
+.tsubakuro-tab {
+	flex: 1;
+	padding: 8px 12px;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 500;
+	color: #6b7280;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.tsubakuro-tab.active,
+.tsubakuro-tab:hover {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+/* Tab content */
+.tsubakuro-tab-content {
+	display: none;
+	padding: 12px 16px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.tsubakuro-tab-content.active {
+	display: block;
+}
+
+/* Filters */
+.tsubakuro-task-filters {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+
+.tsubakuro-task-filters select {
+	font-size: 13px;
+	padding: 4px 6px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+}
+
+.tsubakuro-task-filters label {
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Task items in list */
+.tsubakuro-pub-task-item {
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 10px 12px;
+	margin-bottom: 8px;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tsubakuro-pub-task-item:hover {
+	border-color: #2271b1;
+	box-shadow: 0 1px 4px rgba(34, 113, 177, 0.15);
+}
+
+.tsubakuro-pub-task-title {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 4px;
+	color: #111827;
+}
+
+.tsubakuro-pub-task-meta {
+	font-size: 12px;
+	color: #6b7280;
+	display: flex;
+	gap: 10px;
+}
+
+/* Status badge (public) */
+.tsubakuro-badge {
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.tsubakuro-badge--todo        { background: #e5e5e5; color: #555; }
+.tsubakuro-badge--in_progress { background: #fff3cd; color: #856404; }
+.tsubakuro-badge--completed   { background: #d1f5d3; color: #1d6b24; }
+
+/* Form (public) */
+.tsubakuro-pub-form-row {
+	margin-bottom: 12px;
+}
+
+.tsubakuro-pub-form-row label {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	margin-bottom: 3px;
+}
+
+.tsubakuro-pub-form-row input[type="text"],
+.tsubakuro-pub-form-row textarea,
+.tsubakuro-pub-form-row select {
+	width: 100%;
+	box-sizing: border-box;
+	font-size: 13px;
+	padding: 6px 8px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	background: #fff;
+	resize: vertical;
+}
+
+.tsubakuro-pub-form-row--checkbox {
+	display: flex;
+	align-items: center;
+}
+
+.tsubakuro-pub-form-row--checkbox label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.tsubakuro-pub-form-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 4px;
+}
+
+/* Buttons */
+.tsubakuro-btn {
+	display: inline-block;
+	padding: 7px 14px;
+	border-radius: 4px;
+	border: none;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.tsubakuro-btn--primary {
+	background: #2271b1;
+	color: #fff;
+}
+
+.tsubakuro-btn--primary:hover {
+	background: #135e96;
+}
+
+.tsubakuro-btn--secondary {
+	background: #e5e7eb;
+	color: #374151;
+}
+
+.tsubakuro-btn--secondary:hover {
+	background: #d1d5db;
+}
+
+.tsubakuro-btn--small {
+	padding: 4px 10px;
+	font-size: 12px;
+}
+
+/* Detail view */
+.tsubakuro-pub-detail {
+	padding: 12px 16px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.tsubakuro-pub-detail-header {
+	margin-bottom: 10px;
+}
+
+.tsubakuro-pub-detail-header button {
+	background: none;
+	border: none;
+	color: #2271b1;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 0;
+	margin-bottom: 6px;
+}
+
+.tsubakuro-pub-detail-header h3 {
+	margin: 0;
+	font-size: 15px;
+}
+
+.tsubakuro-pub-detail-content {
+	font-size: 13px;
+	color: #374151;
+	white-space: pre-wrap;
+	margin-bottom: 12px;
+	line-height: 1.6;
+}
+
+.tsubakuro-pub-detail-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 14px;
+	flex-wrap: wrap;
+}
+
+.tsubakuro-pub-detail-status label {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.tsubakuro-pub-detail-status select {
+	font-size: 12px;
+	padding: 4px 6px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+}
+
+/* Comments */
+.tsubakuro-pub-comments h4 {
+	font-size: 13px;
+	margin: 0 0 8px;
+	color: #374151;
+}
+
+#tsubakuro-pub-comment-list {
+	max-height: 150px;
+	overflow-y: auto;
+	margin-bottom: 8px;
+}
+
+.tsubakuro-pub-comment-item {
+	padding: 6px 0;
+	border-bottom: 1px solid #e5e7eb;
+	font-size: 13px;
+}
+
+.tsubakuro-pub-comment-item:last-child {
+	border-bottom: none;
+}
+
+.tsubakuro-pub-comment-meta {
+	font-size: 11px;
+	color: #9ca3af;
+	margin-bottom: 2px;
+}
+
+.tsubakuro-pub-add-comment {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tsubakuro-pub-add-comment textarea {
+	width: 100%;
+	box-sizing: border-box;
+	font-size: 13px;
+	padding: 6px 8px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	resize: none;
+}
+
+/* Loading / empty states */
+.tsubakuro-loading,
+.tsubakuro-empty {
+	text-align: center;
+	color: #9ca3af;
+	font-size: 13px;
+	padding: 16px 0;
+}
+
+/* Notice */
+.tsubakuro-pub-notice {
+	padding: 6px 10px;
+	border-radius: 4px;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.tsubakuro-pub-notice--error   { background: #fde8e8; color: #b91c1c; }
+.tsubakuro-pub-notice--success { background: #ecfdf5; color: #065f46; }
+
+.required { color: #c0392b; }

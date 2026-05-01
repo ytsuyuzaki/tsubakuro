@@ -1,0 +1,279 @@
+<?php
+/**
+ * REST API endpoints for tasks and comments.
+ *
+ * Base route: /wp-json/tsubakuro/v1/
+ *
+ * Endpoints:
+ *   GET    /tasks
+ *   POST   /tasks
+ *   GET    /tasks/{id}
+ *   PUT    /tasks/{id}
+ *   DELETE /tasks/{id}
+ *   GET    /tasks/{id}/comments
+ *   POST   /tasks/{id}/comments
+ *
+ * @package Tsubakuro
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Tsubakuro_REST_API {
+
+	const NAMESPACE = 'tsubakuro/v1';
+
+	public static function init() {
+		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+	}
+
+	public static function register_routes() {
+		// Tasks collection.
+		register_rest_route(
+			self::NAMESPACE,
+			'/tasks',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_tasks' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'status'       => array( 'type' => 'string' ),
+						'related_page' => array( 'type' => 'integer' ),
+						'per_page'     => array( 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 100 ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'create_task' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => array(
+						'title'         => array( 'required' => true, 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+						'content'       => array( 'type' => 'string', 'default' => '' ),
+						'status'        => array( 'type' => 'string', 'default' => 'todo' ),
+						'assignee'      => array( 'type' => 'integer', 'default' => 0 ),
+						'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'default' => array() ),
+					),
+				),
+			)
+		);
+
+		// Single task.
+		register_rest_route(
+			self::NAMESPACE,
+			'/tasks/(?P<id>\d+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_task' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'id' => array( 'required' => true, 'type' => 'integer' ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( __CLASS__, 'update_task' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => array(
+						'id'            => array( 'required' => true, 'type' => 'integer' ),
+						'title'         => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+						'content'       => array( 'type' => 'string' ),
+						'status'        => array( 'type' => 'string' ),
+						'assignee'      => array( 'type' => 'integer' ),
+						'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( __CLASS__, 'delete_task' ),
+					'permission_callback' => array( __CLASS__, 'check_delete_permission' ),
+					'args'                => array(
+						'id' => array( 'required' => true, 'type' => 'integer' ),
+					),
+				),
+			)
+		);
+
+		// Task comments.
+		register_rest_route(
+			self::NAMESPACE,
+			'/tasks/(?P<id>\d+)/comments',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_comments' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'id' => array( 'required' => true, 'type' => 'integer' ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'add_comment' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => array(
+						'id'      => array( 'required' => true, 'type' => 'integer' ),
+						'comment' => array( 'required' => true, 'type' => 'string', 'sanitize_callback' => 'sanitize_textarea_field' ),
+					),
+				),
+			)
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Handlers
+	// -------------------------------------------------------------------------
+
+	public static function get_tasks( $request ) {
+		$args = array();
+
+		if ( $request->get_param( 'status' ) ) {
+			$args['status'] = $request->get_param( 'status' );
+		}
+
+		if ( $request->get_param( 'related_page' ) ) {
+			$args['related_page'] = $request->get_param( 'related_page' );
+		}
+
+		if ( $request->get_param( 'per_page' ) ) {
+			$args['posts_per_page'] = $request->get_param( 'per_page' );
+		}
+
+		return rest_ensure_response( Tsubakuro_Post_Types::get_tasks( $args ) );
+	}
+
+	public static function create_task( $request ) {
+		$task_id = wp_insert_post(
+			array(
+				'post_type'    => 'tsubakuro_task',
+				'post_title'   => $request->get_param( 'title' ),
+				'post_content' => wp_kses_post( $request->get_param( 'content' ) ),
+				'post_status'  => 'publish',
+			),
+			true
+		);
+
+		if ( is_wp_error( $task_id ) ) {
+			return new WP_Error( 'create_failed', $task_id->get_error_message(), array( 'status' => 500 ) );
+		}
+
+		Tsubakuro_Post_Types::save_meta(
+			$task_id,
+			array(
+				'status'        => $request->get_param( 'status' ),
+				'assignee'      => $request->get_param( 'assignee' ),
+				'related_pages' => $request->get_param( 'related_pages' ),
+			)
+		);
+
+		return rest_ensure_response( Tsubakuro_Post_Types::get_task( $task_id ) );
+	}
+
+	public static function get_task( $request ) {
+		$task = Tsubakuro_Post_Types::get_task( (int) $request['id'] );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
+
+		return rest_ensure_response( $task );
+	}
+
+	public static function update_task( $request ) {
+		$task_id = (int) $request['id'];
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		$update = array( 'ID' => $task_id );
+
+		if ( null !== $request->get_param( 'title' ) ) {
+			$update['post_title'] = $request->get_param( 'title' );
+		}
+
+		if ( null !== $request->get_param( 'content' ) ) {
+			$update['post_content'] = wp_kses_post( $request->get_param( 'content' ) );
+		}
+
+		wp_update_post( $update );
+
+		$meta = array();
+		foreach ( array( 'status', 'assignee', 'related_pages' ) as $field ) {
+			if ( null !== $request->get_param( $field ) ) {
+				$meta[ $field ] = $request->get_param( $field );
+			}
+		}
+		if ( ! empty( $meta ) ) {
+			Tsubakuro_Post_Types::save_meta( $task_id, $meta );
+		}
+
+		return rest_ensure_response( Tsubakuro_Post_Types::get_task( $task_id ) );
+	}
+
+	public static function delete_task( $request ) {
+		$task_id = (int) $request['id'];
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		wp_delete_post( $task_id, true );
+
+		return rest_ensure_response( array( 'deleted' => true, 'id' => $task_id ) );
+	}
+
+	public static function get_comments( $request ) {
+		$task_id = (int) $request['id'];
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Admin::get_task_comments( $task_id ) );
+	}
+
+	public static function add_comment( $request ) {
+		$task_id = (int) $request['id'];
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		$comment_id = Tsubakuro_Admin::insert_comment(
+			$task_id,
+			get_current_user_id(),
+			$request->get_param( 'comment' )
+		);
+
+		if ( false === $comment_id ) {
+			return new WP_Error( 'insert_failed', 'コメントの保存に失敗しました。', array( 'status' => 500 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Admin::get_comment( $comment_id ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// Permissions
+	// -------------------------------------------------------------------------
+
+	public static function check_read_permission() {
+		return current_user_can( 'edit_posts' );
+	}
+
+	public static function check_write_permission() {
+		return current_user_can( 'edit_posts' );
+	}
+
+	public static function check_delete_permission() {
+		return current_user_can( 'delete_posts' );
+	}
+}
