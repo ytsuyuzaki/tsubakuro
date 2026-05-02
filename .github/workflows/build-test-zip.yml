@@ -40,3 +40,27 @@ jobs:
           name: tsubakuro-test-build
           path: dist/tsubakuro.zip
           retention-days: 30
+
+      - name: Get artifact URL and send webhook to n8n
+        env:
+          ARTIFACT_WEBHOOK_URL: ${{ secrets.ARTIFACT_WEBHOOK_URL }}
+        run: |
+          # artifact ID を取得
+          ARTIFACT_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
+            | jq '.artifacts[0].id')
+          
+          # artifact のダウンロード URL を生成
+          ARTIFACT_URL="https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip"
+          
+          # n8n webhook に POST
+          curl -X POST $ARTIFACT_WEBHOOK_URL \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"repository\": \"${{ github.repository }}\",
+              \"run_id\": \"${{ github.run_id }}\",
+              \"artifact_name\": \"tsubakuro-test-build\",
+              \"artifact_url\": \"${ARTIFACT_URL}\",
+              \"artifact_token\": \"${{ secrets.GITHUB_TOKEN }}\",
+              \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"
+            }"
