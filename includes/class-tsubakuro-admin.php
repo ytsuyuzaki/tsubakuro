@@ -14,12 +14,10 @@ class Tsubakuro_Admin {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
-		add_action( 'wp_ajax_tsubakuro_create_task', array( __CLASS__, 'ajax_create_task' ) );
-		add_action( 'wp_ajax_tsubakuro_update_task', array( __CLASS__, 'ajax_update_task' ) );
+		add_action( 'admin_post_tsubakuro_save_task', array( __CLASS__, 'handle_save_task' ) );
 		add_action( 'wp_ajax_tsubakuro_delete_task', array( __CLASS__, 'ajax_delete_task' ) );
 		add_action( 'wp_ajax_tsubakuro_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_tsubakuro_get_comments', array( __CLASS__, 'ajax_get_comments' ) );
-		add_action( 'wp_ajax_tsubakuro_get_task', array( __CLASS__, 'ajax_get_task' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -44,6 +42,15 @@ class Tsubakuro_Admin {
 			'edit_posts',
 			'tsubakuro-tasks',
 			array( __CLASS__, 'render_task_list' )
+		);
+
+		add_submenu_page(
+			'tsubakuro-tasks',
+			'新規タスク追加',
+			'新規タスク追加',
+			'edit_posts',
+			'tsubakuro-task-form',
+			array( __CLASS__, 'render_task_form' )
 		);
 	}
 
@@ -89,74 +96,90 @@ class Tsubakuro_Admin {
 
 	public static function render_task_list() {
 		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( $_GET['status'] ) : '';
+		$message       = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
 		$tasks         = Tsubakuro_Post_Types::get_tasks( $status_filter ? array( 'status' => $status_filter ) : array() );
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-list.php';
+	}
+
+	public static function render_task_form() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$task_id  = absint( $_GET['task_id'] ?? 0 );
+		$task     = null;
+		$comments = array();
+
+		if ( $task_id ) {
+			$task = Tsubakuro_Post_Types::get_task( $task_id );
+			if ( $task ) {
+				$comments = self::get_task_comments( $task_id );
+			}
+		}
+
+		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';
+	}
+
+	// -------------------------------------------------------------------------
+	// Form POST handler
+	// -------------------------------------------------------------------------
+
+	public static function handle_save_task() {
+		check_admin_referer( 'tsubakuro_save_task', 'tsubakuro_nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$task_id = absint( $_POST['task_id'] ?? 0 );
+		$title   = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+		$content = wp_kses_post( wp_unslash( $_POST['content'] ?? '' ) );
+
+		if ( ! $title ) {
+			$back = admin_url( 'admin.php?page=tsubakuro-task-form' );
+			if ( $task_id ) {
+				$back .= '&task_id=' . $task_id;
+			}
+			wp_safe_redirect( add_query_arg( 'error', rawurlencode( 'タイトルは必須です。' ), $back ) );
+			exit;
+		}
+
+		if ( $task_id ) {
+			wp_update_post(
+				array(
+					'ID'           => $task_id,
+					'post_title'   => $title,
+					'post_content' => $content,
+				)
+			);
+			Tsubakuro_Post_Types::save_meta( $task_id, $_POST );
+		} else {
+			$task_id = wp_insert_post(
+				array(
+					'post_type'    => 'tsubakuro_task',
+					'post_title'   => $title,
+					'post_content' => $content,
+					'post_status'  => 'publish',
+				),
+				true
+			);
+
+			if ( is_wp_error( $task_id ) ) {
+				$back = admin_url( 'admin.php?page=tsubakuro-task-form' );
+				wp_safe_redirect( add_query_arg( 'error', rawurlencode( $task_id->get_error_message() ), $back ) );
+				exit;
+			}
+
+			Tsubakuro_Post_Types::save_meta( $task_id, $_POST );
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=tsubakuro-tasks&message=saved' ) );
+		exit;
 	}
 
 	// -------------------------------------------------------------------------
 	// AJAX handlers
 	// -------------------------------------------------------------------------
-
-	public static function ajax_create_task() {
-		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
-		}
-
-		$title   = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
-		$content = wp_kses_post( wp_unslash( $_POST['content'] ?? '' ) );
-
-		if ( ! $title ) {
-			wp_send_json_error( array( 'message' => 'タイトルは必須です。' ), 400 );
-		}
-
-		$task_id = wp_insert_post(
-			array(
-				'post_type'    => 'tsubakuro_task',
-				'post_title'   => $title,
-				'post_content' => $content,
-				'post_status'  => 'publish',
-			),
-			true
-		);
-
-		if ( is_wp_error( $task_id ) ) {
-			wp_send_json_error( array( 'message' => $task_id->get_error_message() ), 500 );
-		}
-
-		Tsubakuro_Post_Types::save_meta( $task_id, $_POST );
-
-		wp_send_json_success( Tsubakuro_Post_Types::get_task( $task_id ) );
-	}
-
-	public static function ajax_update_task() {
-		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
-		}
-
-		$task_id = absint( $_POST['task_id'] ?? 0 );
-		if ( ! $task_id ) {
-			wp_send_json_error( array( 'message' => 'タスクIDが必要です。' ), 400 );
-		}
-
-		$update = array( 'ID' => $task_id );
-
-		if ( ! empty( $_POST['title'] ) ) {
-			$update['post_title'] = sanitize_text_field( wp_unslash( $_POST['title'] ) );
-		}
-
-		if ( isset( $_POST['content'] ) ) {
-			$update['post_content'] = wp_kses_post( wp_unslash( $_POST['content'] ) );
-		}
-
-		wp_update_post( $update );
-		Tsubakuro_Post_Types::save_meta( $task_id, $_POST );
-
-		wp_send_json_success( Tsubakuro_Post_Types::get_task( $task_id ) );
-	}
 
 	public static function ajax_delete_task() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
@@ -205,23 +228,6 @@ class Tsubakuro_Admin {
 		}
 
 		wp_send_json_success( self::get_task_comments( $task_id ) );
-	}
-
-	public static function ajax_get_task() {
-		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
-
-		$task_id = absint( $_GET['task_id'] ?? 0 );
-		if ( ! $task_id ) {
-			wp_send_json_error( array( 'message' => 'タスクIDが必要です。' ), 400 );
-		}
-
-		$task = Tsubakuro_Post_Types::get_task( $task_id );
-		if ( ! $task ) {
-			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
-		}
-
-		$task['comments'] = self::get_task_comments( $task_id );
-		wp_send_json_success( $task );
 	}
 
 	// -------------------------------------------------------------------------
