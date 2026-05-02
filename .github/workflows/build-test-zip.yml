@@ -34,33 +34,46 @@ jobs:
       - name: Build ZIP
         run: npm run build:zip
 
-      - name: Upload test ZIP artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tsubakuro-test-build
-          path: dist/tsubakuro.zip
-          retention-days: 30
+      - name: Install deploy tools
+        run: sudo apt-get update && sudo apt-get install -y rsync unzip
 
-      - name: Get artifact URL and send webhook to n8n
-        env:
-          ARTIFACT_WEBHOOK_URL: ${{ secrets.ARTIFACT_WEBHOOK_URL }}
+      - name: Extract ZIP
         run: |
-          # artifact ID を取得
-          ARTIFACT_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
-            | jq '.artifacts[0].id')
-          
-          # artifact のダウンロード URL を生成
-          ARTIFACT_URL="https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip"
-          
-          # n8n webhook に POST
-          curl -X POST $ARTIFACT_WEBHOOK_URL \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"repository\": \"${{ github.repository }}\",
-              \"run_id\": \"${{ github.run_id }}\",
-              \"artifact_name\": \"tsubakuro-test-build\",
-              \"artifact_url\": \"${ARTIFACT_URL}\",
-              \"artifact_token\": \"${{ secrets.GITHUB_TOKEN }}\",
-              \"timestamp\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"
-            }"
+          rm -rf dist/share
+          mkdir -p dist/share
+          unzip -q dist/tsubakuro.zip -d dist/share
+
+      - name: Share extracted ZIP with rsync
+        env:
+          RSYNC_HOST: ${{ secrets.RSYNC_HOST }}
+          RSYNC_USER: ${{ secrets.RSYNC_USER }}
+          RSYNC_DESTINATION: ${{ secrets.RSYNC_DESTINATION }}
+          RSYNC_PORT: ${{ secrets.RSYNC_PORT }}
+          RSYNC_SSH_PRIVATE_KEY: ${{ secrets.RSYNC_SSH_PRIVATE_KEY }}
+          RSYNC_KNOWN_HOSTS: ${{ secrets.RSYNC_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          : "${RSYNC_HOST:?RSYNC_HOST secret is required}"
+          : "${RSYNC_USER:?RSYNC_USER secret is required}"
+          : "${RSYNC_DESTINATION:?RSYNC_DESTINATION secret is required}"
+          : "${RSYNC_SSH_PRIVATE_KEY:?RSYNC_SSH_PRIVATE_KEY secret is required}"
+
+          RSYNC_PORT="${RSYNC_PORT:-22}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$RSYNC_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          if [ -n "${RSYNC_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$RSYNC_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$RSYNC_PORT" "$RSYNC_HOST" >> ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_rsa -p ${RSYNC_PORT}" \
+            dist/share/tsubakuro/ \
+            "${RSYNC_USER}@${RSYNC_HOST}:${RSYNC_DESTINATION%/}/"

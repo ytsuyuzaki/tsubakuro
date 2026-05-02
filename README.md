@@ -19,3 +19,12 @@ npm run build:zip
 `main` ブランチの `Tests` workflow が成功すると、GitHub Actionsの `Build Test ZIP` workflow が `tsubakuro-test-build` artifactとしてテスト用ZIPを作成します。
 
 `Tests` workflow は `main` へのpush、Pull Request、手動実行、毎日 18:00 UTC の定期実行で動きます。
+
+`Build Test ZIP` workflow は作成したZIPを展開し、次のGitHub Secretsを使って展開済みプラグインをrsyncで共有先へ同期します。
+
+- `RSYNC_HOST`
+- `RSYNC_USER`
+- `RSYNC_DESTINATION`
+- `RSYNC_SSH_PRIVATE_KEY`
+- `RSYNC_PORT` optional, default `22`
+- `RSYNC_KNOWN_HOSTS` optional
