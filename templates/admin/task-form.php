@@ -96,12 +96,32 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 			</div>
 
 			<div class="tsubakuro-form-row">
-				<label for="tsubakuro-task-related">
-					<?php esc_html_e( '関連ページ（ページIDをカンマ区切り）', 'tsubakuro' ); ?>
-				</label>
-				<input type="text" id="tsubakuro-task-related" name="related_pages" class="widefat"
-					value="<?php echo esc_attr( implode( ', ', $task['related_pages'] ?? array() ) ); ?>"
-					placeholder="<?php esc_attr_e( '例: 1, 5, 10', 'tsubakuro' ); ?>">
+				<label><?php esc_html_e( '関連ページ', 'tsubakuro' ); ?></label>
+				<input type="hidden" id="tsubakuro-task-related" name="related_pages"
+					value="<?php echo esc_attr( implode( ', ', $task['related_pages'] ?? array() ) ); ?>">
+
+				<div id="tsubakuro-related-tags" class="tsubakuro-related-tags">
+					<?php foreach ( $related_page_objects as $rp ) : ?>
+					<span class="tsubakuro-related-tag" data-id="<?php echo esc_attr( $rp['id'] ); ?>">
+						<?php if ( $rp['url'] ) : ?>
+						<a href="<?php echo esc_url( $rp['url'] ); ?>" target="_blank" rel="noopener">
+							<?php echo esc_html( $rp['title'] ); ?>
+						</a>
+						<?php else : ?>
+						<?php echo esc_html( $rp['title'] ); ?>
+						<?php endif; ?>
+						<button type="button" class="tsubakuro-related-remove" data-id="<?php echo esc_attr( $rp['id'] ); ?>"
+							aria-label="<?php esc_attr_e( '削除', 'tsubakuro' ); ?>">&#x2715;</button>
+					</span>
+					<?php endforeach; ?>
+				</div>
+
+				<div class="tsubakuro-related-search">
+					<input type="text" id="tsubakuro-related-search-input" class="widefat"
+						placeholder="<?php esc_attr_e( '記事タイトルで検索して関連付け...', 'tsubakuro' ); ?>"
+						autocomplete="off">
+					<div id="tsubakuro-related-results" class="tsubakuro-related-results" hidden></div>
+				</div>
 			</div>
 
 			<div class="tsubakuro-form-footer">

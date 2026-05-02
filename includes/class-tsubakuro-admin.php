@@ -24,6 +24,7 @@ class Tsubakuro_Admin {
 		add_action( 'wp_ajax_tsubakuro_delete_task', array( __CLASS__, 'ajax_delete_task' ) );
 		add_action( 'wp_ajax_tsubakuro_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_tsubakuro_get_comments', array( __CLASS__, 'ajax_get_comments' ) );
+		add_action( 'wp_ajax_tsubakuro_search_posts', array( __CLASS__, 'ajax_search_posts' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -138,14 +139,25 @@ class Tsubakuro_Admin {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- task_id is a display param, not form data.
-		$task_id  = absint( $_GET['task_id'] ?? 0 );
-		$task     = null;
-		$comments = array();
+		$task_id              = absint( $_GET['task_id'] ?? 0 );
+		$task                 = null;
+		$comments             = array();
+		$related_page_objects = array();
 
 		if ( $task_id ) {
 			$task = Tsubakuro_Post_Types::get_task( $task_id );
 			if ( $task ) {
 				$comments = self::get_task_comments( $task_id );
+				foreach ( $task['related_pages'] as $page_id ) {
+					$post = get_post( $page_id );
+					if ( $post ) {
+						$related_page_objects[] = array(
+							'id'    => $post->ID,
+							'title' => $post->post_title ?: sprintf( '(ID: %d)', $post->ID ),
+							'url'   => (string) get_permalink( $post->ID ),
+						);
+					}
+				}
 			}
 		}
 
@@ -284,6 +296,47 @@ class Tsubakuro_Admin {
 		}
 
 		wp_send_json_success( self::get_task_comments( $task_id ) );
+	}
+
+	/**
+	 * AJAX handler: search published posts/pages by keyword.
+	 */
+	public static function ajax_search_posts() {
+		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
+		}
+
+		$keyword    = sanitize_text_field( wp_unslash( $_GET['keyword'] ?? '' ) );
+		$post_types = array_values(
+			array_diff(
+				get_post_types( array( 'public' => true ), 'names' ),
+				array( 'tsubakuro_task' )
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_s -- keyword search required for post lookup.
+		$query = new WP_Query(
+			array(
+				'post_type'      => $post_types,
+				'post_status'    => 'publish',
+				's'              => $keyword,
+				'posts_per_page' => 10,
+				'no_found_rows'  => true,
+			)
+		);
+
+		$results = array();
+		foreach ( $query->posts as $post ) {
+			$results[] = array(
+				'id'    => $post->ID,
+				'title' => $post->post_title,
+				'url'   => (string) get_permalink( $post->ID ),
+			);
+		}
+
+		wp_send_json_success( $results );
 	}
 
 	// -------------------------------------------------------------------------
