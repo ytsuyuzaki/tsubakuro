@@ -126,6 +126,86 @@
 }
 
 /* =========================================================================
+   Related pages field
+   ========================================================================= */
+
+.tsubakuro-related-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+	min-height: 24px;
+}
+
+.tsubakuro-related-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: #e8f0fe;
+	border: 1px solid #b3c9f7;
+	border-radius: 3px;
+	padding: 3px 8px;
+	font-size: 13px;
+}
+
+.tsubakuro-related-tag a {
+	color: #1a56cc;
+	text-decoration: none;
+}
+
+.tsubakuro-related-tag a:hover {
+	text-decoration: underline;
+}
+
+.tsubakuro-related-remove {
+	background: none;
+	border: none;
+	color: #888;
+	cursor: pointer;
+	font-size: 12px;
+	line-height: 1;
+	padding: 0 0 0 4px;
+}
+
+.tsubakuro-related-remove:hover {
+	color: #c0392b;
+}
+
+.tsubakuro-related-search {
+	position: relative;
+}
+
+.tsubakuro-related-results {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	max-height: 220px;
+	overflow-y: auto;
+	z-index: 100;
+}
+
+.tsubakuro-related-result-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 13px;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.tsubakuro-related-result-item:last-child {
+	border-bottom: none;
+}
+
+.tsubakuro-related-result-item:hover {
+	background: #f0f6ff;
+}
+
+/* =========================================================================
    Settings page
    ========================================================================= */
 
