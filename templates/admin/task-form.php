@@ -108,7 +108,7 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 							<?php echo esc_html( $rp['title'] ); ?>
 						</a>
 						<?php else : ?>
-						<?php echo esc_html( $rp['title'] ); ?>
+							<?php echo esc_html( $rp['title'] ); ?>
 						<?php endif; ?>
 						<button type="button" class="tsubakuro-related-remove" data-id="<?php echo esc_attr( $rp['id'] ); ?>"
 							aria-label="<?php esc_attr_e( '削除', 'tsubakuro' ); ?>">&#x2715;</button>
