@@ -2,41 +2,20 @@
    Tsubakuro – Frontend Task Panel Styles
    ========================================================================== */
 
-/* FAB button */
-#tsubakuro-fab {
-	position: fixed;
-	bottom: 28px;
-	right: 28px;
-	width: 52px;
-	height: 52px;
-	background: #2271b1;
-	color: #fff;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-	z-index: 99998;
-	transition: background 0.2s, transform 0.2s;
-	user-select: none;
-}
-
-#tsubakuro-fab:hover {
-	background: #135e96;
-	transform: scale(1.08);
-}
-
-#tsubakuro-fab .dashicons {
-	font-size: 22px;
-	width: 22px;
-	height: 22px;
+/* Admin bar button */
+#wp-admin-bar-tsubakuro-panel-toggle > a .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: middle;
+	margin-right: 4px;
+	line-height: 32px;
 }
 
 /* Panel */
 .tsubakuro-panel {
 	position: fixed;
-	bottom: 92px;
+	top: calc(var(--wp-admin--admin-bar--height, 32px) + 8px);
 	right: 28px;
 	width: 380px;
 	max-width: calc(100vw - 40px);

@@ -34,7 +34,8 @@
 	// =========================================================================
 	// Panel toggle
 	// =========================================================================
-	$( document ).on( 'click', '#tsubakuro-fab', function () {
+	$( document ).on( 'click', '#wp-admin-bar-tsubakuro-panel-toggle > a', function ( e ) {
+		e.preventDefault();
 		const $panel = $( '#tsubakuro-panel' );
 		if ( $panel.is( ':visible' ) ) {
 			$panel.hide();

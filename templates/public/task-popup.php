@@ -11,10 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <!-- Tsubakuro Frontend Task Panel -->
-<div id="tsubakuro-fab" title="<?php esc_attr_e( 'タスク管理', 'tsubakuro' ); ?>">
-	<span class="dashicons dashicons-list-view"></span>
-</div>
-
 <div id="tsubakuro-panel" class="tsubakuro-panel" style="display:none;">
 	<div class="tsubakuro-panel-header">
 		<span><?php esc_html_e( 'タスク管理', 'tsubakuro' ); ?></span>
