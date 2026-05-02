@@ -25,9 +25,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Run PHPUnit tests
-        run: vendor/bin/phpunit
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,6 +36,9 @@ jobs:
 
       - name: Start wp-env
         run: npm run wp-env:start
+
+      - name: Run PHPUnit tests
+        run: npm run wp-env:test
 
       - name: Lint PHP files
         run: npm run lint:php
