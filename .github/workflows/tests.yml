@@ -16,6 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,9 +42,6 @@ jobs:
 
       - name: Lint PHP files
         run: npm run lint:php
-
-      - name: Run unit tests
-        run: npm run test:unit
 
       - name: Run WordPress integration tests
         run: npm run test:wp
