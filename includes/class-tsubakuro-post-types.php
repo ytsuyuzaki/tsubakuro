@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Manages the tsubakuro_task custom post type.
+ */
 class Tsubakuro_Post_Types {
 
 	/** All valid task statuses. */
@@ -23,10 +26,16 @@ class Tsubakuro_Post_Types {
 		'completed'   => '実行完了',
 	);
 
+	/**
+	 * Register WordPress hooks.
+	 */
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 	}
 
+	/**
+	 * Register the tsubakuro_task custom post type.
+	 */
 	public static function register_post_type() {
 		$labels = array(
 			'name'               => 'タスク',
@@ -42,19 +51,19 @@ class Tsubakuro_Post_Types {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => false, // We build our own admin UI.
-			'show_in_menu'        => false,
-			'query_var'           => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'supports'            => array( 'title', 'editor', 'author' ),
-			'show_in_rest'        => true,
-			'rest_base'           => 'tsubakuro-tasks',
+			'labels'             => $labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => false, // We build our own admin UI.
+			'show_in_menu'       => false,
+			'query_var'          => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'supports'           => array( 'title', 'editor', 'author' ),
+			'show_in_rest'       => true,
+			'rest_base'          => 'tsubakuro-tasks',
 		);
 
 		register_post_type( 'tsubakuro_task', $args );
@@ -108,13 +117,14 @@ class Tsubakuro_Post_Types {
 	/**
 	 * Format a WP_Post into a structured task array.
 	 *
-	 * @param WP_Post $post
+	 * @param WP_Post $post The post object to format.
 	 * @return array
 	 */
 	public static function format_task( $post ) {
-		$status        = get_post_meta( $post->ID, '_tsubakuro_status', true ) ?: 'todo';
+		$status_raw    = get_post_meta( $post->ID, '_tsubakuro_status', true );
+		$status        = $status_raw ? $status_raw : 'todo';
 		$assignee_id   = (int) get_post_meta( $post->ID, '_tsubakuro_assignee', true );
-		$related_pages = array_map( 'intval', get_post_meta( $post->ID, '_tsubakuro_related_page' ) );
+		$related_pages = array_map( 'intval', get_post_meta( $post->ID, '_tsubakuro_related_page', false ) );
 
 		$assignee = null;
 		if ( $assignee_id ) {
@@ -128,16 +138,16 @@ class Tsubakuro_Post_Types {
 		}
 
 		return array(
-			'id'             => $post->ID,
-			'title'          => $post->post_title,
-			'content'        => $post->post_content,
-			'status'         => $status,
-			'status_label'   => self::STATUSES[ $status ] ?? $status,
-			'assignee'       => $assignee,
-			'related_pages'  => $related_pages,
-			'created_at'     => $post->post_date,
-			'updated_at'     => $post->post_modified,
-			'author_id'      => (int) $post->post_author,
+			'id'            => $post->ID,
+			'title'         => $post->post_title,
+			'content'       => $post->post_content,
+			'status'        => $status,
+			'status_label'  => self::STATUSES[ $status ] ?? $status,
+			'assignee'      => $assignee,
+			'related_pages' => $related_pages,
+			'created_at'    => $post->post_date,
+			'updated_at'    => $post->post_modified,
+			'author_id'     => (int) $post->post_author,
 		);
 	}
 
@@ -157,6 +167,7 @@ class Tsubakuro_Post_Types {
 		);
 
 		if ( ! empty( $args['status'] ) ) {
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for status filtering.
 			$defaults['meta_query'] = array(
 				array(
 					'key'   => '_tsubakuro_status',
@@ -168,6 +179,7 @@ class Tsubakuro_Post_Types {
 
 		if ( ! empty( $args['related_page'] ) ) {
 			$page_id = absint( $args['related_page'] );
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for page filtering.
 			$defaults['meta_query'][] = array(
 				'key'     => '_tsubakuro_related_page',
 				'value'   => $page_id,

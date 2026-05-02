@@ -9,6 +9,8 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: tsubakuro
  * Domain Path: /languages
+ *
+ * @package Tsubakuro
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -30,6 +32,9 @@ require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-frontend.php';
 register_activation_hook( __FILE__, array( 'Tsubakuro_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Tsubakuro_Activator', 'deactivate' ) );
 
+/**
+ * Bootstrap all plugin modules on plugins_loaded.
+ */
 function tsubakuro_init() {
 	Tsubakuro_Post_Types::init();
 	Tsubakuro_Admin::init();

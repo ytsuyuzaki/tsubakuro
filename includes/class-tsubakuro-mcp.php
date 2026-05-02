@@ -23,14 +23,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Implements the MCP (Model Context Protocol) endpoint via JSON-RPC 2.0.
+ */
 class Tsubakuro_MCP {
 
 	const ROUTE = '/mcp';
 
+	/**
+	 * Register WordPress hooks.
+	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 	}
 
+	/**
+	 * Register the MCP REST routes (discovery GET and JSON-RPC POST).
+	 */
 	public static function register_routes() {
 		// Discovery (GET).
 		register_rest_route(
@@ -55,10 +64,20 @@ class Tsubakuro_MCP {
 	// MCP manifest
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Handle GET /mcp – return the MCP server manifest.
+	 *
+	 * @return WP_REST_Response
+	 */
 	public static function handle_manifest() {
 		return rest_ensure_response( self::get_manifest() );
 	}
 
+	/**
+	 * Build and return the MCP server manifest array.
+	 *
+	 * @return array
+	 */
 	public static function get_manifest() {
 		return array(
 			'schema_version' => '2024-11-05',
@@ -72,9 +91,19 @@ class Tsubakuro_MCP {
 					'inputSchema' => array(
 						'type'       => 'object',
 						'properties' => array(
-							'status'       => array( 'type' => 'string', 'description' => 'フィルタ: todo | in_progress | completed' ),
-							'related_page' => array( 'type' => 'integer', 'description' => '関連ページIDでフィルタ' ),
-							'per_page'     => array( 'type' => 'integer', 'description' => '取得件数 (max 100)', 'default' => 50 ),
+							'status'       => array(
+								'type'        => 'string',
+								'description' => 'フィルタ: todo | in_progress | completed',
+							),
+							'related_page' => array(
+								'type'        => 'integer',
+								'description' => '関連ページIDでフィルタ',
+							),
+							'per_page'     => array(
+								'type'        => 'integer',
+								'description' => '取得件数 (max 100)',
+								'default'     => 50,
+							),
 						),
 					),
 				),
@@ -85,7 +114,10 @@ class Tsubakuro_MCP {
 						'type'       => 'object',
 						'required'   => array( 'id' ),
 						'properties' => array(
-							'id' => array( 'type' => 'integer', 'description' => 'タスクID' ),
+							'id' => array(
+								'type'        => 'integer',
+								'description' => 'タスクID',
+							),
 						),
 					),
 				),
@@ -96,11 +128,28 @@ class Tsubakuro_MCP {
 						'type'       => 'object',
 						'required'   => array( 'title' ),
 						'properties' => array(
-							'title'         => array( 'type' => 'string', 'description' => 'タイトル' ),
-							'content'       => array( 'type' => 'string', 'description' => '内容・説明' ),
-							'status'        => array( 'type' => 'string', 'description' => 'todo | in_progress | completed', 'default' => 'todo' ),
-							'assignee'      => array( 'type' => 'integer', 'description' => 'アサインするWordPressユーザーID' ),
-							'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => '関連ページIDの配列' ),
+							'title'         => array(
+								'type'        => 'string',
+								'description' => 'タイトル',
+							),
+							'content'       => array(
+								'type'        => 'string',
+								'description' => '内容・説明',
+							),
+							'status'        => array(
+								'type'        => 'string',
+								'description' => 'todo | in_progress | completed',
+								'default'     => 'todo',
+							),
+							'assignee'      => array(
+								'type'        => 'integer',
+								'description' => 'アサインするWordPressユーザーID',
+							),
+							'related_pages' => array(
+								'type'        => 'array',
+								'items'       => array( 'type' => 'integer' ),
+								'description' => '関連ページIDの配列',
+							),
 						),
 					),
 				),
@@ -111,12 +160,18 @@ class Tsubakuro_MCP {
 						'type'       => 'object',
 						'required'   => array( 'id' ),
 						'properties' => array(
-							'id'            => array( 'type' => 'integer', 'description' => 'タスクID' ),
+							'id'            => array(
+								'type'        => 'integer',
+								'description' => 'タスクID',
+							),
 							'title'         => array( 'type' => 'string' ),
 							'content'       => array( 'type' => 'string' ),
 							'status'        => array( 'type' => 'string' ),
 							'assignee'      => array( 'type' => 'integer' ),
-							'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+							'related_pages' => array(
+								'type'  => 'array',
+								'items' => array( 'type' => 'integer' ),
+							),
 						),
 					),
 				),
@@ -127,7 +182,10 @@ class Tsubakuro_MCP {
 						'type'       => 'object',
 						'required'   => array( 'id' ),
 						'properties' => array(
-							'id' => array( 'type' => 'integer', 'description' => 'タスクID' ),
+							'id' => array(
+								'type'        => 'integer',
+								'description' => 'タスクID',
+							),
 						),
 					),
 				),
@@ -138,8 +196,14 @@ class Tsubakuro_MCP {
 						'type'       => 'object',
 						'required'   => array( 'id', 'comment' ),
 						'properties' => array(
-							'id'      => array( 'type' => 'integer', 'description' => 'タスクID' ),
-							'comment' => array( 'type' => 'string', 'description' => 'コメント本文' ),
+							'id'      => array(
+								'type'        => 'integer',
+								'description' => 'タスクID',
+							),
+							'comment' => array(
+								'type'        => 'string',
+								'description' => 'コメント本文',
+							),
 						),
 					),
 				),
@@ -151,6 +215,12 @@ class Tsubakuro_MCP {
 	// JSON-RPC 2.0 dispatcher
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Handle POST /mcp – dispatch an incoming JSON-RPC 2.0 request.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response
+	 */
 	public static function handle_jsonrpc( $request ) {
 		$body = $request->get_json_params();
 
@@ -170,6 +240,12 @@ class Tsubakuro_MCP {
 		return rest_ensure_response( self::dispatch( $body ) );
 	}
 
+	/**
+	 * Route a single JSON-RPC call to the appropriate tool method.
+	 *
+	 * @param array $rpc Decoded JSON-RPC call object.
+	 * @return array JSON-RPC response array.
+	 */
 	private static function dispatch( $rpc ) {
 		$id     = $rpc['id'] ?? null;
 		$method = $rpc['method'] ?? '';
@@ -207,6 +283,13 @@ class Tsubakuro_MCP {
 	// Tool implementations
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Tool: list tasks with optional status/page filters.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters.
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_list_tasks( $id, $params ) {
 		$args = array();
 
@@ -227,6 +310,13 @@ class Tsubakuro_MCP {
 		return self::success_response( $id, $tasks );
 	}
 
+	/**
+	 * Tool: get a single task with all its comments.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters.
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_get_task( $id, $params ) {
 		if ( empty( $params['id'] ) ) {
 			return self::error_response( $id, -32602, 'id is required' );
@@ -243,6 +333,13 @@ class Tsubakuro_MCP {
 		return self::success_response( $id, $task );
 	}
 
+	/**
+	 * Tool: create a new task.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters (title required).
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_create_task( $id, $params ) {
 		if ( empty( $params['title'] ) ) {
 			return self::error_response( $id, -32602, 'title is required' );
@@ -267,6 +364,13 @@ class Tsubakuro_MCP {
 		return self::success_response( $id, Tsubakuro_Post_Types::get_task( $task_id ) );
 	}
 
+	/**
+	 * Tool: update an existing task.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters (id required).
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_update_task( $id, $params ) {
 		if ( empty( $params['id'] ) ) {
 			return self::error_response( $id, -32602, 'id is required' );
@@ -295,6 +399,13 @@ class Tsubakuro_MCP {
 		return self::success_response( $id, Tsubakuro_Post_Types::get_task( $task_id ) );
 	}
 
+	/**
+	 * Tool: delete a task.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters (id required).
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_delete_task( $id, $params ) {
 		if ( empty( $params['id'] ) ) {
 			return self::error_response( $id, -32602, 'id is required' );
@@ -309,9 +420,22 @@ class Tsubakuro_MCP {
 
 		wp_delete_post( $task_id, true );
 
-		return self::success_response( $id, array( 'deleted' => true, 'id' => $task_id ) );
+		return self::success_response(
+			$id,
+			array(
+				'deleted' => true,
+				'id'      => $task_id,
+			)
+		);
 	}
 
+	/**
+	 * Tool: add a comment to a task.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param array $params Tool input parameters (id and comment required).
+	 * @return array JSON-RPC response.
+	 */
 	private static function tool_add_comment( $id, $params ) {
 		if ( empty( $params['id'] ) || empty( $params['comment'] ) ) {
 			return self::error_response( $id, -32602, 'id and comment are required' );
@@ -341,6 +465,13 @@ class Tsubakuro_MCP {
 	// JSON-RPC helpers
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Build a JSON-RPC 2.0 success response.
+	 *
+	 * @param mixed $id     Request id.
+	 * @param mixed $result Result payload.
+	 * @return array
+	 */
 	private static function success_response( $id, $result ) {
 		return array(
 			'jsonrpc' => '2.0',
@@ -349,6 +480,14 @@ class Tsubakuro_MCP {
 		);
 	}
 
+	/**
+	 * Build a JSON-RPC 2.0 error response.
+	 *
+	 * @param mixed  $id      Request id.
+	 * @param int    $code    JSON-RPC error code.
+	 * @param string $message Human-readable error message.
+	 * @return array
+	 */
 	private static function error_response( $id, $code, $message ) {
 		return array(
 			'jsonrpc' => '2.0',
@@ -364,6 +503,11 @@ class Tsubakuro_MCP {
 	// Permission
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Permission callback: require edit_posts capability.
+	 *
+	 * @return bool
+	 */
 	public static function check_permission() {
 		return current_user_can( 'edit_posts' );
 	}

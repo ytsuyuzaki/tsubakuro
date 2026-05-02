@@ -18,8 +18,8 @@ $profile_url = admin_url( 'profile.php' );
 	<h1><?php esc_html_e( 'Tsubakuro 設定', 'tsubakuro' ); ?></h1>
 
 	<!-- ======================================================
-	     Section 1 – MCP エンドポイント URL
-	     ====================================================== -->
+		Section 1 – MCP エンドポイント URL
+		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( 'MCP エンドポイント URL', 'tsubakuro' ); ?></h2>
 		<p>
@@ -43,8 +43,8 @@ $profile_url = admin_url( 'profile.php' );
 	</div>
 
 	<!-- ======================================================
-	     Section 2 – アプリケーションパスワードの作成
-	     ====================================================== -->
+		Section 2 – アプリケーションパスワードの作成
+		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( '認証キー（アプリケーションパスワード）の作成', 'tsubakuro' ); ?></h2>
 		<p>
@@ -53,7 +53,10 @@ $profile_url = admin_url( 'profile.php' );
 				/* translators: %s: link to user profile page */
 				wp_kses(
 					__( 'MCP エンドポイントへのリクエストには WordPress の <strong>アプリケーションパスワード</strong> による認証が必要です。<br>以下の手順で発行してください。', 'tsubakuro' ),
-					array( 'strong' => array(), 'br' => array() )
+					array(
+						'strong' => array(),
+						'br'     => array(),
+					)
 				)
 			);
 			?>
@@ -96,8 +99,8 @@ $profile_url = admin_url( 'profile.php' );
 	</div>
 
 	<!-- ======================================================
-	     Section 3 – MCP クライアントへの設定方法
-	     ====================================================== -->
+		Section 3 – MCP クライアントへの設定方法
+		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( 'MCP クライアントへの設定方法', 'tsubakuro' ); ?></h2>
 		<p>
@@ -108,8 +111,9 @@ $profile_url = admin_url( 'profile.php' );
 			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-claude-config">
 				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 			</button>
-			<pre id="tsubakuro-claude-config" class="tsubakuro-code-block"><?php
-$example = '{
+			<pre id="tsubakuro-claude-config" class="tsubakuro-code-block">
+			<?php
+			$example = '{
   "mcpServers": {
     "tsubakuro": {
       "command": "npx",
@@ -122,8 +126,9 @@ $example = '{
     }
   }
 }';
-echo esc_html( $example );
-?></pre>
+			echo esc_html( $example );
+			?>
+			</pre>
 		</div>
 
 		<p><?php esc_html_e( '認証情報の生成例（ターミナル）:', 'tsubakuro' ); ?></p>

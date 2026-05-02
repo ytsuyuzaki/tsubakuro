@@ -1,0 +1,10 @@
+{
+	"extends": "@wordpress/npm-package-json-lint-config",
+	"rules": {
+		"require-author": "off",
+		"require-bugs": "off",
+		"require-homepage": "off",
+		"require-keywords": "off",
+		"require-repository": "off"
+	}
+}

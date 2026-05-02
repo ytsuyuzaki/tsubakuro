@@ -181,9 +181,20 @@
 	letter-spacing: 0.4px;
 }
 
-.tsubakuro-badge--todo        { background: #e5e5e5; color: #555; }
-.tsubakuro-badge--in_progress { background: #fff3cd; color: #856404; }
-.tsubakuro-badge--completed   { background: #d1f5d3; color: #1d6b24; }
+.tsubakuro-badge--todo {
+	background: #e5e5e5;
+	color: #555;
+}
+
+.tsubakuro-badge--in_progress {
+	background: #fff3cd;
+	color: #856404;
+}
+
+.tsubakuro-badge--completed {
+	background: #d1f5d3;
+	color: #1d6b24;
+}
 
 /* Form (public) */
 .tsubakuro-pub-form-row {
@@ -380,7 +391,16 @@
 	font-size: 13px;
 }
 
-.tsubakuro-pub-notice--error   { background: #fde8e8; color: #b91c1c; }
-.tsubakuro-pub-notice--success { background: #ecfdf5; color: #065f46; }
+.tsubakuro-pub-notice--error {
+	background: #fde8e8;
+	color: #b91c1c;
+}
 
-.required { color: #c0392b; }
+.tsubakuro-pub-notice--success {
+	background: #ecfdf5;
+	color: #065f46;
+}
+
+.required {
+	color: #c0392b;
+}

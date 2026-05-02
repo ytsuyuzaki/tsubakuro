@@ -20,14 +20,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Provides the REST API endpoints for tasks and comments.
+ */
 class Tsubakuro_REST_API {
 
 	const NAMESPACE = 'tsubakuro/v1';
 
+	/**
+	 * Register WordPress hooks.
+	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 	}
 
+	/**
+	 * Register all REST routes for this plugin.
+	 */
 	public static function register_routes() {
 		// Tasks collection.
 		register_rest_route(
@@ -41,7 +50,12 @@ class Tsubakuro_REST_API {
 					'args'                => array(
 						'status'       => array( 'type' => 'string' ),
 						'related_page' => array( 'type' => 'integer' ),
-						'per_page'     => array( 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 100 ),
+						'per_page'     => array(
+							'type'    => 'integer',
+							'default' => 50,
+							'minimum' => 1,
+							'maximum' => 100,
+						),
 					),
 				),
 				array(
@@ -49,11 +63,28 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'create_task' ),
 					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
 					'args'                => array(
-						'title'         => array( 'required' => true, 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-						'content'       => array( 'type' => 'string', 'default' => '' ),
-						'status'        => array( 'type' => 'string', 'default' => 'todo' ),
-						'assignee'      => array( 'type' => 'integer', 'default' => 0 ),
-						'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'default' => array() ),
+						'title'         => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'content'       => array(
+							'type'    => 'string',
+							'default' => '',
+						),
+						'status'        => array(
+							'type'    => 'string',
+							'default' => 'todo',
+						),
+						'assignee'      => array(
+							'type'    => 'integer',
+							'default' => 0,
+						),
+						'related_pages' => array(
+							'type'    => 'array',
+							'items'   => array( 'type' => 'integer' ),
+							'default' => array(),
+						),
 					),
 				),
 			)
@@ -69,7 +100,10 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'get_task' ),
 					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 					'args'                => array(
-						'id' => array( 'required' => true, 'type' => 'integer' ),
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
 					),
 				),
 				array(
@@ -77,12 +111,21 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'update_task' ),
 					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
 					'args'                => array(
-						'id'            => array( 'required' => true, 'type' => 'integer' ),
-						'title'         => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+						'id'            => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+						'title'         => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 						'content'       => array( 'type' => 'string' ),
 						'status'        => array( 'type' => 'string' ),
 						'assignee'      => array( 'type' => 'integer' ),
-						'related_pages' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+						'related_pages' => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'integer' ),
+						),
 					),
 				),
 				array(
@@ -90,7 +133,10 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'delete_task' ),
 					'permission_callback' => array( __CLASS__, 'check_delete_permission' ),
 					'args'                => array(
-						'id' => array( 'required' => true, 'type' => 'integer' ),
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
 					),
 				),
 			)
@@ -106,7 +152,10 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'get_comments' ),
 					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 					'args'                => array(
-						'id' => array( 'required' => true, 'type' => 'integer' ),
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
 					),
 				),
 				array(
@@ -114,8 +163,15 @@ class Tsubakuro_REST_API {
 					'callback'            => array( __CLASS__, 'add_comment' ),
 					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
 					'args'                => array(
-						'id'      => array( 'required' => true, 'type' => 'integer' ),
-						'comment' => array( 'required' => true, 'type' => 'string', 'sanitize_callback' => 'sanitize_textarea_field' ),
+						'id'      => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+						'comment' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_textarea_field',
+						),
 					),
 				),
 			)
@@ -126,6 +182,12 @@ class Tsubakuro_REST_API {
 	// Handlers
 	// -------------------------------------------------------------------------
 
+	/**
+	 * GET /tasks – Return a list of tasks with optional filters.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
 	public static function get_tasks( $request ) {
 		$args = array();
 
@@ -144,6 +206,12 @@ class Tsubakuro_REST_API {
 		return rest_ensure_response( Tsubakuro_Post_Types::get_tasks( $args ) );
 	}
 
+	/**
+	 * POST /tasks – Create a new task.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function create_task( $request ) {
 		$task_id = wp_insert_post(
 			array(
@@ -171,6 +239,12 @@ class Tsubakuro_REST_API {
 		return rest_ensure_response( Tsubakuro_Post_Types::get_task( $task_id ) );
 	}
 
+	/**
+	 * GET /tasks/{id} – Return a single task with its comments.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_task( $request ) {
 		$task = Tsubakuro_Post_Types::get_task( (int) $request['id'] );
 
@@ -183,6 +257,12 @@ class Tsubakuro_REST_API {
 		return rest_ensure_response( $task );
 	}
 
+	/**
+	 * PUT /tasks/{id} – Update an existing task.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function update_task( $request ) {
 		$task_id = (int) $request['id'];
 		$task    = Tsubakuro_Post_Types::get_task( $task_id );
@@ -216,6 +296,12 @@ class Tsubakuro_REST_API {
 		return rest_ensure_response( Tsubakuro_Post_Types::get_task( $task_id ) );
 	}
 
+	/**
+	 * DELETE /tasks/{id} – Delete a task.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function delete_task( $request ) {
 		$task_id = (int) $request['id'];
 		$task    = Tsubakuro_Post_Types::get_task( $task_id );
@@ -226,9 +312,20 @@ class Tsubakuro_REST_API {
 
 		wp_delete_post( $task_id, true );
 
-		return rest_ensure_response( array( 'deleted' => true, 'id' => $task_id ) );
+		return rest_ensure_response(
+			array(
+				'deleted' => true,
+				'id'      => $task_id,
+			)
+		);
 	}
 
+	/**
+	 * GET /tasks/{id}/comments – Return all comments for a task.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_comments( $request ) {
 		$task_id = (int) $request['id'];
 		$task    = Tsubakuro_Post_Types::get_task( $task_id );
@@ -240,6 +337,12 @@ class Tsubakuro_REST_API {
 		return rest_ensure_response( Tsubakuro_Admin::get_task_comments( $task_id ) );
 	}
 
+	/**
+	 * POST /tasks/{id}/comments – Add a comment to a task.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function add_comment( $request ) {
 		$task_id = (int) $request['id'];
 		$task    = Tsubakuro_Post_Types::get_task( $task_id );
@@ -265,14 +368,29 @@ class Tsubakuro_REST_API {
 	// Permissions
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Permission callback: require edit_posts capability.
+	 *
+	 * @return bool
+	 */
 	public static function check_read_permission() {
 		return current_user_can( 'edit_posts' );
 	}
 
+	/**
+	 * Permission callback: require edit_posts capability for write operations.
+	 *
+	 * @return bool
+	 */
 	public static function check_write_permission() {
 		return current_user_can( 'edit_posts' );
 	}
 
+	/**
+	 * Permission callback: require delete_posts capability.
+	 *
+	 * @return bool
+	 */
 	public static function check_delete_permission() {
 		return current_user_can( 'delete_posts' );
 	}

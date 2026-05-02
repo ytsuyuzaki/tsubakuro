@@ -47,7 +47,7 @@ class WP_Query {
 
 	public function __construct( $args ) {
 		$GLOBALS['tsubakuro_test']['last_query_args'] = $args;
-		$this->posts = array_values(
+		$this->posts                                  = array_values(
 			array_filter(
 				$GLOBALS['tsubakuro_test']['posts'],
 				function ( $post ) use ( $args ) {
@@ -198,16 +198,21 @@ function is_admin() {
 function wp_enqueue_style() {}
 function wp_enqueue_script() {}
 function wp_localize_script() {}
-function admin_url( $path = '' ) { return 'https://example.test/wp-admin/' . $path; }
-function rest_url( $path = '' ) { return 'https://example.test/wp-json/' . $path; }
-function wp_create_nonce() { return 'nonce'; }
-function get_queried_object_id() { return 55; }
+function admin_url( $path = '' ) {
+	return 'https://example.test/wp-admin/' . $path; }
+function rest_url( $path = '' ) {
+	return 'https://example.test/wp-json/' . $path; }
+function wp_create_nonce() {
+	return 'nonce'; }
+function get_queried_object_id() {
+	return 55; }
 function add_menu_page() {}
 function add_submenu_page() {}
 function check_ajax_referer() {}
 function wp_send_json_error() {}
 function wp_send_json_success() {}
-function current_time() { return '2026-05-02 00:00:00'; }
+function current_time() {
+	return '2026-05-02 00:00:00'; }
 function add_option() {}
 
 tsubakuro_test_reset();

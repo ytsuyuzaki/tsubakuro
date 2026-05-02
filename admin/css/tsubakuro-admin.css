@@ -4,43 +4,43 @@
 
 /* Wrap */
 .tsubakuro-admin-wrap {
-max-width: 1200px;
+	max-width: 1200px;
 }
 
 /* Filter tabs */
 .tsubakuro-filter-tabs {
-margin-bottom: 16px;
+	margin-bottom: 16px;
 }
 
 /* Status badges */
 .tsubakuro-status {
-display: inline-block;
-padding: 2px 8px;
-border-radius: 3px;
-font-size: 12px;
-font-weight: 600;
-text-transform: uppercase;
-letter-spacing: 0.5px;
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
 .tsubakuro-status--todo {
-background: #e5e5e5;
-color: #555;
+	background: #e5e5e5;
+	color: #555;
 }
 
 .tsubakuro-status--in_progress {
-background: #fff3cd;
-color: #856404;
+	background: #fff3cd;
+	color: #856404;
 }
 
 .tsubakuro-status--completed {
-background: #d1f5d3;
-color: #1d6b24;
+	background: #d1f5d3;
+	color: #1d6b24;
 }
 
 /* Task table */
 .tsubakuro-task-table .column-id {
-width: 60px;
+	width: 60px;
 }
 
 /* =========================================================================
@@ -48,81 +48,81 @@ width: 60px;
    ========================================================================= */
 
 .tsubakuro-form-card {
-background: #fff;
-border: 1px solid #ddd;
-border-radius: 4px;
-padding: 20px 24px;
-margin-top: 16px;
-max-width: 800px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 20px 24px;
+	margin-top: 16px;
+	max-width: 800px;
 }
 
 /* Form rows */
 .tsubakuro-form-row {
-margin-bottom: 16px;
+	margin-bottom: 16px;
 }
 
 .tsubakuro-form-row label {
-display: block;
-font-weight: 600;
-margin-bottom: 4px;
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
 }
 
 .tsubakuro-form-row .required {
-color: #c0392b;
+	color: #c0392b;
 }
 
 .tsubakuro-form-row--half {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 16px;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
 }
 
 .tsubakuro-form-footer {
-display: flex;
-gap: 8px;
-justify-content: flex-end;
-padding-top: 8px;
-border-top: 1px solid #eee;
-margin-top: 8px;
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	padding-top: 8px;
+	border-top: 1px solid #eee;
+	margin-top: 8px;
 }
 
 /* Comments */
 #tsubakuro-comment-list {
-max-height: 320px;
-overflow-y: auto;
-border: 1px solid #ddd;
-border-radius: 4px;
-padding: 8px;
-margin-bottom: 10px;
-background: #fafafa;
+	max-height: 320px;
+	overflow-y: auto;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 8px;
+	margin-bottom: 10px;
+	background: #fafafa;
 }
 
 .tsubakuro-comment-item {
-padding: 8px 0;
-border-bottom: 1px solid #eee;
+	padding: 8px 0;
+	border-bottom: 1px solid #eee;
 }
 
 .tsubakuro-comment-item:last-child {
-border-bottom: none;
+	border-bottom: none;
 }
 
 .tsubakuro-comment-meta {
-font-size: 12px;
-color: #888;
-margin-bottom: 4px;
+	font-size: 12px;
+	color: #888;
+	margin-bottom: 4px;
 }
 
 .tsubakuro-comment-meta strong {
-color: #444;
+	color: #444;
 }
 
 .tsubakuro-comment-body {
-font-size: 14px;
-white-space: pre-wrap;
+	font-size: 14px;
+	white-space: pre-wrap;
 }
 
 #tsubakuro-add-comment-btn {
-margin-top: 6px;
+	margin-top: 6px;
 }
 
 /* =========================================================================
@@ -130,57 +130,59 @@ margin-top: 6px;
    ========================================================================= */
 
 .tsubakuro-settings-card {
-background: #fff;
-border: 1px solid #ddd;
-border-radius: 4px;
-padding: 20px 24px;
-margin-top: 20px;
-max-width: 800px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 20px 24px;
+	margin-top: 20px;
+	max-width: 800px;
 }
 
 .tsubakuro-settings-card h2 {
-margin-top: 0;
-padding-bottom: 10px;
-border-bottom: 1px solid #eee;
+	margin-top: 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #eee;
 }
 
 .tsubakuro-url-row {
-display: flex;
-gap: 8px;
-align-items: center;
+	display: flex;
+	gap: 8px;
+	align-items: center;
 }
 
 .tsubakuro-url-row input {
-flex: 1;
+	flex: 1;
 }
 
 .tsubakuro-steps {
-padding-left: 20px;
+	padding-left: 20px;
 }
 
 .tsubakuro-steps li {
-margin-bottom: 8px;
+	margin-bottom: 8px;
 }
 
 .tsubakuro-code-block-wrap {
-position: relative;
-margin: 10px 0;
+	position: relative;
+	margin: 10px 0;
 }
 
 .tsubakuro-code-block-wrap .tsubakuro-copy-btn {
-position: absolute;
-top: 8px;
-right: 8px;
+	position: absolute;
+	top: 8px;
+	right: 8px;
 }
 
 .tsubakuro-code-block {
-background: #f5f5f5;
-border: 1px solid #ddd;
-border-radius: 4px;
-/* right padding leaves room for the absolute-positioned copy button (~100px wide + 8px gap + 8px edge) */
-padding: 14px 120px 14px 14px;
-font-size: 13px;
-overflow-x: auto;
-white-space: pre;
-margin: 0;
+	background: #f5f5f5;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	/* right padding leaves room for the absolute-positioned copy button
+	   (~100px wide + 8px gap + 8px edge) */
+	padding: 14px 120px 14px 14px;
+	font-size: 13px;
+	overflow-x: auto;
+	white-space: pre;
+	margin: 0;
 }

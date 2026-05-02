@@ -9,8 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Manages admin menu pages and AJAX handlers.
+ */
 class Tsubakuro_Admin {
 
+	/**
+	 * Register WordPress action hooks.
+	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
@@ -24,6 +30,9 @@ class Tsubakuro_Admin {
 	// Menu
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Register top-level and sub-menu pages in the WordPress admin.
+	 */
 	public static function add_menu() {
 		add_menu_page(
 			'Tsubakuro タスク管理',
@@ -67,6 +76,11 @@ class Tsubakuro_Admin {
 	// Assets
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Enqueue admin CSS and JS on Tsubakuro admin pages.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
 	public static function enqueue_scripts( $hook ) {
 		if ( strpos( $hook, 'tsubakuro' ) === false ) {
 			return;
@@ -103,18 +117,27 @@ class Tsubakuro_Admin {
 	// Render pages
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Render the task list admin page.
+	 */
 	public static function render_task_list() {
-		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( $_GET['status'] ) : '';
-		$message       = isset( $_GET['message'] ) ? sanitize_text_field( $_GET['message'] ) : '';
-		$tasks         = Tsubakuro_Post_Types::get_tasks( $status_filter ? array( 'status' => $status_filter ) : array() );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only URL params set by the plugin.
+		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only URL params set by the plugin.
+		$message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['message'] ) ) : '';
+		$tasks   = Tsubakuro_Post_Types::get_tasks( $status_filter ? array( 'status' => $status_filter ) : array() );
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-list.php';
 	}
 
+	/**
+	 * Render the task add/edit form admin page.
+	 */
 	public static function render_task_form() {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( '権限がありません。' );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- task_id is a display param, not form data.
 		$task_id  = absint( $_GET['task_id'] ?? 0 );
 		$task     = null;
 		$comments = array();
@@ -129,6 +152,9 @@ class Tsubakuro_Admin {
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';
 	}
 
+	/**
+	 * Render the plugin settings admin page.
+	 */
 	public static function render_settings() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( '権限がありません。' );
@@ -142,6 +168,9 @@ class Tsubakuro_Admin {
 	// -------------------------------------------------------------------------
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Handle the task create/update form submission (admin-post action).
+	 */
 	public static function handle_save_task() {
 		check_admin_referer( 'tsubakuro_save_task', 'tsubakuro_nonce' );
 
@@ -199,6 +228,9 @@ class Tsubakuro_Admin {
 	// AJAX handlers
 	// -------------------------------------------------------------------------
 
+	/**
+	 * AJAX handler: delete a task by ID.
+	 */
 	public static function ajax_delete_task() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
 
@@ -215,6 +247,9 @@ class Tsubakuro_Admin {
 		wp_send_json_success( array( 'deleted' => true ) );
 	}
 
+	/**
+	 * AJAX handler: add a comment to a task.
+	 */
 	public static function ajax_add_comment() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
 
@@ -237,6 +272,9 @@ class Tsubakuro_Admin {
 		wp_send_json_success( self::get_comment( $result ) );
 	}
 
+	/**
+	 * AJAX handler: retrieve all comments for a task.
+	 */
 	public static function ajax_get_comments() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
 
@@ -252,9 +290,18 @@ class Tsubakuro_Admin {
 	// Comment helpers
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Insert a comment row into the custom comments table.
+	 *
+	 * @param int    $task_id  ID of the task.
+	 * @param int    $user_id  ID of the commenter.
+	 * @param string $comment  Comment text (already sanitized).
+	 * @return int|false Inserted comment ID, or false on failure.
+	 */
 	public static function insert_comment( $task_id, $user_id, $comment ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- inserting into a custom table.
 		return $wpdb->insert(
 			$wpdb->prefix . 'tsubakuro_comments',
 			array(
@@ -267,9 +314,16 @@ class Tsubakuro_Admin {
 		) ? $wpdb->insert_id : false;
 	}
 
+	/**
+	 * Retrieve a single comment by its ID.
+	 *
+	 * @param int $comment_id Comment ID.
+	 * @return array|null
+	 */
 	public static function get_comment( $comment_id ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$wpdb->prefix}tsubakuro_comments WHERE id = %d",
@@ -285,18 +339,25 @@ class Tsubakuro_Admin {
 		$user = get_user_by( 'id', $row['user_id'] );
 
 		return array(
-			'id'           => (int) $row['id'],
-			'task_id'      => (int) $row['task_id'],
-			'user_id'      => (int) $row['user_id'],
-			'user_name'    => $user ? $user->display_name : '不明',
-			'comment'      => $row['comment'],
-			'created_at'   => $row['created_at'],
+			'id'         => (int) $row['id'],
+			'task_id'    => (int) $row['task_id'],
+			'user_id'    => (int) $row['user_id'],
+			'user_name'  => $user ? $user->display_name : '不明',
+			'comment'    => $row['comment'],
+			'created_at' => $row['created_at'],
 		);
 	}
 
+	/**
+	 * Retrieve all comments for a task, ordered chronologically.
+	 *
+	 * @param int $task_id Task post ID.
+	 * @return array
+	 */
 	public static function get_task_comments( $task_id ) {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$wpdb->prefix}tsubakuro_comments WHERE task_id = %d ORDER BY created_at ASC",
@@ -325,8 +386,18 @@ class Tsubakuro_Admin {
 	// Utility
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Return a simplified list of all author users for dropdowns.
+	 *
+	 * @return array[]
+	 */
 	public static function get_users_list() {
-		$users = get_users( array( 'who' => 'authors', 'fields' => array( 'ID', 'display_name' ) ) );
+		$users = get_users(
+			array(
+				'who'    => 'authors',
+				'fields' => array( 'ID', 'display_name' ),
+			)
+		);
 		$list  = array();
 		foreach ( $users as $user ) {
 			$list[] = array(
