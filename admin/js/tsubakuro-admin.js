@@ -6,6 +6,7 @@
 	// Delete task
 	// =========================================================================
 	function deleteTask( taskId ) {
+		// eslint-disable-next-line no-alert
 		if ( ! window.confirm( 'このタスクを削除しますか？' ) ) {
 			return;
 		}
@@ -21,11 +22,15 @@
 				if ( response.success ) {
 					window.location.reload();
 				} else {
-					alert( response.data.message || '削除に失敗しました。' );
+					// eslint-disable-next-line no-alert
+					window.alert(
+						response.data.message || '削除に失敗しました。'
+					);
 				}
 			}
 		).fail( function () {
-			alert( '通信エラーが発生しました。' );
+			// eslint-disable-next-line no-alert
+			window.alert( '通信エラーが発生しました。' );
 		} );
 	}
 
@@ -48,14 +53,15 @@
 	}
 
 	function addComment() {
-		const $commList = $( '#tsubakuro-comment-list' );
 		const $newComment = $( '#tsubakuro-new-comment' );
-		const taskId = $( '#tsubakuro-task-id' ).val();
 		const comment = $.trim( $newComment.val() );
 
 		if ( ! comment ) {
 			return;
 		}
+
+		const $commList = $( '#tsubakuro-comment-list' );
+		const taskId = $( '#tsubakuro-task-id' ).val();
 
 		$.post(
 			tsubakuroAdmin.ajaxUrl,
@@ -72,14 +78,16 @@
 					$commList.find( '.tsubakuro-no-comments' ).remove();
 					renderComment( $commList, response.data );
 				} else {
-					alert(
+					// eslint-disable-next-line no-alert
+					window.alert(
 						response.data.message ||
 							'コメントの追加に失敗しました。'
 					);
 				}
 			}
 		).fail( function () {
-			alert( '通信エラーが発生しました。' );
+			// eslint-disable-next-line no-alert
+			window.alert( '通信エラーが発生しました。' );
 		} );
 	}
 

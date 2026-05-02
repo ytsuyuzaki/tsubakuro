@@ -2,7 +2,6 @@
 /**
  * Smoke tests executed inside wp-env with WordPress loaded.
  */
-
 function tsubakuro_wp_env_assert( $condition, $message ) {
 	if ( ! $condition ) {
 		fwrite( STDERR, "FAIL: {$message}\n" );
@@ -15,7 +14,7 @@ tsubakuro_wp_env_assert( post_type_exists( 'tsubakuro_task' ), 'Task post type i
 
 global $wpdb;
 $comments_table = $wpdb->prefix . 'tsubakuro_comments';
-$table_exists    = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $comments_table ) );
+$table_exists   = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $comments_table ) );
 tsubakuro_wp_env_assert( $comments_table === $table_exists, 'Comments table exists after activation.' );
 
 do_action( 'rest_api_init' );

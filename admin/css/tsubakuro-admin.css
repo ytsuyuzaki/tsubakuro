@@ -178,7 +178,8 @@
 	border: 1px solid #ddd;
 	border-radius: 4px;
 
-	/* right padding leaves room for the absolute-positioned copy button (~100px wide + 8px gap + 8px edge) */
+	/* right padding leaves room for the absolute-positioned copy button
+	   (~100px wide + 8px gap + 8px edge) */
 	padding: 14px 120px 14px 14px;
 	font-size: 13px;
 	overflow-x: auto;

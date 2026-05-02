@@ -261,13 +261,14 @@
 	}
 
 	$( document ).on( 'click', '#tsubakuro-pub-save', function () {
-		const editingId = $( '#tsubakuro-pub-editing-id' ).val();
 		const titleV = $.trim( $( '#tsubakuro-pub-title' ).val() );
 
 		if ( ! titleV ) {
 			showPubNotice( 'タイトルは必須です。', 'error' );
 			return;
 		}
+
+		const editingId = $( '#tsubakuro-pub-editing-id' ).val();
 
 		let relatedPages = [];
 		if (

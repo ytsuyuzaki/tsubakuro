@@ -9,6 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Handles plugin activation and deactivation lifecycle.
+ */
 class Tsubakuro_Activator {
 
 	/**

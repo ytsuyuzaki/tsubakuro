@@ -11,8 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Frontend overlay for logged-in admin users.
+ */
 class Tsubakuro_Frontend {
 
+	/**
+	 * Register WordPress action hooks.
+	 */
 	public static function init() {
 		// Only run on the frontend, not in admin.
 		if ( is_admin() ) {
@@ -23,6 +29,9 @@ class Tsubakuro_Frontend {
 		add_action( 'wp_footer', array( __CLASS__, 'render_popup' ) );
 	}
 
+	/**
+	 * Enqueue public-facing CSS and JS assets.
+	 */
 	public static function enqueue_scripts() {
 		if ( ! self::should_show() ) {
 			return;
@@ -58,6 +67,9 @@ class Tsubakuro_Frontend {
 		);
 	}
 
+	/**
+	 * Output the task popup HTML in the page footer.
+	 */
 	public static function render_popup() {
 		if ( ! self::should_show() ) {
 			return;
@@ -66,6 +78,11 @@ class Tsubakuro_Frontend {
 		include TSUBAKURO_PLUGIN_DIR . 'templates/public/task-popup.php';
 	}
 
+	/**
+	 * Whether the frontend overlay should be rendered for the current user.
+	 *
+	 * @return bool
+	 */
 	private static function should_show() {
 		return is_user_logged_in() && current_user_can( 'edit_posts' );
 	}

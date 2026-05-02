@@ -63,7 +63,7 @@ class TsubakuroTest extends TestCase {
 	}
 
 	public function test_format_task_returns_structured_task_data(): void {
-		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
+		$GLOBALS['tsubakuro_test']['users'][7]       = (object) array(
 			'ID'           => 7,
 			'display_name' => 'Editor User',
 		);
@@ -80,7 +80,13 @@ class TsubakuroTest extends TestCase {
 		$this->assertSame( 'in_progress', $task['status'] );
 		$this->assertSame( '実行中', $task['status_label'] );
 		$this->assertSame( array( 11, 12 ), $task['related_pages'] );
-		$this->assertSame( array( 'id' => 7, 'display_name' => 'Editor User' ), $task['assignee'] );
+		$this->assertSame(
+			array(
+				'id'           => 7,
+				'display_name' => 'Editor User',
+			),
+			$task['assignee']
+		);
 	}
 
 	public function test_get_tasks_builds_query_filters(): void {

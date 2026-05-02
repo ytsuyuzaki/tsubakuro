@@ -24,9 +24,16 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 		<?php esc_html_e( '← タスク一覧に戻る', 'tsubakuro' ); ?>
 	</a>
 
-	<?php if ( isset( $_GET['error'] ) ) : ?>
+	<?php
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- displaying redirect error message set by the plugin.
+	if ( isset( $_GET['error'] ) ) :
+		?>
 	<div class="notice notice-error is-dismissible">
-		<p><?php echo esc_html( sanitize_text_field( rawurldecode( $_GET['error'] ) ) ); ?></p>
+		<?php
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- error message is sanitized via sanitize_text_field below.
+		$error_msg = sanitize_text_field( rawurldecode( wp_unslash( $_GET['error'] ) ) );
+		?>
+		<p><?php echo esc_html( $error_msg ); ?></p>
 	</div>
 	<?php endif; ?>
 
@@ -117,7 +124,7 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 			<?php if ( empty( $comments ) ) : ?>
 			<p class="tsubakuro-no-comments" style="color:#888;font-size:13px;"><?php esc_html_e( 'コメントはありません。', 'tsubakuro' ); ?></p>
 			<?php else : ?>
-			<?php foreach ( $comments as $c ) : ?>
+				<?php foreach ( $comments as $c ) : ?>
 			<div class="tsubakuro-comment-item">
 				<div class="tsubakuro-comment-meta">
 					<strong><?php echo esc_html( $c['user_name'] ); ?></strong>

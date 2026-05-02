@@ -31,17 +31,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<ul class="subsubsub tsubakuro-filter-tabs">
 		<li>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-tasks' ) ); ?>"
-			   class="<?php echo ( '' === $status_filter ) ? 'current' : ''; ?>">
+				class="<?php echo ( '' === $status_filter ) ? 'current' : ''; ?>">
 				<?php esc_html_e( 'すべて', 'tsubakuro' ); ?>
 			</a> |
 		</li>
 		<?php foreach ( Tsubakuro_Post_Types::STATUSES as $key => $label ) : ?>
 		<li>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-tasks&status=' . $key ) ); ?>"
-			   class="<?php echo ( $status_filter === $key ) ? 'current' : ''; ?>">
+				class="<?php echo ( $status_filter === $key ) ? 'current' : ''; ?>">
 				<?php echo esc_html( $label ); ?>
 			</a>
-			<?php echo $key !== array_key_last( Tsubakuro_Post_Types::STATUSES ) ? ' | ' : ''; ?>
+			<?php echo array_key_last( Tsubakuro_Post_Types::STATUSES ) !== $key ? ' | ' : ''; ?>
 		</li>
 		<?php endforeach; ?>
 	</ul>
@@ -93,6 +93,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 								$titles[] = esc_html( $p->post_title );
 							}
 						}
+						// Each title was already escaped with esc_html() before being added to the array.
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each title is individually esc_html()-escaped.
 						echo implode( ', ', $titles );
 					} else {
 						echo '&#8212;';
