@@ -27,6 +27,27 @@ class Tsubakuro_Frontend {
 
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'render_popup' ) );
+		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_button' ), 100 );
+	}
+
+	/**
+	 * Add a task panel toggle button to the WordPress admin bar.
+	 *
+	 * @param WP_Admin_Bar $wp_admin_bar The admin bar instance.
+	 */
+	public static function add_admin_bar_button( $wp_admin_bar ) {
+		if ( ! self::should_show() ) {
+			return;
+		}
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'    => 'tsubakuro-panel-toggle',
+				'title' => '<span class="ab-icon dashicons dashicons-list-view"></span>' . esc_html__( 'タスク管理', 'tsubakuro' ),
+				'href'  => '#',
+				'meta'  => array( 'class' => 'tsubakuro-admin-bar-btn' ),
+			)
+		);
 	}
 
 	/**
