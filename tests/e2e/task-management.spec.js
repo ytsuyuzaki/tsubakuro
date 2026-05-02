@@ -7,7 +7,7 @@ test.describe( 'Tsubakuro task management', () => {
 	} );
 
 	test( 'new task form page is accessible', async ( { page } ) => {
-		await page.goto( '/wp-admin/admin.php?page=tsubakuro-add-task' );
+		await page.goto( '/wp-admin/admin.php?page=tsubakuro-task-form' );
 		await expect( page ).toHaveTitle( /タスク/ );
 	} );
 
