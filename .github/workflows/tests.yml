@@ -16,12 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,6 +24,9 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci
+
+      - name: Start wp-env
+        run: npm run wp-env:start
 
       - name: Lint PHP files
         run: npm run lint:php

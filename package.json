@@ -4,15 +4,15 @@
   "private": true,
   "description": "WordPress task management plugin",
   "scripts": {
-    "lint:php": "find . -name '*.php' -not -path './vendor/*' -not -path './node_modules/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l",
-    "test:unit": "php tests/run.php",
+    "lint:php": "wp-env run cli sh -c \"find /var/www/html/wp-content/plugins/tsubakuro -name '*.php' -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -print0 | xargs -0 -n1 php -l\"",
+    "test:unit": "wp-env run cli php /var/www/html/wp-content/plugins/tsubakuro/tests/run.php",
     "test": "npm run lint:php && npm run test:unit",
     "test:all": "npm test && npm run test:wp",
     "wp-env:start": "wp-env start",
     "wp-env:stop": "wp-env stop",
     "wp-env:destroy": "wp-env destroy",
-    "test:wp": "wp-env start && wp-env run cli wp plugin activate tsubakuro && wp-env run cli wp eval-file /var/www/html/wp-content/plugins/tsubakuro/tests/integration/wp-env-smoke.php",
-    "build:zip": "bash scripts/build-zip.sh"
+    "test:wp": "wp-env run cli wp plugin activate tsubakuro && wp-env run cli wp eval-file /var/www/html/wp-content/plugins/tsubakuro/tests/integration/wp-env-smoke.php",
+    "build:zip": "wp-env run cli php /var/www/html/wp-content/plugins/tsubakuro/scripts/build-zip.php"
   },
   "devDependencies": {
     "@wordpress/env": "^10.19.0"
