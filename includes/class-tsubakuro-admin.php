@@ -52,6 +52,15 @@ class Tsubakuro_Admin {
 			'tsubakuro-task-form',
 			array( __CLASS__, 'render_task_form' )
 		);
+
+		add_submenu_page(
+			'tsubakuro-tasks',
+			'Tsubakuro 設定',
+			'設定',
+			'manage_options',
+			'tsubakuro-settings',
+			array( __CLASS__, 'render_settings' )
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -120,8 +129,17 @@ class Tsubakuro_Admin {
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';
 	}
 
+	public static function render_settings() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
+
+		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/settings.php';
+	}
+
 	// -------------------------------------------------------------------------
-	// Form POST handler
 	// -------------------------------------------------------------------------
 
 	public static function handle_save_task() {
