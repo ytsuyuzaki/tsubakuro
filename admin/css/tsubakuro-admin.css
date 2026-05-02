@@ -4,187 +4,123 @@
 
 /* Wrap */
 .tsubakuro-admin-wrap {
-	max-width: 1200px;
+max-width: 1200px;
 }
 
 /* Filter tabs */
 .tsubakuro-filter-tabs {
-	margin-bottom: 16px;
+margin-bottom: 16px;
 }
 
 /* Status badges */
 .tsubakuro-status {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 3px;
-	font-size: 12px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+display: inline-block;
+padding: 2px 8px;
+border-radius: 3px;
+font-size: 12px;
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 0.5px;
 }
 
 .tsubakuro-status--todo {
-	background: #e5e5e5;
-	color: #555;
+background: #e5e5e5;
+color: #555;
 }
 
 .tsubakuro-status--in_progress {
-	background: #fff3cd;
-	color: #856404;
+background: #fff3cd;
+color: #856404;
 }
 
 .tsubakuro-status--completed {
-	background: #d1f5d3;
-	color: #1d6b24;
+background: #d1f5d3;
+color: #1d6b24;
 }
 
 /* Task table */
 .tsubakuro-task-table .column-id {
-	width: 60px;
+width: 60px;
 }
 
 /* =========================================================================
-   Modal
+   Task form page
    ========================================================================= */
 
-.tsubakuro-modal-overlay {
-	position: fixed;
-	inset: 0;
-	background: rgba(0, 0, 0, 0.55);
-	z-index: 100000;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.tsubakuro-modal {
-	background: #fff;
-	border-radius: 6px;
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
-	width: 640px;
-	max-width: 96vw;
-	max-height: 90vh;
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-}
-
-.tsubakuro-modal-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 16px 20px;
-	border-bottom: 1px solid #ddd;
-}
-
-.tsubakuro-modal-header h2 {
-	margin: 0;
-	font-size: 18px;
-}
-
-.tsubakuro-modal-close {
-	background: none;
-	border: none;
-	font-size: 24px;
-	cursor: pointer;
-	color: #666;
-	line-height: 1;
-	padding: 0 4px;
-}
-
-.tsubakuro-modal-close:hover {
-	color: #c0392b;
-}
-
-.tsubakuro-modal-body {
-	padding: 20px;
-	flex: 1;
-}
-
-.tsubakuro-modal-footer {
-	padding: 14px 20px;
-	border-top: 1px solid #ddd;
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
+.tsubakuro-form-card {
+background: #fff;
+border: 1px solid #ddd;
+border-radius: 4px;
+padding: 20px 24px;
+margin-top: 16px;
+max-width: 800px;
 }
 
 /* Form rows */
 .tsubakuro-form-row {
-	margin-bottom: 16px;
+margin-bottom: 16px;
 }
 
 .tsubakuro-form-row label {
-	display: block;
-	font-weight: 600;
-	margin-bottom: 4px;
+display: block;
+font-weight: 600;
+margin-bottom: 4px;
 }
 
 .tsubakuro-form-row .required {
-	color: #c0392b;
+color: #c0392b;
 }
 
 .tsubakuro-form-row--half {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 16px;
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 16px;
+}
+
+.tsubakuro-form-footer {
+display: flex;
+gap: 8px;
+justify-content: flex-end;
+padding-top: 8px;
+border-top: 1px solid #eee;
+margin-top: 8px;
 }
 
 /* Comments */
 #tsubakuro-comment-list {
-	max-height: 200px;
-	overflow-y: auto;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 8px;
-	margin-bottom: 10px;
-	background: #fafafa;
+max-height: 320px;
+overflow-y: auto;
+border: 1px solid #ddd;
+border-radius: 4px;
+padding: 8px;
+margin-bottom: 10px;
+background: #fafafa;
 }
 
 .tsubakuro-comment-item {
-	padding: 8px 0;
-	border-bottom: 1px solid #eee;
+padding: 8px 0;
+border-bottom: 1px solid #eee;
 }
 
 .tsubakuro-comment-item:last-child {
-	border-bottom: none;
+border-bottom: none;
 }
 
 .tsubakuro-comment-meta {
-	font-size: 12px;
-	color: #888;
-	margin-bottom: 4px;
+font-size: 12px;
+color: #888;
+margin-bottom: 4px;
 }
 
 .tsubakuro-comment-meta strong {
-	color: #444;
+color: #444;
 }
 
 .tsubakuro-comment-body {
-	font-size: 14px;
-	white-space: pre-wrap;
+font-size: 14px;
+white-space: pre-wrap;
 }
 
 #tsubakuro-add-comment-btn {
-	margin-top: 6px;
-}
-
-/* Notices */
-.tsubakuro-notice {
-	padding: 8px 12px;
-	border-radius: 4px;
-	margin: 0 0 12px;
-	font-size: 14px;
-}
-
-.tsubakuro-notice--error {
-	background: #fde8e8;
-	color: #b91c1c;
-	border: 1px solid #f5b5b5;
-}
-
-.tsubakuro-notice--success {
-	background: #ecfdf5;
-	color: #065f46;
-	border: 1px solid #6ee7b7;
+margin-top: 6px;
 }
