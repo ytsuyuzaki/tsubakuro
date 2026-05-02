@@ -153,7 +153,7 @@ class Tsubakuro_Admin {
 					if ( $post ) {
 						$related_page_objects[] = array(
 							'id'    => $post->ID,
-							'title' => $post->post_title ?: "(ID: {$post->ID})",
+							'title' => $post->post_title ?: sprintf( '(ID: %d)', $post->ID ),
 							'url'   => (string) get_permalink( $post->ID ),
 						);
 					}
