@@ -131,7 +131,7 @@ echo esc_html( $example );
 			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-auth-cmd">
 				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 			</button>
-			<pre id="tsubakuro-auth-cmd" class="tsubakuro-code-block"><?php echo esc_html( 'echo -n "ユーザー名:アプリケーションパスワード" | base64' ); ?></pre>
+			<pre id="tsubakuro-auth-cmd" class="tsubakuro-code-block" aria-label="<?php esc_attr_e( '認証情報生成コマンド', 'tsubakuro' ); ?>"><code><?php echo esc_html( 'echo -n "ユーザー名:アプリケーションパスワード" | base64' ); ?></code></pre>
 		</div>
 
 		<p class="description">
@@ -158,6 +158,9 @@ echo esc_html( $example );
 				var original = btn.textContent;
 				btn.textContent = 'コピーしました！';
 				setTimeout( function () { btn.textContent = original; }, 2000 );
+			} ).catch( function () {
+				btn.textContent = 'コピーに失敗しました';
+				setTimeout( function () { btn.textContent = btn.getAttribute( 'data-original' ) || 'コピー'; }, 2000 );
 			} );
 		} );
 	} );
