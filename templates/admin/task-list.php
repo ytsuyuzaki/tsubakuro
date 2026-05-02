@@ -54,7 +54,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<th><?php esc_html_e( 'タイトル', 'tsubakuro' ); ?></th>
 				<th><?php esc_html_e( 'ステータス', 'tsubakuro' ); ?></th>
 				<th><?php esc_html_e( 'アサイン', 'tsubakuro' ); ?></th>
-				<th><?php esc_html_e( '関連ページ', 'tsubakuro' ); ?></th>
 				<th><?php esc_html_e( '作成日', 'tsubakuro' ); ?></th>
 				<th><?php esc_html_e( '操作', 'tsubakuro' ); ?></th>
 			</tr>
@@ -62,7 +61,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<tbody>
 		<?php if ( empty( $tasks ) ) : ?>
 			<tr>
-				<td colspan="7"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
+				<td colspan="6"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
 			</tr>
 		<?php else : ?>
 			<?php foreach ( $tasks as $task ) : ?>
@@ -82,24 +81,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</td>
 				<td>
 					<?php echo $task['assignee'] ? esc_html( $task['assignee']['display_name'] ) : '&#8212;'; ?>
-				</td>
-				<td>
-					<?php
-					if ( ! empty( $task['related_pages'] ) ) {
-						$titles = array();
-						foreach ( $task['related_pages'] as $page_id ) {
-							$p = get_post( $page_id );
-							if ( $p ) {
-								$titles[] = esc_html( $p->post_title );
-							}
-						}
-						// Each title was already escaped with esc_html() before being added to the array.
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each title is individually esc_html()-escaped.
-						echo implode( ', ', $titles );
-					} else {
-						echo '&#8212;';
-					}
-					?>
 				</td>
 				<td><?php echo esc_html( mysql2date( 'Y/m/d', $task['created_at'] ) ); ?></td>
 				<td>
