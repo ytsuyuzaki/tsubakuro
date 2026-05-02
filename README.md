@@ -16,6 +16,6 @@ npm run build:zip
 
 ## Distribution
 
-`main` ブランチへpushすると、GitHub Actionsの `Build Release ZIP` workflow が `tsubakuro-latest` artifactとして最新ZIPを作成します。
+`main` ブランチの `Tests` workflow が成功すると、GitHub Actionsの `Build Test ZIP` workflow が `tsubakuro-test-build` artifactとしてテスト用ZIPを作成します。
 
-タグ `v*` をpushすると、同じZIPをGitHub Releaseへ添付します。
+`Tests` workflow は `main` へのpush、Pull Request、手動実行、毎日 18:00 UTC の定期実行で動きます。

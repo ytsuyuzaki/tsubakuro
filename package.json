@@ -4,7 +4,7 @@
   "private": true,
   "description": "WordPress task management plugin",
   "scripts": {
-    "lint:php": "find . -name '*.php' -not -path './vendor/*' -not -path './node_modules/*' -print0 | xargs -0 -n1 php -l",
+    "lint:php": "find . -name '*.php' -not -path './vendor/*' -not -path './node_modules/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l",
     "test:unit": "php tests/run.php",
     "test": "npm run lint:php && npm run test:unit",
     "test:all": "npm test && npm run test:wp",

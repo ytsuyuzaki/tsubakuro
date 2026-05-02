@@ -1,0 +1,42 @@
+name: Build Test ZIP
+
+on:
+  workflow_run:
+    workflows:
+      - Tests
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: build-test-zip-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Test ZIP
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build ZIP
+        run: npm run build:zip
+
+      - name: Upload test ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsubakuro-test-build
+          path: dist/tsubakuro.zip
+          retention-days: 30
