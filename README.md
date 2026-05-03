@@ -4,7 +4,7 @@ WordPress管理画面でのタスク管理プラグイン
 
 ## ドキュメント
 
-- [MCP エンドポイント](docs/mcp.md) — 利用可能なパス・ツール一覧・生成AI接続フロー
+- MCP エンドポイント、利用可能なツール、生成AI接続フローは WordPress 管理画面の「Tsubakuro」→「MCP ガイド」で確認できます。
 
 ## Development
 

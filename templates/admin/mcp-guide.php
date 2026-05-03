@@ -48,6 +48,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php esc_html_e( 'このサイトの MCP エンドポイント URL:', 'tsubakuro' ); ?>
 			<code><?php echo esc_html( $mcp_url ); ?></code>
 		</p>
+		<p><?php esc_html_e( 'ディスカバリーを呼び出すと、利用可能なツールの一覧を含む MCP サーバーマニフェストが返ります。', 'tsubakuro' ); ?></p>
+		<div class="tsubakuro-code-block-wrap">
+			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-manifest-example">
+				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+			</button>
+			<pre id="tsubakuro-guide-manifest-example" class="tsubakuro-code-block"><?php echo esc_html( '{"schema_version":"2024-11-05","name":"tsubakuro-task-manager","version":"1.0.0","description":"WordPress task management plugin - manage tasks, comments, status, assignees and related pages.","tools":[...]}' ); ?></pre>
+		</div>
 	</div>
 
 	<!-- ==================================================================
@@ -136,6 +143,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</tr>
 			</tbody>
 		</table>
+		<p class="description">
+			<?php
+			echo wp_kses(
+				__( 'MCP 公式仕様では、HTTP transport の認可として OAuth 2.1 / Bearer token / Protected Resource Metadata が中心に整理されています。このプラグインは WordPress プラグインとして配布しやすいことを優先し、現時点では WordPress 標準の Application Passwords を採用しています。参考: <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization" target="_blank">Authorization specification</a> / <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic" target="_blank">Basic specification</a>', 'tsubakuro' ),
+				array(
+					'a' => array(
+						'href'   => array(),
+						'target' => array(),
+					),
+				)
+			);
+			?>
+		</p>
 	</div>
 
 	<!-- ==================================================================
