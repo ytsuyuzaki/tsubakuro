@@ -332,4 +332,71 @@ class AdminTest extends TestCase {
 		$this->assertSame( '不明', $result[1]['user_name'] );
 		$this->assertSame( 'Second', $result[1]['comment'] );
 	}
+
+	// -------------------------------------------------------------------------
+	// exclude_task_comments_from_list()
+	// -------------------------------------------------------------------------
+
+	public function test_init_registers_pre_get_comments_hook(): void {
+		Tsubakuro_Admin::init();
+
+		$this->assertContains(
+			array( 'Tsubakuro_Admin', 'exclude_task_comments_from_list' ),
+			$GLOBALS['tsubakuro_test']['actions']['pre_get_comments'] ?? array()
+		);
+	}
+
+	public function test_exclude_task_comments_adds_type_not_in_on_admin_comments_page(): void {
+		global $pagenow;
+		$GLOBALS['tsubakuro_test']['is_admin'] = true;
+		$pagenow                               = 'edit-comments.php';
+
+		$query             = new WP_Comment_Query();
+		$query->query_vars = array();
+
+		Tsubakuro_Admin::exclude_task_comments_from_list( $query );
+
+		$this->assertArrayHasKey( 'type__not_in', $query->query_vars );
+		$this->assertContains( Tsubakuro_Admin::COMMENT_TYPE, $query->query_vars['type__not_in'] );
+	}
+
+	public function test_exclude_task_comments_preserves_existing_type_not_in(): void {
+		global $pagenow;
+		$GLOBALS['tsubakuro_test']['is_admin'] = true;
+		$pagenow                               = 'edit-comments.php';
+
+		$query             = new WP_Comment_Query();
+		$query->query_vars = array( 'type__not_in' => array( 'ping' ) );
+
+		Tsubakuro_Admin::exclude_task_comments_from_list( $query );
+
+		$this->assertContains( 'ping', $query->query_vars['type__not_in'] );
+		$this->assertContains( Tsubakuro_Admin::COMMENT_TYPE, $query->query_vars['type__not_in'] );
+	}
+
+	public function test_exclude_task_comments_does_nothing_outside_admin(): void {
+		global $pagenow;
+		$GLOBALS['tsubakuro_test']['is_admin'] = false;
+		$pagenow                               = 'edit-comments.php';
+
+		$query             = new WP_Comment_Query();
+		$query->query_vars = array();
+
+		Tsubakuro_Admin::exclude_task_comments_from_list( $query );
+
+		$this->assertArrayNotHasKey( 'type__not_in', $query->query_vars );
+	}
+
+	public function test_exclude_task_comments_does_nothing_on_other_admin_pages(): void {
+		global $pagenow;
+		$GLOBALS['tsubakuro_test']['is_admin'] = true;
+		$pagenow                               = 'index.php';
+
+		$query             = new WP_Comment_Query();
+		$query->query_vars = array();
+
+		Tsubakuro_Admin::exclude_task_comments_from_list( $query );
+
+		$this->assertArrayNotHasKey( 'type__not_in', $query->query_vars );
+	}
 }

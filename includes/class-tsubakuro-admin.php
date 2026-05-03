@@ -28,6 +28,7 @@ class Tsubakuro_Admin {
 		add_action( 'wp_ajax_tsubakuro_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_tsubakuro_get_comments', array( __CLASS__, 'ajax_get_comments' ) );
 		add_action( 'wp_ajax_tsubakuro_search_posts', array( __CLASS__, 'ajax_search_posts' ) );
+		add_action( 'pre_get_comments', array( __CLASS__, 'exclude_task_comments_from_list' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -626,6 +627,33 @@ class Tsubakuro_Admin {
 	// -------------------------------------------------------------------------
 	// Comment helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Exclude task comments from the standard WordPress comments list.
+	 *
+	 * Fires on the `pre_get_comments` action so that comments stored with the
+	 * plugin's custom comment type do not appear on the wp-admin Comments page.
+	 *
+	 * @param WP_Comment_Query $query The comment query object.
+	 */
+	public static function exclude_task_comments_from_list( $query ) {
+		global $pagenow;
+
+		if ( ! is_admin() || 'edit-comments.php' !== $pagenow ) {
+			return;
+		}
+
+		$not_in = $query->query_vars['type__not_in'] ?? array();
+
+		if ( ! is_array( $not_in ) ) {
+			$not_in = array( $not_in );
+		}
+
+		if ( ! in_array( self::COMMENT_TYPE, $not_in, true ) ) {
+			$not_in[] = self::COMMENT_TYPE;
+			$query->set( 'type__not_in', $not_in );
+		}
+	}
 
 	/**
 	 * Insert a task comment using WordPress core comments.

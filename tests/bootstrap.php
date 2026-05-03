@@ -552,6 +552,16 @@ function apply_filters( $hook_name, $value ) {
 	return $value;
 }
 
+if ( ! class_exists( 'WP_Comment_Query' ) ) {
+	class WP_Comment_Query {
+		public $query_vars = array();
+
+		public function set( $key, $value ) {
+			$this->query_vars[ $key ] = $value;
+		}
+	}
+}
+
 tsubakuro_test_reset();
 require_once dirname( __DIR__ ) . '/tsubakuro.php';
 $GLOBALS['tsubakuro_test_bootstrap_state'] = $GLOBALS['tsubakuro_test'];
