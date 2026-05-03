@@ -96,7 +96,9 @@ class FrontendTest extends TestCase {
 
 		Tsubakuro_Frontend::add_admin_bar_button( $bar );
 
-		$this->assertCount( 1, $bar->nodes );
+		$this->assertCount( 3, $bar->nodes );
 		$this->assertSame( 'tsubakuro-panel-toggle', $bar->nodes[0]['id'] );
+		$this->assertSame( 'tsubakuro-list', $bar->nodes[1]['id'] );
+		$this->assertSame( 'tsubakuro-new', $bar->nodes[2]['id'] );
 	}
 }
