@@ -9,6 +9,8 @@ class AdminTest extends TestCase {
 
 	protected function setUp(): void {
 		tsubakuro_test_reset();
+		$_GET  = array();
+		$_POST = array();
 	}
 
 	// -------------------------------------------------------------------------
@@ -61,6 +63,93 @@ class AdminTest extends TestCase {
 		$this->assertStringContainsString( '軽やかに巡回しながら、課題を運び、積み上げていく存在', $output );
 		$this->assertStringContainsString( 'admin.php?page=tsubakuro-tasks', $output );
 		$this->assertStringContainsString( 'admin.php?page=tsubakuro-settings', $output );
+	}
+
+	// -------------------------------------------------------------------------
+	// Task list page
+	// -------------------------------------------------------------------------
+
+	private function make_task_post( int $id, string $title, string $content = 'Body' ): object {
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_task',
+			'post_title'    => $title,
+			'post_content'  => $content,
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+		);
+	}
+
+	public function test_task_list_args_from_request_sanitizes_filters_search_and_sort(): void {
+		$_GET = array(
+			'status'   => 'in_progress',
+			'assignee' => '7',
+			's'        => '<b>urgent</b>',
+			'orderby'  => 'title',
+			'order'    => 'ASC',
+		);
+
+		$args = Tsubakuro_Admin::get_task_list_args_from_request();
+
+		$this->assertSame( 'in_progress', $args['status'] );
+		$this->assertSame( 7, $args['assignee'] );
+		$this->assertSame( 'urgent', $args['s'] );
+		$this->assertSame( 'title', $args['orderby'] );
+		$this->assertSame( 'ASC', $args['order'] );
+	}
+
+	public function test_task_list_args_from_request_drops_invalid_filters_and_sort(): void {
+		$_GET = array(
+			'status'  => 'unknown',
+			'orderby' => 'bad_column',
+			'order'   => 'SIDEWAYS',
+		);
+
+		$args = Tsubakuro_Admin::get_task_list_args_from_request();
+
+		$this->assertArrayNotHasKey( 'status', $args );
+		$this->assertSame( 'date', $args['orderby'] );
+		$this->assertSame( 'DESC', $args['order'] );
+	}
+
+	public function test_render_task_list_outputs_wp_style_controls_and_task_rows(): void {
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_task_post( 101, 'Urgent task', 'Needs work' );
+		$GLOBALS['tsubakuro_test']['post_meta'][101] = array(
+			'_tsubakuro_status'   => array( 'in_progress' ),
+			'_tsubakuro_assignee' => array( 7 ),
+		);
+		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
+			'ID'           => 7,
+			'display_name' => 'Editor User',
+		);
+		$_GET = array(
+			'status'   => 'in_progress',
+			'assignee' => '7',
+			's'        => 'Urgent',
+			'orderby'  => 'title',
+			'order'    => 'ASC',
+		);
+
+		ob_start();
+		Tsubakuro_Admin::render_task_list();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString( 'name="task_ids[]"', $output );
+		$this->assertStringContainsString( 'tsubakuro_bulk_tasks', $output );
+		$this->assertStringContainsString( 'id="tsubakuro-task-search-input"', $output );
+		$this->assertStringContainsString( 'id="tsubakuro-filter-status"', $output );
+		$this->assertStringContainsString( 'id="tsubakuro-filter-assignee"', $output );
+		$this->assertStringContainsString( 'orderby=title', $output );
+		$this->assertStringContainsString( 'Urgent task', $output );
+		$this->assertStringContainsString( 'Editor User', $output );
+	}
+
+	public function test_delete_tasks_sanitizes_ids_and_returns_deleted_count(): void {
+		$deleted = Tsubakuro_Admin::delete_tasks( array( '10', '10', '0', '-3', 'abc' ) );
+
+		$this->assertSame( 2, $deleted );
+		$this->assertSame( array( 10, 3 ), $GLOBALS['tsubakuro_test']['deleted_posts'] );
 	}
 
 	// -------------------------------------------------------------------------

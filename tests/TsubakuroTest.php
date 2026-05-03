@@ -91,6 +91,10 @@ class TsubakuroTest extends TestCase {
 
 	public function test_get_tasks_builds_query_filters(): void {
 		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task title', 'Task body' );
+		$GLOBALS['tsubakuro_test']['post_meta'][101] = array(
+			'_tsubakuro_status'       => array( 'todo' ),
+			'_tsubakuro_related_page' => array( 22 ),
+		);
 
 		$tasks = Tsubakuro_Post_Types::get_tasks(
 			array(

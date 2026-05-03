@@ -21,6 +21,7 @@ class Tsubakuro_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
 		add_action( 'admin_post_tsubakuro_save_task', array( __CLASS__, 'handle_save_task' ) );
+		add_action( 'admin_post_tsubakuro_bulk_tasks', array( __CLASS__, 'handle_bulk_tasks' ) );
 		add_action( 'wp_ajax_tsubakuro_delete_task', array( __CLASS__, 'ajax_delete_task' ) );
 		add_action( 'wp_ajax_tsubakuro_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_tsubakuro_get_comments', array( __CLASS__, 'ajax_get_comments' ) );
@@ -131,11 +132,10 @@ class Tsubakuro_Admin {
 	 * Render the task list admin page.
 	 */
 	public static function render_task_list() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only URL params set by the plugin.
-		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only URL params set by the plugin.
-		$message = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GET['message'] ) ) : '';
-		$tasks   = Tsubakuro_Post_Types::get_tasks( $status_filter ? array( 'status' => $status_filter ) : array() );
+		$list_args = self::get_task_list_args_from_request();
+		$message   = self::get_admin_message_from_request();
+		$tasks     = Tsubakuro_Post_Types::get_tasks( $list_args );
+		$users     = self::get_users_list();
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-list.php';
 	}
 
@@ -199,6 +199,121 @@ class Tsubakuro_Admin {
 		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/settings.php';
+	}
+
+	/**
+	 * Build task list query args from display-only request parameters.
+	 *
+	 * @return array
+	 */
+	public static function get_task_list_args_from_request() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only list table filters.
+		$args = array(
+			'status'   => isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '',
+			'assignee' => isset( $_GET['assignee'] ) ? absint( wp_unslash( $_GET['assignee'] ) ) : 0,
+			's'        => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
+			'orderby'  => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date',
+			'order'    => isset( $_GET['order'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) : 'DESC',
+		);
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( ! array_key_exists( $args['status'], Tsubakuro_Post_Types::STATUSES ) ) {
+			$args['status'] = '';
+		}
+
+		if ( ! in_array( $args['orderby'], array( 'id', 'title', 'status', 'assignee', 'date' ), true ) ) {
+			$args['orderby'] = 'date';
+		}
+
+		if ( ! in_array( $args['order'], array( 'ASC', 'DESC' ), true ) ) {
+			$args['order'] = 'DESC';
+		}
+
+		return array_filter(
+			$args,
+			static function ( $value ) {
+				return '' !== $value && 0 !== $value;
+			}
+		);
+	}
+
+	/**
+	 * Return a sanitized admin message key from the current request.
+	 *
+	 * @return string
+	 */
+	public static function get_admin_message_from_request() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice parameter.
+		return isset( $_GET['message'] ) ? sanitize_key( wp_unslash( $_GET['message'] ) ) : '';
+	}
+
+	/**
+	 * Build a task list URL while preserving active filters.
+	 *
+	 * @param array $overrides Query parameters to add, replace, or remove by passing null/empty string.
+	 * @return string
+	 */
+	public static function get_task_list_url( $overrides = array() ) {
+		$params = array_merge(
+			array( 'page' => 'tsubakuro-tasks' ),
+			self::get_task_list_args_from_request(),
+			$overrides
+		);
+
+		foreach ( $params as $key => $value ) {
+			if ( '' === $value || null === $value || 0 === $value ) {
+				unset( $params[ $key ] );
+			}
+		}
+
+		return add_query_arg( $params, admin_url( 'admin.php' ) );
+	}
+
+	/**
+	 * Return the next sort order for a column.
+	 *
+	 * @param string $column Column key.
+	 * @return string
+	 */
+	public static function get_next_task_list_order( $column ) {
+		$args = self::get_task_list_args_from_request();
+		if ( ( $args['orderby'] ?? 'date' ) === $column && 'ASC' === ( $args['order'] ?? 'DESC' ) ) {
+			return 'DESC';
+		}
+
+		return 'ASC';
+	}
+
+	/**
+	 * Sanitize selected task IDs from a submitted bulk action.
+	 *
+	 * @param array $data Submitted request data.
+	 * @return array
+	 */
+	public static function get_selected_task_ids( $data ) {
+		$ids = $data['task_ids'] ?? array();
+		if ( ! is_array( $ids ) ) {
+			$ids = array( $ids );
+		}
+
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
+	/**
+	 * Delete selected tasks and return the number of deleted records.
+	 *
+	 * @param array $task_ids Task IDs.
+	 * @return int
+	 */
+	public static function delete_tasks( $task_ids ) {
+		$deleted = 0;
+		foreach ( self::get_selected_task_ids( array( 'task_ids' => $task_ids ) ) as $task_id ) {
+			if ( wp_delete_post( $task_id, true ) ) {
+				++$deleted;
+			}
+		}
+
+		return $deleted;
 	}
 
 	/**
@@ -332,6 +447,50 @@ class Tsubakuro_Admin {
 		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=tsubakuro-tasks&message=saved' ) );
+		exit;
+	}
+
+	/**
+	 * Handle task list bulk actions.
+	 */
+	public static function handle_bulk_tasks() {
+		check_admin_referer( 'tsubakuro_bulk_tasks', 'tsubakuro_bulk_nonce' );
+
+		if ( ! current_user_can( 'delete_posts' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$bulk_action = sanitize_key( wp_unslash( $_POST['bulk_action'] ?? '' ) );
+		if ( '' === $bulk_action ) {
+			$bulk_action = sanitize_key( wp_unslash( $_POST['bulk_action_bottom'] ?? '' ) );
+		}
+		$deleted = 0;
+		$message = '';
+
+		if ( 'delete' === $bulk_action ) {
+			$deleted = self::delete_tasks( self::get_selected_task_ids( wp_unslash( $_POST ) ) );
+			$message = $deleted ? 'bulk_deleted' : 'no_tasks_selected';
+		}
+
+		$redirect_args = array(
+			'page' => 'tsubakuro-tasks',
+		);
+
+		foreach ( array( 'status', 'assignee', 's', 'orderby', 'order' ) as $key ) {
+			if ( isset( $_POST[ $key ] ) && '' !== $_POST[ $key ] ) {
+				$redirect_args[ $key ] = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+			}
+		}
+
+		if ( $message ) {
+			$redirect_args['message'] = $message;
+		}
+
+		if ( $deleted ) {
+			$redirect_args['deleted_count'] = $deleted;
+		}
+
+		wp_safe_redirect( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
 		exit;
 	}
 

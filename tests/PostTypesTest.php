@@ -197,4 +197,63 @@ class PostTypesTest extends TestCase {
 
 		$this->assertSame( 5, $GLOBALS['tsubakuro_test']['last_query_args']['posts_per_page'] );
 	}
+
+	public function test_get_tasks_with_search_and_assignee_filter_builds_query(): void {
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Urgent task', 'Body' );
+		$GLOBALS['tsubakuro_test']['post_meta'][1] = array(
+			'_tsubakuro_assignee' => array( 7 ),
+		);
+
+		$tasks = Tsubakuro_Post_Types::get_tasks(
+			array(
+				's'        => 'urgent',
+				'assignee' => 7,
+			)
+		);
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame( 'urgent', $args['s'] );
+		$this->assertSame( '_tsubakuro_assignee', $args['meta_query'][0]['key'] );
+		$this->assertSame( 7, $args['meta_query'][0]['value'] );
+		$this->assertCount( 1, $tasks );
+	}
+
+	public function test_get_tasks_sorts_by_supported_columns(): void {
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post( 2, 'Beta', 'Body' );
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Alpha', 'Body' );
+
+		$tasks = Tsubakuro_Post_Types::get_tasks(
+			array(
+				'orderby' => 'title',
+				'order'   => 'ASC',
+			)
+		);
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame( 'title', $args['orderby'] );
+		$this->assertSame( 'ASC', $args['order'] );
+		$this->assertSame( array( 'Alpha', 'Beta' ), array_column( $tasks, 'title' ) );
+	}
+
+	public function test_get_tasks_sorts_by_status_meta_value(): void {
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Task A', 'Body' );
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post( 2, 'Task B', 'Body' );
+		$GLOBALS['tsubakuro_test']['post_meta'][1] = array(
+			'_tsubakuro_status' => array( 'todo' ),
+		);
+		$GLOBALS['tsubakuro_test']['post_meta'][2] = array(
+			'_tsubakuro_status' => array( 'completed' ),
+		);
+
+		Tsubakuro_Post_Types::get_tasks(
+			array(
+				'orderby' => 'status',
+				'order'   => 'ASC',
+			)
+		);
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame( 'meta_value', $args['orderby'] );
+		$this->assertSame( '_tsubakuro_status', $args['meta_key'] );
+	}
 }

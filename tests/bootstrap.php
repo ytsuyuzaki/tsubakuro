@@ -144,14 +144,64 @@ class WP_Query {
 
 	public function __construct( $args ) {
 		$GLOBALS['tsubakuro_test']['last_query_args'] = $args;
-		$this->posts                                  = array_values(
+		$posts                                        = array_values(
 			array_filter(
 				$GLOBALS['tsubakuro_test']['posts'],
 				function ( $post ) use ( $args ) {
-					return ( $args['post_type'] ?? '' ) === $post->post_type;
+					if ( ( $args['post_type'] ?? '' ) !== $post->post_type ) {
+						return false;
+					}
+
+					if ( ! empty( $args['s'] ) && false === stripos( $post->post_title . ' ' . $post->post_content, $args['s'] ) ) {
+						return false;
+					}
+
+					foreach ( $args['meta_query'] ?? array() as $meta_filter ) {
+						$values = $GLOBALS['tsubakuro_test']['post_meta'][ $post->ID ][ $meta_filter['key'] ] ?? array();
+						if ( ! in_array( $meta_filter['value'], $values, false ) ) {
+							return false;
+						}
+					}
+
+					return true;
 				}
 			)
 		);
+
+		usort(
+			$posts,
+			function ( $a, $b ) use ( $args ) {
+				$orderby = $args['orderby'] ?? 'date';
+				$order   = $args['order'] ?? 'DESC';
+
+				if ( 'ID' === $orderby ) {
+					$left  = $a->ID;
+					$right = $b->ID;
+				} elseif ( 'title' === $orderby ) {
+					$left  = $a->post_title;
+					$right = $b->post_title;
+				} elseif ( in_array( $orderby, array( 'meta_value', 'meta_value_num' ), true ) ) {
+					$key   = $args['meta_key'] ?? '';
+					$left  = $GLOBALS['tsubakuro_test']['post_meta'][ $a->ID ][ $key ][0] ?? '';
+					$right = $GLOBALS['tsubakuro_test']['post_meta'][ $b->ID ][ $key ][0] ?? '';
+					if ( 'meta_value_num' === $orderby ) {
+						$left  = (int) $left;
+						$right = (int) $right;
+					}
+				} else {
+					$left  = $a->post_date;
+					$right = $b->post_date;
+				}
+
+				$result = is_string( $left ) || is_string( $right )
+					? strcmp( (string) $left, (string) $right )
+					: $left <=> $right;
+
+				return 'ASC' === $order ? $result : -$result;
+			}
+		);
+
+		$this->posts = $posts;
 	}
 }
 
@@ -179,11 +229,13 @@ function tsubakuro_test_reset() {
 		'is_logged_in'       => false,
 		'enqueued_scripts'   => array(),
 		'enqueued_styles'    => array(),
-		'menu_pages'         => array(),
-		'submenu_pages'      => array(),
-		'filters_applied'    => array(),
-		'redirected_to'      => null,
-	);
+			'menu_pages'         => array(),
+			'submenu_pages'      => array(),
+			'filters_applied'    => array(),
+			'deleted_posts'      => array(),
+			'redirected_to'      => null,
+			'died'               => null,
+		);
 	$wpdb = new MockWpdb();
 }
 
@@ -231,8 +283,16 @@ function sanitize_textarea_field( $value ) {
 	return trim( wp_strip_all_tags( (string) $value ) );
 }
 
+function sanitize_key( $key ) {
+	return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+}
+
 function wp_strip_all_tags( $value ) {
 	return strip_tags( (string) $value );
+}
+
+function wp_unslash( $value ) {
+	return is_array( $value ) ? array_map( 'wp_unslash', $value ) : stripslashes( (string) $value );
 }
 
 function absint( $value ) {
@@ -295,6 +355,7 @@ function wp_update_post() {
 }
 
 function wp_delete_post() {
+	$GLOBALS['tsubakuro_test']['deleted_posts'][] = func_get_arg( 0 );
 	return true;
 }
 
@@ -315,6 +376,10 @@ function wp_enqueue_script( $handle, ...$args ) {
 function wp_localize_script() {}
 function admin_url( $path = '' ) {
 	return 'https://example.test/wp-admin/' . $path; }
+function add_query_arg( $args, $url = '' ) {
+	$separator = str_contains( $url, '?' ) ? '&' : '?';
+	return $url . $separator . http_build_query( $args );
+}
 function rest_url( $path = '' ) {
 	return 'https://example.test/wp-json/' . $path; }
 function wp_create_nonce() {
@@ -329,8 +394,17 @@ function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, 
 }
 function check_ajax_referer() {}
 function check_admin_referer() {}
+function wp_nonce_field( $action = -1, $name = '_wpnonce' ) {
+	echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="nonce" />';
+}
 function wp_send_json_error() {}
 function wp_send_json_success() {}
+function wp_safe_redirect( $location ) {
+	$GLOBALS['tsubakuro_test']['redirected_to'] = $location;
+}
+function wp_die( $message = '' ) {
+	$GLOBALS['tsubakuro_test']['died'] = $message;
+}
 function current_time() {
 	return '2026-05-02 00:00:00'; }
 function add_option() {}
@@ -346,6 +420,9 @@ function get_permalink( $post_id = 0 ) {
 function esc_html__( $text, $domain = 'default' ) {
 	return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
 }
+function __( $text, $domain = 'default' ) {
+	return $text;
+}
 function esc_html( $text ) {
 	return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
 }
@@ -355,8 +432,21 @@ function esc_html_e( $text, $domain = 'default' ) {
 function esc_attr( $text ) {
 	return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
 }
+function esc_attr_e( $text, $domain = 'default' ) {
+	echo esc_attr( $text );
+}
 function esc_url( $url ) {
 	return filter_var( (string) $url, FILTER_SANITIZE_URL );
+}
+function selected( $selected, $current = true, $display = true ) {
+	$result = (string) $selected === (string) $current ? ' selected="selected"' : '';
+	if ( $display ) {
+		echo $result;
+	}
+	return $result;
+}
+function mysql2date( $format, $date ) {
+	return date( $format, strtotime( $date ) );
 }
 function apply_filters( $hook_name, $value ) {
 	$GLOBALS['tsubakuro_test']['filters_applied'][] = $hook_name;

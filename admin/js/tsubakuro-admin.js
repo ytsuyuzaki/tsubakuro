@@ -208,6 +208,21 @@
 	// Event bindings
 	// =========================================================================
 	$( document ).ready( function () {
+		// List table: select all checkboxes.
+		$( document ).on( 'change', '.tsubakuro-select-all', function () {
+			$( '.tsubakuro-task-table tbody input[name="task_ids[]"]' ).prop(
+				'checked',
+				$( this ).prop( 'checked' )
+			);
+		} );
+
+		// List table: mirror the bottom bulk action into the submitted field.
+		$( document ).on( 'click', '.tsubakuro-bulk-apply-bottom', function () {
+			$( '#tsubakuro-bulk-action-selector-top' ).val(
+				$( '#tsubakuro-bulk-action-selector-bottom' ).val()
+			);
+		} );
+
 		// Delete task.
 		$( document ).on( 'click', '.tsubakuro-delete-task', function () {
 			deleteTask( $( this ).data( 'task-id' ) );

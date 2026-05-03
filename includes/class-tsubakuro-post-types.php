@@ -166,27 +166,77 @@ class Tsubakuro_Post_Types {
 			'order'          => 'DESC',
 		);
 
+		$meta_query = array();
+
 		if ( ! empty( $args['status'] ) ) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for status filtering.
-			$defaults['meta_query'] = array(
-				array(
-					'key'   => '_tsubakuro_status',
-					'value' => sanitize_text_field( $args['status'] ),
-				),
+			$meta_query[] = array(
+				'key'   => '_tsubakuro_status',
+				'value' => sanitize_text_field( $args['status'] ),
 			);
 			unset( $args['status'] );
+		}
+
+		if ( ! empty( $args['assignee'] ) ) {
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for assignee filtering.
+			$meta_query[] = array(
+				'key'     => '_tsubakuro_assignee',
+				'value'   => absint( $args['assignee'] ),
+				'compare' => '=',
+				'type'    => 'NUMERIC',
+			);
+			unset( $args['assignee'] );
 		}
 
 		if ( ! empty( $args['related_page'] ) ) {
 			$page_id = absint( $args['related_page'] );
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for page filtering.
-			$defaults['meta_query'][] = array(
+			$meta_query[] = array(
 				'key'     => '_tsubakuro_related_page',
 				'value'   => $page_id,
 				'compare' => '=',
 				'type'    => 'NUMERIC',
 			);
 			unset( $args['related_page'] );
+		}
+
+		if ( ! empty( $meta_query ) ) {
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query is required for task list filters.
+			$defaults['meta_query'] = $meta_query;
+		}
+
+		if ( ! empty( $args['s'] ) ) {
+			$defaults['s'] = sanitize_text_field( $args['s'] );
+			unset( $args['s'] );
+		}
+
+		if ( ! empty( $args['orderby'] ) ) {
+			$orderby_map = array(
+				'id'       => 'ID',
+				'title'    => 'title',
+				'date'     => 'date',
+				'status'   => 'meta_value',
+				'assignee' => 'meta_value_num',
+			);
+			$orderby     = sanitize_key( $args['orderby'] );
+			if ( isset( $orderby_map[ $orderby ] ) ) {
+				$defaults['orderby'] = $orderby_map[ $orderby ];
+				if ( 'status' === $orderby ) {
+					$defaults['meta_key'] = '_tsubakuro_status'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
+				}
+				if ( 'assignee' === $orderby ) {
+					$defaults['meta_key'] = '_tsubakuro_assignee'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
+				}
+			}
+			unset( $args['orderby'] );
+		}
+
+		if ( ! empty( $args['order'] ) ) {
+			$order = strtoupper( sanitize_text_field( $args['order'] ) );
+			if ( in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+				$defaults['order'] = $order;
+			}
+			unset( $args['order'] );
 		}
 
 		$query_args = array_merge( $defaults, $args );

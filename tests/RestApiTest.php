@@ -60,6 +60,9 @@ class RestApiTest extends TestCase {
 
 	public function test_get_tasks_handler_passes_filters_to_post_types(): void {
 		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Task A' );
+		$GLOBALS['tsubakuro_test']['post_meta'][1] = array(
+			'_tsubakuro_status' => array( 'todo' ),
+		);
 
 		$req    = new WP_REST_Request( array( 'status' => 'todo', 'per_page' => 10 ) );
 		$result = Tsubakuro_REST_API::get_tasks( $req );
