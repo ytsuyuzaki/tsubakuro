@@ -313,6 +313,24 @@ class Tsubakuro_OAuth {
 	}
 
 	/**
+	 * Check whether the current request carries a valid Bearer token.
+	 *
+	 * Extracts the token from the Authorization header and validates it
+	 * against the stored transient.  Returns true only when a token that
+	 * was issued by the OAuth endpoint is found.
+	 *
+	 * @return bool
+	 */
+	public static function has_valid_bearer_token() {
+		$token = self::get_bearer_token_from_header();
+		if ( ! $token ) {
+			return false;
+		}
+
+		return (bool) get_transient( self::TRANSIENT_PREFIX . hash( 'sha256', $token ) );
+	}
+
+	/**
 	 * Extract a Bearer token from the HTTP Authorization header.
 	 *
 	 * @return string|null Token string or null if not present/not a Bearer token.

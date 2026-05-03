@@ -504,11 +504,18 @@ class Tsubakuro_MCP {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Permission callback: require edit_posts capability.
+	 * Permission callback: require a valid Bearer token AND edit_posts capability.
+	 *
+	 * Basic Auth (Base64-encoded credentials) is explicitly rejected; only
+	 * OAuth Bearer tokens issued by the /oauth/token endpoint are accepted.
 	 *
 	 * @return bool
 	 */
 	public static function check_permission() {
+		if ( ! Tsubakuro_OAuth::has_valid_bearer_token() ) {
+			return false;
+		}
+
 		return current_user_can( 'edit_posts' );
 	}
 }
