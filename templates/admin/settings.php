@@ -181,7 +181,152 @@ $profile_url = admin_url( 'profile.php' );
 	</div>
 
 	<!-- ======================================================
-		Section 3 – MCP クライアントへの設定方法
+		Section 3 – OAuth クライアント認証
+		====================================================== -->
+	<div class="tsubakuro-settings-card">
+		<h2><?php esc_html_e( 'OAuth クライアント認証', 'tsubakuro' ); ?></h2>
+		<p>
+			<?php
+			echo wp_kses(
+				__( 'OAuth 2.0 <strong>クライアントクレデンシャル</strong> フローを使って MCP エンドポイントにアクセスできます。<br>クライアント ID / シークレットでトークンを取得し、<code>Authorization: Bearer &lt;token&gt;</code> で認証します。', 'tsubakuro' ),
+				array(
+					'strong' => array(),
+					'br'     => array(),
+					'code'   => array(),
+				)
+			);
+			?>
+		</p>
+
+		<!-- トークンエンドポイント -->
+		<h3><?php esc_html_e( 'トークンエンドポイント', 'tsubakuro' ); ?></h3>
+		<p class="description">
+			<?php esc_html_e( 'クライアント ID / シークレットを送信してアクセストークンを取得します（有効期限: 1 時間）。', 'tsubakuro' ); ?>
+		</p>
+		<div class="tsubakuro-url-row">
+			<input
+				type="text"
+				id="tsubakuro-token-url"
+				class="regular-text code"
+				value="<?php echo esc_attr( $token_url ); ?>"
+				readonly
+			/>
+			<button
+				type="button"
+				class="button tsubakuro-copy-btn"
+				data-target="tsubakuro-token-url"
+			><?php esc_html_e( 'コピー', 'tsubakuro' ); ?></button>
+		</div>
+
+		<div class="tsubakuro-code-block-wrap" style="margin-top:12px;">
+			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-token-request-example">
+				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+			</button>
+			<pre id="tsubakuro-token-request-example" class="tsubakuro-code-block">
+			<?php
+			$token_example = 'POST ' . esc_html( $token_url ) . '
+Content-Type: application/json
+
+{
+  "grant_type": "client_credentials",
+  "client_id": "<client_id>",
+  "client_secret": "<client_secret>"
+}
+
+# レスポンス:
+# { "access_token": "...", "token_type": "Bearer", "expires_in": 3600 }';
+			echo esc_html( $token_example );
+			?>
+			</pre>
+		</div>
+
+		<!-- 登録済みクライアント一覧 -->
+		<h3><?php esc_html_e( '登録済みクライアント', 'tsubakuro' ); ?></h3>
+		<div id="tsubakuro-oauth-clients-wrap">
+		<?php if ( empty( $oauth_clients ) ) : ?>
+			<p class="description" id="tsubakuro-no-clients-msg">
+				<?php esc_html_e( '登録されているクライアントはありません。', 'tsubakuro' ); ?>
+			</p>
+		<?php else : ?>
+			<table class="wp-list-table widefat fixed striped" id="tsubakuro-oauth-clients-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'クライアント名', 'tsubakuro' ); ?></th>
+						<th><?php esc_html_e( 'クライアント ID', 'tsubakuro' ); ?></th>
+						<th><?php esc_html_e( '作成日時', 'tsubakuro' ); ?></th>
+						<th><?php esc_html_e( '操作', 'tsubakuro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php foreach ( $oauth_clients as $oc ) : ?>
+					<tr data-client-id="<?php echo esc_attr( $oc['client_id'] ); ?>">
+						<td><?php echo esc_html( $oc['name'] ); ?></td>
+						<td><code><?php echo esc_html( $oc['client_id'] ); ?></code></td>
+						<td><?php echo esc_html( $oc['created_at'] ); ?></td>
+						<td>
+							<button
+								type="button"
+								class="button button-link-delete tsubakuro-revoke-client"
+								data-client-id="<?php echo esc_attr( $oc['client_id'] ); ?>"
+								data-confirm="<?php esc_attr_e( 'このクライアントを無効化しますか？', 'tsubakuro' ); ?>"
+							><?php esc_html_e( '無効化', 'tsubakuro' ); ?></button>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+		</div><!-- #tsubakuro-oauth-clients-wrap -->
+
+		<!-- 新しいクライアントを生成 -->
+		<h3><?php esc_html_e( '新しいクライアントを追加', 'tsubakuro' ); ?></h3>
+		<div class="tsubakuro-oauth-generate-form">
+			<input
+				type="text"
+				id="tsubakuro-oauth-client-name"
+				class="regular-text"
+				placeholder="<?php esc_attr_e( 'クライアント名（例: Claude Desktop）', 'tsubakuro' ); ?>"
+			/>
+			<button
+				type="button"
+				id="tsubakuro-generate-oauth-client"
+				class="button button-primary"
+				data-error-empty="<?php esc_attr_e( 'クライアント名を入力してください。', 'tsubakuro' ); ?>"
+			><?php esc_html_e( 'クライアントを生成', 'tsubakuro' ); ?></button>
+		</div>
+
+		<!-- 生成結果（生成直後にのみ表示） -->
+		<div id="tsubakuro-new-client-result" class="tsubakuro-settings-card" style="border-left:4px solid #d63638;margin-top:16px;" hidden>
+			<p><strong><?php esc_html_e( '⚠ クライアントシークレットは今回のみ表示されます。必ずコピーして安全な場所に保管してください。', 'tsubakuro' ); ?></strong></p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'クライアント ID', 'tsubakuro' ); ?></th>
+					<td>
+						<div class="tsubakuro-url-row">
+							<input type="text" id="tsubakuro-new-client-id" class="regular-text code" readonly />
+							<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-new-client-id">
+								<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+							</button>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'クライアントシークレット', 'tsubakuro' ); ?></th>
+					<td>
+						<div class="tsubakuro-url-row">
+							<input type="text" id="tsubakuro-new-client-secret" class="regular-text code" readonly />
+							<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-new-client-secret">
+								<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+							</button>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<!-- ======================================================
+		Section 4 – MCP クライアントへの設定方法
 		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( 'MCP クライアントへの設定方法', 'tsubakuro' ); ?></h2>
@@ -252,7 +397,7 @@ TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"';
 
 		<h3><?php esc_html_e( 'その他の接続方式の扱い', 'tsubakuro' ); ?></h3>
 		<ul class="tsubakuro-guide-list">
-			<li><?php esc_html_e( 'OAuth クライアント ID/シークレットは OAuth フローでクライアントを識別するための情報で、ツール呼び出し時に直接送る認証情報ではありません。', 'tsubakuro' ); ?></li>
+			<li><?php esc_html_e( 'OAuth クライアント ID/シークレットによる認証は、上記の「OAuth クライアント認証」セクションから設定できます。', 'tsubakuro' ); ?></li>
 			<li><?php esc_html_e( 'URL パス/クエリトークンはログ、履歴、Referer に残りやすいため推奨しません。どうしても必要なクライアント向けの将来オプション扱いです。', 'tsubakuro' ); ?></li>
 			<li><?php esc_html_e( 'OAuth や IP 制限、監査ログ、レート制限が必要な場合は、リバースプロキシや API Gateway で外側に追加する構成を検討してください。', 'tsubakuro' ); ?></li>
 		</ul>
@@ -342,5 +487,136 @@ TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"';
 			} );
 		} );
 	} );
+} )();
+
+<script>
+( function () {
+	var oauthAjaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+	var oauthNonce   = '<?php echo esc_js( wp_create_nonce( 'tsubakuro_admin' ) ); ?>';
+
+	// OAuth クライアント生成
+	var generateOAuthBtn = document.getElementById( 'tsubakuro-generate-oauth-client' );
+	if ( generateOAuthBtn ) {
+		generateOAuthBtn.addEventListener( 'click', function () {
+			var nameInput = document.getElementById( 'tsubakuro-oauth-client-name' );
+			var name = ( nameInput ? nameInput.value : '' ).trim();
+
+			if ( ! name ) {
+				alert( generateOAuthBtn.getAttribute( 'data-error-empty' ) || 'クライアント名を入力してください。' );
+				return;
+			}
+
+			generateOAuthBtn.disabled = true;
+
+			var formData = new FormData();
+			formData.append( 'action', 'tsubakuro_generate_oauth_client' );
+			formData.append( 'nonce', oauthNonce );
+			formData.append( 'name', name );
+
+			fetch( oauthAjaxUrl, { method: 'POST', body: formData } )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( data ) {
+					generateOAuthBtn.disabled = false;
+					if ( ! data.success ) {
+						alert( ( data.data && data.data.message ) || 'エラーが発生しました。' );
+						return;
+					}
+
+					// Show credentials (once)
+					var result = document.getElementById( 'tsubakuro-new-client-result' );
+					document.getElementById( 'tsubakuro-new-client-id' ).value     = data.data.client_id;
+					document.getElementById( 'tsubakuro-new-client-secret' ).value = data.data.client_secret;
+					result.hidden = false;
+
+					// Add row to table
+					addClientRow( data.data );
+
+					// Clear name input
+					if ( nameInput ) { nameInput.value = ''; }
+				} )
+				.catch( function () {
+					generateOAuthBtn.disabled = false;
+					alert( '通信エラーが発生しました。' );
+				} );
+		} );
+	}
+
+	// クライアント行を表に追加（動的生成）
+	function addClientRow( client ) {
+		var wrap = document.getElementById( 'tsubakuro-oauth-clients-wrap' );
+		if ( ! wrap ) { return; }
+
+		var noMsg = document.getElementById( 'tsubakuro-no-clients-msg' );
+		if ( noMsg ) { noMsg.remove(); }
+
+		var table = document.getElementById( 'tsubakuro-oauth-clients-table' );
+		if ( ! table ) {
+			table = document.createElement( 'table' );
+			table.id = 'tsubakuro-oauth-clients-table';
+			table.className = 'wp-list-table widefat fixed striped';
+			table.innerHTML = '<thead><tr>'
+				+ '<th><?php echo esc_js( esc_html__( 'クライアント名', 'tsubakuro' ) ); ?></th>'
+				+ '<th><?php echo esc_js( esc_html__( 'クライアント ID', 'tsubakuro' ) ); ?></th>'
+				+ '<th><?php echo esc_js( esc_html__( '作成日時', 'tsubakuro' ) ); ?></th>'
+				+ '<th><?php echo esc_js( esc_html__( '操作', 'tsubakuro' ) ); ?></th>'
+				+ '</tr></thead><tbody></tbody>';
+			wrap.appendChild( table );
+		}
+
+		var tbody = table.querySelector( 'tbody' );
+		var tr    = document.createElement( 'tr' );
+		tr.setAttribute( 'data-client-id', client.client_id );
+		tr.innerHTML = '<td>' + escHtml( client.name ) + '</td>'
+			+ '<td><code>' + escHtml( client.client_id ) + '</code></td>'
+			+ '<td>' + escHtml( client.created_at || '' ) + '</td>'
+			+ '<td><button type="button" class="button button-link-delete tsubakuro-revoke-client"'
+			+ ' data-client-id="' + escAttr( client.client_id ) + '"'
+			+ ' data-confirm="<?php echo esc_js( esc_html__( 'このクライアントを無効化しますか？', 'tsubakuro' ) ); ?>">'
+			+ '<?php echo esc_js( esc_html__( '無効化', 'tsubakuro' ) ); ?>'
+			+ '</button></td>';
+		tbody.appendChild( tr );
+	}
+
+	// クライアント無効化（イベント委任）
+	document.addEventListener( 'click', function ( e ) {
+		var btn = e.target.closest( '.tsubakuro-revoke-client' );
+		if ( ! btn ) { return; }
+
+		var confirmMsg = btn.getAttribute( 'data-confirm' ) || 'このクライアントを無効化しますか？';
+		if ( ! window.confirm( confirmMsg ) ) { return; }
+
+		var clientId = btn.getAttribute( 'data-client-id' );
+		btn.disabled = true;
+
+		var formData = new FormData();
+		formData.append( 'action', 'tsubakuro_revoke_oauth_client' );
+		formData.append( 'nonce', oauthNonce );
+		formData.append( 'client_id', clientId );
+
+		fetch( oauthAjaxUrl, { method: 'POST', body: formData } )
+			.then( function ( r ) { return r.json(); } )
+			.then( function ( data ) {
+				if ( ! data.success ) {
+					btn.disabled = false;
+					alert( ( data.data && data.data.message ) || 'エラーが発生しました。' );
+					return;
+				}
+				var row = document.querySelector( '[data-client-id="' + clientId + '"]' );
+				if ( row ) { row.remove(); }
+			} )
+			.catch( function () {
+				btn.disabled = false;
+				alert( '通信エラーが発生しました。' );
+			} );
+	} );
+
+	function escHtml( str ) {
+		return String( str )
+			.replace( /&/g, '&amp;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' )
+			.replace( /"/g, '&quot;' );
+	}
+	function escAttr( str ) { return escHtml( str ); }
 } )();
 </script>

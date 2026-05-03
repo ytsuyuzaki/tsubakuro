@@ -209,6 +209,7 @@ function tsubakuro_test_reset() {
 	global $wpdb;
 	$GLOBALS['tsubakuro_test'] = array(
 		'actions'            => array(),
+		'filters'            => array(),
 		'activation_hooks'   => array(),
 		'deactivation_hooks' => array(),
 		'post_types'         => array(),
@@ -217,8 +218,9 @@ function tsubakuro_test_reset() {
 		'post_meta'          => array(),
 		'users'              => array(),
 		'can'                => array(
-			'edit_posts'   => true,
-			'delete_posts' => true,
+			'edit_posts'    => true,
+			'delete_posts'  => true,
+			'manage_options' => true,
 		),
 		'last_query_args'    => array(),
 		'comments'           => array(),
@@ -230,13 +232,16 @@ function tsubakuro_test_reset() {
 		'is_logged_in'       => false,
 		'enqueued_scripts'   => array(),
 		'enqueued_styles'    => array(),
-			'menu_pages'         => array(),
-			'submenu_pages'      => array(),
-			'filters_applied'    => array(),
-			'deleted_posts'      => array(),
-			'redirected_to'      => null,
-			'died'               => null,
-		);
+		'menu_pages'         => array(),
+		'submenu_pages'      => array(),
+		'filters_applied'    => array(),
+		'deleted_posts'      => array(),
+		'redirected_to'      => null,
+		'died'               => null,
+		'options'            => array(),
+		'transients'         => array(),
+		'pwd_counter'        => 0,
+	);
 	$wpdb = new MockWpdb();
 }
 
@@ -262,6 +267,10 @@ function register_deactivation_hook( $file, $callback ) {
 
 function add_action( $hook, $callback ) {
 	$GLOBALS['tsubakuro_test']['actions'][ $hook ][] = $callback;
+}
+
+function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+	$GLOBALS['tsubakuro_test']['filters'][ $hook ][] = $callback;
 }
 
 function register_post_type( $post_type, $args ) {
@@ -466,6 +475,38 @@ function wp_die( $message = '' ) {
 function current_time() {
 	return '2026-05-02 00:00:00'; }
 function add_option() {}
+function get_option( $option, $default = false ) {
+	return $GLOBALS['tsubakuro_test']['options'][ $option ] ?? $default;
+}
+function update_option( $option, $value, $autoload = null ) {
+	$GLOBALS['tsubakuro_test']['options'][ $option ] = $value;
+	return true;
+}
+function delete_option( $option ) {
+	unset( $GLOBALS['tsubakuro_test']['options'][ $option ] );
+	return true;
+}
+function set_transient( $key, $value, $expiry = 0 ) {
+	$GLOBALS['tsubakuro_test']['transients'][ $key ] = $value;
+	return true;
+}
+function get_transient( $key ) {
+	return $GLOBALS['tsubakuro_test']['transients'][ $key ] ?? false;
+}
+function delete_transient( $key ) {
+	unset( $GLOBALS['tsubakuro_test']['transients'][ $key ] );
+	return true;
+}
+function wp_generate_password( $length = 12, $special_chars = true ) {
+	$GLOBALS['tsubakuro_test']['pwd_counter'] = ( $GLOBALS['tsubakuro_test']['pwd_counter'] ?? 0 ) + 1;
+	return str_pad( 'pwd' . $GLOBALS['tsubakuro_test']['pwd_counter'], (int) $length, 'x' );
+}
+function wp_hash_password( $password ) {
+	return 'hashed:' . $password;
+}
+function wp_check_password( $password, $hash ) {
+	return $hash === 'hashed:' . $password;
+}
 function is_user_logged_in() {
 	return ! empty( $GLOBALS['tsubakuro_test']['is_logged_in'] );
 }
