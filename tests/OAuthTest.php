@@ -193,6 +193,39 @@ class OAuthTest extends TestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// has_valid_bearer_token()
+	// -------------------------------------------------------------------------
+
+	public function test_has_valid_bearer_token_returns_false_when_no_header(): void {
+		$this->assertFalse( Tsubakuro_OAuth::has_valid_bearer_token() );
+	}
+
+	public function test_has_valid_bearer_token_returns_false_for_invalid_token(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer invalidtoken';
+		$this->assertFalse( Tsubakuro_OAuth::has_valid_bearer_token() );
+	}
+
+	public function test_has_valid_bearer_token_returns_false_for_basic_auth(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
+		$this->assertFalse( Tsubakuro_OAuth::has_valid_bearer_token() );
+	}
+
+	public function test_has_valid_bearer_token_returns_true_for_valid_token(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'Valid Client', 1 );
+		$req       = $this->make_token_request(
+			array(
+				'grant_type'    => 'client_credentials',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+			)
+		);
+		$token_response                = Tsubakuro_OAuth::handle_token( $req );
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token_response['access_token'];
+
+		$this->assertTrue( Tsubakuro_OAuth::has_valid_bearer_token() );
+	}
+
+	// -------------------------------------------------------------------------
 	// generate_client()
 	// -------------------------------------------------------------------------
 

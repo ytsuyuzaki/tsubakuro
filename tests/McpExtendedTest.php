@@ -10,6 +10,11 @@ class McpExtendedTest extends TestCase {
 
 	protected function setUp(): void {
 		tsubakuro_test_reset();
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+	}
+
+	protected function tearDown(): void {
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -351,12 +356,47 @@ class McpExtendedTest extends TestCase {
 	// check_permission()
 	// -------------------------------------------------------------------------
 
+	/**
+	 * Helper: issue a valid Bearer token for user 1 and set the Authorization header.
+	 */
+	private function set_valid_bearer_header(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'Test Client', 1 );
+		$req       = new WP_REST_Request(
+			array(),
+			array(
+				'grant_type'    => 'client_credentials',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+			)
+		);
+		$token_response                = Tsubakuro_OAuth::handle_token( $req );
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token_response['access_token'];
+	}
+
 	public function test_check_permission_returns_true_when_user_can_edit(): void {
+		$this->set_valid_bearer_header();
 		$this->assertTrue( Tsubakuro_MCP::check_permission() );
 	}
 
 	public function test_check_permission_returns_false_when_user_cannot(): void {
+		$this->set_valid_bearer_header();
 		$GLOBALS['tsubakuro_test']['can']['edit_posts'] = false;
+		$this->assertFalse( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_check_permission_returns_false_when_no_bearer_token(): void {
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		$this->assertFalse( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_check_permission_returns_false_for_invalid_bearer_token(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer invalidtoken';
+		$this->assertFalse( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_check_permission_returns_false_for_basic_auth(): void {
+		// Basic Auth (Base64-encoded credentials) must NOT be accepted.
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
 		$this->assertFalse( Tsubakuro_MCP::check_permission() );
 	}
 }
