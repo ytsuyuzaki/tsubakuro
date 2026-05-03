@@ -141,7 +141,7 @@ class McpExtendedTest extends TestCase {
 		$this->assertNull( $result );
 	}
 
-	public function test_tools_list_returns_ping_tool(): void {
+	public function test_tools_list_returns_task_tools(): void {
 		$result = $this->dispatch(
 			array(
 				'jsonrpc' => '2.0',
@@ -153,27 +153,12 @@ class McpExtendedTest extends TestCase {
 
 		$tools = array_column( $result['result']['tools'], 'name' );
 
-		$this->assertSame( 'ping', $result['result']['tools'][0]['name'] );
+		$this->assertSame( 'tsubakuro_list_tasks', $result['result']['tools'][0]['name'] );
 		$this->assertSame( 'object', $result['result']['tools'][0]['inputSchema']['type'] );
+		$this->assertNotContains( 'ping', $tools );
 		$this->assertContains( 'tsubakuro_list_tasks', $tools );
 		$this->assertContains( 'tsubakuro_update_task', $tools );
 		$this->assertContains( 'tsubakuro_add_comment', $tools );
-	}
-
-	public function test_tools_call_ping_returns_pong(): void {
-		$result = $this->dispatch(
-			array(
-				'jsonrpc' => '2.0',
-				'id'      => 3,
-				'method'  => 'tools/call',
-				'params'  => array(
-					'name'      => 'ping',
-					'arguments' => array(),
-				),
-			)
-		);
-
-		$this->assertSame( 'pong', $result['result']['content'][0]['text'] );
 	}
 
 	public function test_tools_call_list_tasks_returns_task_list(): void {

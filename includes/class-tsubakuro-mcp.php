@@ -229,19 +229,6 @@ class Tsubakuro_MCP {
 		$arguments = self::get_tool_arguments( $params );
 
 		switch ( $name ) {
-			case 'ping':
-				return self::success_response(
-					$id,
-					array(
-						'content' => array(
-							array(
-								'type' => 'text',
-								'text' => 'pong',
-							),
-						),
-					)
-				);
-
 			case 'tsubakuro_list_tasks':
 				return self::tool_list_tasks( $id, $arguments );
 
@@ -555,14 +542,6 @@ class Tsubakuro_MCP {
 	private static function get_tools() {
 		return array(
 			array(
-				'name'        => 'ping',
-				'description' => '接続確認用',
-				'inputSchema' => array(
-					'type'       => 'object',
-					'properties' => (object) array(),
-				),
-			),
-			array(
 				'name'        => 'tsubakuro_list_tasks',
 				'description' => 'タスク一覧を取得します。status、assignee、related_page、per_page、s、orderby、order で絞り込みできます。',
 				'inputSchema' => array(
@@ -755,12 +734,6 @@ class Tsubakuro_MCP {
 				'- The authenticated WordPress user must have the `edit_posts` capability.',
 				'',
 				'## Tools',
-				'',
-				'### ping',
-				'',
-				'- Description: 接続確認用',
-				'- Input schema: `{"type":"object","properties":{}}`',
-				'- Result: `{"content":[{"type":"text","text":"pong"}]}`',
 				'',
 				'### tsubakuro_list_tasks',
 				'',
