@@ -65,6 +65,15 @@ class Tsubakuro_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
+			'MCP ガイド',
+			'MCP ガイド',
+			'edit_posts',
+			'tsubakuro-mcp-guide',
+			array( __CLASS__, 'render_mcp_guide' )
+		);
+
+		add_submenu_page(
+			'tsubakuro-tasks',
 			'Tsubakuro 設定',
 			'設定',
 			'manage_options',
@@ -162,6 +171,19 @@ class Tsubakuro_Admin {
 		}
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';
+	}
+
+	/**
+	 * Render the MCP guide admin page.
+	 */
+	public static function render_mcp_guide() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
+
+		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/mcp-guide.php';
 	}
 
 	/**
