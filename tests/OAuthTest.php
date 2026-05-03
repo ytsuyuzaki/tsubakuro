@@ -74,7 +74,7 @@ class OAuthTest extends TestCase {
 	// handle_token() – token endpoint
 	// -------------------------------------------------------------------------
 
-	public function test_handle_token_returns_error_for_unsupported_grant_type(): void {
+	public function test_handle_token_returns_error_for_completely_unsupported_grant_type(): void {
 		$req    = $this->make_token_request(
 			array( 'grant_type' => 'implicit', 'client_id' => 'x', 'client_secret' => 'y' )
 		);
@@ -509,6 +509,39 @@ class OAuthTest extends TestCase {
 		$result = Tsubakuro_OAuth::generate_client( 'CLI App', 1 );
 
 		$this->assertSame( '', $result['redirect_uri'] );
+	}
+
+	public function test_handle_authorize_returns_error_when_client_has_no_redirect_uri(): void {
+		// A client without a redirect_uri cannot be used for the authorization code flow.
+		$generated = Tsubakuro_OAuth::generate_client( 'CLI-only App', 1 ); // no redirect_uri
+
+		$req    = new WP_REST_Request(
+			array(
+				'response_type' => 'code',
+				'client_id'     => $generated['client_id'],
+				'redirect_uri'  => 'https://example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_redirect_uri', $result->get_error_code() );
+	}
+
+	public function test_process_consent_returns_error_when_client_has_no_redirect_uri(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'CLI-only App', 1 ); // no redirect_uri
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://example.com/callback',
+			'',
+			'approve',
+			'nonce'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_redirect_uri', $result->get_error_code() );
 	}
 
 	// -------------------------------------------------------------------------
