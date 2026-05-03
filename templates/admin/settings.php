@@ -488,6 +488,7 @@ TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"';
 		} );
 	} );
 } )();
+</script>
 
 <script>
 ( function () {
