@@ -14,7 +14,7 @@ WordPress管理画面でのタスク管理プラグイン
 - Transport: Streamable HTTP
 - JSON-RPC: `2.0`
 - 認証: `Authorization: Basic <Base64(username:application_password)>` またはプラグイン発行の `Bearer` トークン
-- 最小ツール: `ping`
+- ツール: `ping`, `tsubakuro_list_tasks`, `tsubakuro_get_task`, `tsubakuro_create_task`, `tsubakuro_update_task`, `tsubakuro_delete_task`, `tsubakuro_add_comment`
 
 WordPress の Application Passwords を使う場合は、`ユーザー名:アプリケーションパスワード` を Base64 エンコードして `Authorization` ヘッダーに設定します。
 
@@ -37,6 +37,51 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ping","arguments":{}}}'
+```
+
+タスク一覧取得:
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"tsubakuro_list_tasks","arguments":{"status":"in_progress","per_page":10}}}'
+```
+
+タスク更新:
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"tsubakuro_update_task","arguments":{"id":42,"status":"completed"}}}'
+```
+
+コメント追加:
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"tsubakuro_add_comment","arguments":{"id":42,"comment":"クライアント確認が完了しました。"}}}'
+```
+
+管理画面の `admin.php?page=tsubakuro-mcp-guide` に対応するドキュメントは MCP Resource として取得できます。
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":7,"method":"resources/list","params":{}}'
+```
+
+`resources/list` の `uri` に返った値を指定して読み取ります。
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":8,"method":"resources/read","params":{"uri":"https://gaichubase.com/wp-admin/admin.php?page=tsubakuro-mcp-guide"}}'
 ```
 
 ### Codex CLI

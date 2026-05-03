@@ -20,6 +20,7 @@ class Tsubakuro_MCP {
 	const ROUTE            = '/mcp';
 	const PROTOCOL_VERSION = '2024-11-05';
 	const SERVER_NAME      = 'tsubakuro-wordpress-mcp';
+	const GUIDE_PAGE_SLUG  = 'tsubakuro-mcp-guide';
 
 	/**
 	 * Register WordPress hooks.
@@ -192,9 +193,12 @@ class Tsubakuro_MCP {
 				return self::success_response(
 					$id,
 					array(
-						'resources' => array(),
+						'resources' => self::get_resources(),
 					)
 				);
+
+			case 'resources/read':
+				return self::handle_resource_read( $id, $params );
 
 			case 'prompts/list':
 				return self::success_response(
@@ -221,17 +225,298 @@ class Tsubakuro_MCP {
 			return self::error_response( $id, -32602, 'Tool name is required' );
 		}
 
-		if ( 'ping' !== $params['name'] ) {
-			return self::error_response( $id, -32602, 'Unknown tool: ' . sanitize_text_field( $params['name'] ) );
+		$name      = sanitize_key( $params['name'] );
+		$arguments = self::get_tool_arguments( $params );
+
+		switch ( $name ) {
+			case 'ping':
+				return self::success_response(
+					$id,
+					array(
+						'content' => array(
+							array(
+								'type' => 'text',
+								'text' => 'pong',
+							),
+						),
+					)
+				);
+
+			case 'tsubakuro_list_tasks':
+				return self::tool_list_tasks( $id, $arguments );
+
+			case 'tsubakuro_get_task':
+				return self::tool_get_task( $id, $arguments );
+
+			case 'tsubakuro_create_task':
+				return self::tool_create_task( $id, $arguments );
+
+			case 'tsubakuro_update_task':
+				return self::tool_update_task( $id, $arguments );
+
+			case 'tsubakuro_delete_task':
+				return self::tool_delete_task( $id, $arguments );
+
+			case 'tsubakuro_add_comment':
+				return self::tool_add_comment( $id, $arguments );
+
+			default:
+				return self::error_response( $id, -32602, 'Unknown tool: ' . sanitize_text_field( $params['name'] ) );
+		}
+	}
+
+	/**
+	 * Extract tool arguments from MCP tools/call params.
+	 *
+	 * @param array $params tools/call params.
+	 * @return array
+	 */
+	private static function get_tool_arguments( $params ) {
+		if ( isset( $params['arguments'] ) && is_array( $params['arguments'] ) ) {
+			return $params['arguments'];
+		}
+
+		return array();
+	}
+
+	/**
+	 * Tool: list tasks with optional filters.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_list_tasks( $id, $arguments ) {
+		$args = array();
+
+		if ( ! empty( $arguments['status'] ) ) {
+			$args['status'] = sanitize_text_field( $arguments['status'] );
+		}
+
+		if ( ! empty( $arguments['assignee'] ) ) {
+			$args['assignee'] = absint( $arguments['assignee'] );
+		}
+
+		if ( ! empty( $arguments['related_page'] ) ) {
+			$args['related_page'] = absint( $arguments['related_page'] );
+		}
+
+		if ( ! empty( $arguments['per_page'] ) ) {
+			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
+		}
+
+		foreach ( array( 's', 'orderby', 'order' ) as $key ) {
+			if ( ! empty( $arguments[ $key ] ) ) {
+				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
+			}
+		}
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'tasks' => Tsubakuro_Post_Types::get_tasks( $args ),
+			)
+		);
+	}
+
+	/**
+	 * Tool: get a single task with comments.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_get_task( $id, $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return self::error_response( $id, -32602, 'id is required' );
+		}
+
+		$task = Tsubakuro_Post_Types::get_task( absint( $arguments['id'] ) );
+		if ( ! $task ) {
+			return self::error_response( $id, 404, 'Task not found' );
+		}
+
+		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'task' => $task,
+			)
+		);
+	}
+
+	/**
+	 * Tool: create a new task.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_create_task( $id, $arguments ) {
+		if ( empty( $arguments['title'] ) ) {
+			return self::error_response( $id, -32602, 'title is required' );
+		}
+
+		$task_id = wp_insert_post(
+			array(
+				'post_type'    => 'tsubakuro_task',
+				'post_title'   => sanitize_text_field( $arguments['title'] ),
+				'post_content' => wp_kses_post( $arguments['content'] ?? '' ),
+				'post_status'  => 'publish',
+			),
+			true
+		);
+
+		if ( is_wp_error( $task_id ) ) {
+			return self::error_response( $id, 500, $task_id->get_error_message() );
+		}
+
+		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+			)
+		);
+	}
+
+	/**
+	 * Tool: update an existing task.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_update_task( $id, $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return self::error_response( $id, -32602, 'id is required' );
+		}
+
+		$task_id = absint( $arguments['id'] );
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return self::error_response( $id, 404, 'Task not found' );
+		}
+
+		$update = array( 'ID' => $task_id );
+
+		if ( isset( $arguments['title'] ) ) {
+			$update['post_title'] = sanitize_text_field( $arguments['title'] );
+		}
+
+		if ( isset( $arguments['content'] ) ) {
+			$update['post_content'] = wp_kses_post( $arguments['content'] );
+		}
+
+		wp_update_post( $update );
+		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+			)
+		);
+	}
+
+	/**
+	 * Tool: delete a task.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_delete_task( $id, $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return self::error_response( $id, -32602, 'id is required' );
+		}
+
+		if ( ! current_user_can( 'delete_posts' ) ) {
+			return self::error_response( $id, -32003, 'Permission denied' );
+		}
+
+		$task_id = absint( $arguments['id'] );
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return self::error_response( $id, 404, 'Task not found' );
+		}
+
+		wp_delete_post( $task_id, true );
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'deleted' => true,
+				'id'      => $task_id,
+			)
+		);
+	}
+
+	/**
+	 * Tool: add a comment to a task.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_add_comment( $id, $arguments ) {
+		if ( empty( $arguments['id'] ) || empty( $arguments['comment'] ) ) {
+			return self::error_response( $id, -32602, 'id and comment are required' );
+		}
+
+		$task_id = absint( $arguments['id'] );
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return self::error_response( $id, 404, 'Task not found' );
+		}
+
+		$comment_id = Tsubakuro_Admin::insert_comment(
+			$task_id,
+			get_current_user_id(),
+			sanitize_textarea_field( $arguments['comment'] )
+		);
+
+		if ( false === $comment_id ) {
+			return self::error_response( $id, 500, 'Failed to insert comment' );
+		}
+
+		return self::tool_success_response(
+			$id,
+			array(
+				'comment' => Tsubakuro_Admin::get_comment( $comment_id ),
+			)
+		);
+	}
+
+	/**
+	 * Handle resources/read.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param mixed $params Resource read parameters.
+	 * @return array
+	 */
+	private static function handle_resource_read( $id, $params ) {
+		if ( ! is_array( $params ) || empty( $params['uri'] ) ) {
+			return self::error_response( $id, -32602, 'Resource uri is required' );
+		}
+
+		if ( self::get_guide_resource_uri() !== $params['uri'] ) {
+			return self::error_response( $id, -32602, 'Unknown resource: ' . sanitize_text_field( $params['uri'] ) );
 		}
 
 		return self::success_response(
 			$id,
 			array(
-				'content' => array(
+				'contents' => array(
 					array(
-						'type' => 'text',
-						'text' => 'pong',
+						'uri'      => self::get_guide_resource_uri(),
+						'mimeType' => 'text/markdown',
+						'text'     => self::get_guide_resource_text(),
 					),
 				),
 			)
@@ -245,7 +530,8 @@ class Tsubakuro_MCP {
 	 */
 	private static function get_capabilities() {
 		return array(
-			'tools' => (object) array(),
+			'tools'     => (object) array(),
+			'resources' => (object) array(),
 		);
 	}
 
@@ -276,6 +562,261 @@ class Tsubakuro_MCP {
 					'properties' => (object) array(),
 				),
 			),
+			array(
+				'name'        => 'tsubakuro_list_tasks',
+				'description' => 'タスク一覧を取得します。status、assignee、related_page、per_page、s、orderby、order で絞り込みできます。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'properties' => array(
+						'status'       => array(
+							'type'        => 'string',
+							'description' => 'todo / in_progress / completed',
+						),
+						'assignee'     => array(
+							'type'        => 'integer',
+							'description' => 'アサインされた WordPress ユーザー ID',
+						),
+						'related_page' => array(
+							'type'        => 'integer',
+							'description' => '関連ページ ID',
+						),
+						'per_page'     => array(
+							'type'        => 'integer',
+							'description' => '取得件数。最大100。',
+						),
+						's'            => array(
+							'type'        => 'string',
+							'description' => '検索語',
+						),
+						'orderby'      => array(
+							'type'        => 'string',
+							'description' => 'id / title / date / status / assignee',
+						),
+						'order'        => array(
+							'type'        => 'string',
+							'description' => 'ASC / DESC',
+						),
+					),
+				),
+			),
+			array(
+				'name'        => 'tsubakuro_get_task',
+				'description' => '指定IDのタスク詳細をコメント込みで取得します。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'required'   => array( 'id' ),
+					'properties' => array(
+						'id' => array(
+							'type'        => 'integer',
+							'description' => 'タスク ID',
+						),
+					),
+				),
+			),
+			array(
+				'name'        => 'tsubakuro_create_task',
+				'description' => '新しいタスクを作成します。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'required'   => array( 'title' ),
+					'properties' => array(
+						'title'         => array(
+							'type'        => 'string',
+							'description' => 'タイトル',
+						),
+						'content'       => array(
+							'type'        => 'string',
+							'description' => '内容・説明',
+						),
+						'status'        => array(
+							'type'        => 'string',
+							'description' => 'todo / in_progress / completed',
+						),
+						'assignee'      => array(
+							'type'        => 'integer',
+							'description' => 'アサインする WordPress ユーザー ID',
+						),
+						'related_pages' => array(
+							'type'        => 'array',
+							'description' => '関連ページ ID の配列',
+							'items'       => array( 'type' => 'integer' ),
+						),
+					),
+				),
+			),
+			array(
+				'name'        => 'tsubakuro_update_task',
+				'description' => '既存タスクを更新します。指定したフィールドのみ変更します。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'required'   => array( 'id' ),
+					'properties' => array(
+						'id'            => array( 'type' => 'integer' ),
+						'title'         => array( 'type' => 'string' ),
+						'content'       => array( 'type' => 'string' ),
+						'status'        => array( 'type' => 'string' ),
+						'assignee'      => array( 'type' => 'integer' ),
+						'related_pages' => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'integer' ),
+						),
+					),
+				),
+			),
+			array(
+				'name'        => 'tsubakuro_delete_task',
+				'description' => '指定したタスクを削除します。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'required'   => array( 'id' ),
+					'properties' => array(
+						'id' => array( 'type' => 'integer' ),
+					),
+				),
+			),
+			array(
+				'name'        => 'tsubakuro_add_comment',
+				'description' => '指定したタスクにコメントを追加します。',
+				'inputSchema' => array(
+					'type'       => 'object',
+					'required'   => array( 'id', 'comment' ),
+					'properties' => array(
+						'id'      => array(
+							'type'        => 'integer',
+							'description' => 'タスク ID',
+						),
+						'comment' => array(
+							'type'        => 'string',
+							'description' => 'コメント本文',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Return available MCP resources.
+	 *
+	 * @return array
+	 */
+	private static function get_resources() {
+		return array(
+			array(
+				'uri'         => self::get_guide_resource_uri(),
+				'name'        => 'Tsubakuro MCP Guide',
+				'description' => 'WordPress 管理画面の page=tsubakuro-mcp-guide に記載している MCP / タスク管理ドキュメントです。',
+				'mimeType'    => 'text/markdown',
+			),
+		);
+	}
+
+	/**
+	 * Return the MCP guide resource URI.
+	 *
+	 * @return string
+	 */
+	private static function get_guide_resource_uri() {
+		return admin_url( 'admin.php?page=' . self::GUIDE_PAGE_SLUG );
+	}
+
+	/**
+	 * Return the MCP guide resource text.
+	 *
+	 * @return string
+	 */
+	private static function get_guide_resource_text() {
+		$mcp_url   = rest_url( Tsubakuro_REST_API::NAMESPACE . self::ROUTE );
+		$admin_url = self::get_guide_resource_uri();
+
+		return implode(
+			"\n",
+			array(
+				'# Tsubakuro MCP Guide',
+				'',
+				'WordPress 管理画面の `page=tsubakuro-mcp-guide` に記載している MCP 接続ガイドです。',
+				'',
+				'## Paths',
+				'',
+				'- Admin guide: `' . $admin_url . '`',
+				'- MCP endpoint: `' . $mcp_url . '`',
+				'- REST route: `/wp-json/tsubakuro/v1/mcp`',
+				'',
+				'## Transport',
+				'',
+				'- Streamable HTTP',
+				'- JSON-RPC 2.0',
+				'- Methods: `initialize`, `initialized`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`',
+				'',
+				'## Authentication',
+				'',
+				'- Use `Authorization: Basic <Base64(username:application_password)>` with WordPress Application Passwords.',
+				'- Bearer tokens issued by this plugin are also accepted when valid.',
+				'- The authenticated WordPress user must have the `edit_posts` capability.',
+				'',
+				'## Tools',
+				'',
+				'### ping',
+				'',
+				'- Description: 接続確認用',
+				'- Input schema: `{"type":"object","properties":{}}`',
+				'- Result: `{"content":[{"type":"text","text":"pong"}]}`',
+				'',
+				'### tsubakuro_list_tasks',
+				'',
+				'- Description: タスク一覧を取得します。',
+				'- Arguments: `status`, `assignee`, `related_page`, `per_page`, `s`, `orderby`, `order`',
+				'',
+				'### tsubakuro_get_task',
+				'',
+				'- Description: 指定IDのタスク詳細をコメント込みで取得します。',
+				'- Required arguments: `id`',
+				'',
+				'### tsubakuro_create_task',
+				'',
+				'- Description: 新しいタスクを作成します。',
+				'- Required arguments: `title`',
+				'- Optional arguments: `content`, `status`, `assignee`, `related_pages`',
+				'',
+				'### tsubakuro_update_task',
+				'',
+				'- Description: 既存タスクを更新します。',
+				'- Required arguments: `id`',
+				'- Optional arguments: `title`, `content`, `status`, `assignee`, `related_pages`',
+				'',
+				'### tsubakuro_delete_task',
+				'',
+				'- Description: 指定したタスクを削除します。',
+				'- Required arguments: `id`',
+				'',
+				'### tsubakuro_add_comment',
+				'',
+				'- Description: 指定したタスクにコメントを追加します。',
+				'- Required arguments: `id`, `comment`',
+				'',
+				'## Resources',
+				'',
+				'### Tsubakuro MCP Guide',
+				'',
+				'- URI: `' . $admin_url . '`',
+				'- Read with: `resources/read`',
+				'- Content type: `text/markdown`',
+				'',
+				'## Example JSON-RPC',
+				'',
+				'```json',
+				'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}',
+				'```',
+				'',
+				'```json',
+				'{"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}',
+				'```',
+				'',
+				'```json',
+				'{"jsonrpc":"2.0","id":3,"method":"resources/read","params":{"uri":"' . $admin_url . '"}}',
+				'```',
+				'',
+			)
 		);
 	}
 
@@ -292,6 +833,43 @@ class Tsubakuro_MCP {
 			'id'      => $id,
 			'result'  => $result,
 		);
+	}
+
+	/**
+	 * Build a MCP tool success response with structured and text content.
+	 *
+	 * @param mixed $id   Request id.
+	 * @param array $data Structured tool data.
+	 * @return array
+	 */
+	private static function tool_success_response( $id, $data ) {
+		return self::success_response(
+			$id,
+			array(
+				'content'           => array(
+					array(
+						'type' => 'text',
+						'text' => self::encode_tool_text( $data ),
+					),
+				),
+				'structuredContent' => $data,
+			)
+		);
+	}
+
+	/**
+	 * Encode structured data for a text content item.
+	 *
+	 * @param mixed $data Data to encode.
+	 * @return string
+	 */
+	private static function encode_tool_text( $data ) {
+		if ( function_exists( 'wp_json_encode' ) ) {
+			return wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for the lightweight PHPUnit bootstrap where wp_json_encode() is unavailable.
+		return json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 	}
 
 	/**

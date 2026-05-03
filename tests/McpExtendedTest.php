@@ -37,6 +37,18 @@ class McpExtendedTest extends TestCase {
 		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token_response['access_token'];
 	}
 
+	private function make_post( int $id, string $title, string $content = '' ): object {
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_task',
+			'post_title'    => $title,
+			'post_content'  => $content,
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+		);
+	}
+
 	public function test_handle_get_returns_manifest_when_authorized(): void {
 		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
 
@@ -139,8 +151,13 @@ class McpExtendedTest extends TestCase {
 			)
 		);
 
+		$tools = array_column( $result['result']['tools'], 'name' );
+
 		$this->assertSame( 'ping', $result['result']['tools'][0]['name'] );
 		$this->assertSame( 'object', $result['result']['tools'][0]['inputSchema']['type'] );
+		$this->assertContains( 'tsubakuro_list_tasks', $tools );
+		$this->assertContains( 'tsubakuro_update_task', $tools );
+		$this->assertContains( 'tsubakuro_add_comment', $tools );
 	}
 
 	public function test_tools_call_ping_returns_pong(): void {
@@ -159,6 +176,165 @@ class McpExtendedTest extends TestCase {
 		$this->assertSame( 'pong', $result['result']['content'][0]['text'] );
 	}
 
+	public function test_tools_call_list_tasks_returns_task_list(): void {
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Alpha' );
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post( 2, 'Beta' );
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 10,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_list_tasks',
+					'arguments' => array(
+						'per_page' => 10,
+					),
+				),
+			)
+		);
+
+		$this->assertCount( 2, $result['result']['structuredContent']['tasks'] );
+		$this->assertSame( 'Alpha', $result['result']['structuredContent']['tasks'][0]['title'] );
+		$this->assertStringContainsString( 'Alpha', $result['result']['content'][0]['text'] );
+	}
+
+	public function test_tools_call_get_task_returns_task_with_comments(): void {
+		$GLOBALS['tsubakuro_test']['posts'][101]    = $this->make_post( 101, 'Task Z' );
+		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
+			'comment_ID'       => 1,
+			'comment_post_ID'  => 101,
+			'user_id'          => 0,
+			'comment_content'  => 'Note',
+			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
+			'comment_approved' => 1,
+			'comment_date'     => '2026-05-01 10:00:00',
+		);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 11,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_get_task',
+					'arguments' => array(
+						'id' => 101,
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 101, $result['result']['structuredContent']['task']['id'] );
+		$this->assertCount( 1, $result['result']['structuredContent']['task']['comments'] );
+	}
+
+	public function test_tools_call_create_task_creates_and_returns_task(): void {
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_post( 123, 'New Task' );
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 12,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_task',
+					'arguments' => array(
+						'title'  => 'New Task',
+						'status' => 'todo',
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 123, $result['result']['structuredContent']['task']['id'] );
+	}
+
+	public function test_tools_call_update_task_updates_meta_and_returns_task(): void {
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Old' );
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 13,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_update_task',
+					'arguments' => array(
+						'id'     => 101,
+						'status' => 'completed',
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 101, $result['result']['structuredContent']['task']['id'] );
+		$this->assertSame( array( 'completed' ), $GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_status'] );
+	}
+
+	public function test_tools_call_delete_task_deletes_and_confirms(): void {
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task' );
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 14,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_delete_task',
+					'arguments' => array(
+						'id' => 101,
+					),
+				),
+			)
+		);
+
+		$this->assertTrue( $result['result']['structuredContent']['deleted'] );
+		$this->assertSame( array( 101 ), $GLOBALS['tsubakuro_test']['deleted_posts'] );
+	}
+
+	public function test_tools_call_add_comment_inserts_and_returns_comment(): void {
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task' );
+		$GLOBALS['tsubakuro_test']['users'][7]   = (object) array(
+			'ID'           => 7,
+			'display_name' => 'Bob',
+		);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 15,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_add_comment',
+					'arguments' => array(
+						'id'      => 101,
+						'comment' => 'Great work',
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 'Great work', $result['result']['structuredContent']['comment']['comment'] );
+		$this->assertSame( 'Bob', $result['result']['structuredContent']['comment']['user_name'] );
+	}
+
+	public function test_tools_call_task_tool_returns_error_for_missing_required_argument(): void {
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 16,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_get_task',
+					'arguments' => array(),
+				),
+			)
+		);
+
+		$this->assertSame( -32602, $result['error']['code'] );
+	}
+
 	public function test_tools_call_unknown_tool_returns_json_rpc_error(): void {
 		$result = $this->dispatch(
 			array(
@@ -175,7 +351,7 @@ class McpExtendedTest extends TestCase {
 		$this->assertStringContainsString( 'missing', $result['error']['message'] );
 	}
 
-	public function test_resources_and_prompts_list_return_empty_arrays(): void {
+	public function test_resources_list_returns_mcp_guide_resource(): void {
 		$resources = $this->dispatch(
 			array(
 				'jsonrpc' => '2.0',
@@ -183,15 +359,55 @@ class McpExtendedTest extends TestCase {
 				'method'  => 'resources/list',
 			)
 		);
-		$prompts   = $this->dispatch(
+
+		$this->assertSame( 'Tsubakuro MCP Guide', $resources['result']['resources'][0]['name'] );
+		$this->assertSame( 'text/markdown', $resources['result']['resources'][0]['mimeType'] );
+		$this->assertStringContainsString( 'page=tsubakuro-mcp-guide', $resources['result']['resources'][0]['uri'] );
+	}
+
+	public function test_resources_read_returns_mcp_guide_document(): void {
+		$uri    = 'https://example.test/wp-admin/admin.php?page=tsubakuro-mcp-guide';
+		$result = $this->dispatch(
 			array(
 				'jsonrpc' => '2.0',
 				'id'      => 6,
+				'method'  => 'resources/read',
+				'params'  => array(
+					'uri' => $uri,
+				),
+			)
+		);
+
+		$this->assertSame( $uri, $result['result']['contents'][0]['uri'] );
+		$this->assertSame( 'text/markdown', $result['result']['contents'][0]['mimeType'] );
+		$this->assertStringContainsString( 'page=tsubakuro-mcp-guide', $result['result']['contents'][0]['text'] );
+		$this->assertStringContainsString( 'resources/read', $result['result']['contents'][0]['text'] );
+	}
+
+	public function test_resources_read_unknown_resource_returns_json_rpc_error(): void {
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 7,
+				'method'  => 'resources/read',
+				'params'  => array(
+					'uri' => 'https://example.test/wp-admin/admin.php?page=missing',
+				),
+			)
+		);
+
+		$this->assertSame( -32602, $result['error']['code'] );
+	}
+
+	public function test_prompts_list_returns_empty_array(): void {
+		$prompts   = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 8,
 				'method'  => 'prompts/list',
 			)
 		);
 
-		$this->assertSame( array(), $resources['result']['resources'] );
 		$this->assertSame( array(), $prompts['result']['prompts'] );
 	}
 
@@ -199,7 +415,7 @@ class McpExtendedTest extends TestCase {
 		$result = $this->dispatch(
 			array(
 				'jsonrpc' => '2.0',
-				'id'      => 7,
+				'id'      => 9,
 				'method'  => 'totally_unknown',
 				'params'  => array(),
 			)
