@@ -386,7 +386,10 @@ class Tsubakuro_OAuth {
 		}
 
 		// User is already logged in: issue an authorization code immediately
-		// without showing a separate consent form.
+		// without showing a separate consent form.  This is intentional:
+		// trusted WordPress users accessing this site's own MCP server are
+		// considered pre-consented; they can revoke access at any time via
+		// the "認証済みの接続" section on the Settings page.
 		$redirect_url = self::build_auto_approve_redirect( $client, get_current_user_id(), $redirect_uri, $state );
 
 		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- redirect_uri was validated against the registered client value.
