@@ -253,18 +253,101 @@
 	right: 8px;
 }
 
-.tsubakuro-code-block {
-	background: #f5f5f5;
+/* =========================================================================
+   MCP Guide page
+   ========================================================================= */
+
+.tsubakuro-guide-intro {
+	font-size: 14px;
+	margin-bottom: 16px;
+}
+
+.tsubakuro-guide-card {
+	background: #fff;
 	border: 1px solid #ddd;
 	border-radius: 4px;
+	padding: 20px 24px;
+	margin-top: 20px;
+	max-width: 900px;
+}
 
-	/* right padding leaves room for the absolute-positioned copy button
-	   (~100px wide + 8px gap + 8px edge) */
-	padding: 14px 120px 14px 14px;
+.tsubakuro-guide-card h2 {
+	margin-top: 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #eee;
+}
+
+.tsubakuro-guide-table {
+	margin: 12px 0;
 	font-size: 13px;
-	overflow-x: auto;
-	white-space: pre;
+}
+
+.tsubakuro-guide-table th {
+	background: #f8f8f8;
+	font-weight: 600;
+}
+
+.tsubakuro-guide-table td,
+.tsubakuro-guide-table th {
+	padding: 8px 12px;
+	vertical-align: top;
+}
+
+.tsubakuro-guide-list {
+	padding-left: 20px;
+	margin: 8px 0;
+}
+
+.tsubakuro-guide-list li {
+	margin-bottom: 6px;
+}
+
+.tsubakuro-guide-tool {
+	margin-top: 24px;
+	padding-top: 20px;
+	border-top: 1px solid #eee;
+}
+
+.tsubakuro-guide-tool:first-child {
+	margin-top: 16px;
+	padding-top: 0;
+	border-top: none;
+}
+
+.tsubakuro-guide-tool h3 {
+	margin: 0 0 8px;
+	font-size: 14px;
+}
+
+.tsubakuro-guide-flows {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.tsubakuro-guide-flow {
+	background: #f9f9f9;
+	border: 1px solid #e5e5e5;
+	border-radius: 4px;
+	padding: 14px 16px;
+}
+
+.tsubakuro-guide-flow h3 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.tsubakuro-flow-steps {
 	margin: 0;
+	padding-left: 18px;
+	font-size: 13px;
+}
+
+.tsubakuro-flow-steps li {
+	margin-bottom: 6px;
+	line-height: 1.5;
 }
 
 /* =========================================================================
@@ -341,6 +424,7 @@
 }
 
 @media (max-width: 900px) {
+
 	.tsubakuro-about-grid,
 	.tsubakuro-about-story-list {
 		grid-template-columns: 1fr;
