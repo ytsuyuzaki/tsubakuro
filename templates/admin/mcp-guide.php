@@ -65,8 +65,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</p>
 		<ul class="tsubakuro-guide-list">
 			<li>
-				<strong><?php esc_html_e( 'Application Passwords（推奨）', 'tsubakuro' ); ?></strong>
-				<?php esc_html_e( '— WordPress 管理画面 → ユーザー → プロフィール → アプリケーションパスワードを発行し、Basic 認証で使用します。', 'tsubakuro' ); ?>
+				<strong><?php esc_html_e( 'Application Passwords（まず使う方法）', 'tsubakuro' ); ?></strong>
+				<?php
+				echo wp_kses(
+					__( '— WordPress 管理画面 → ユーザー → プロフィール → アプリケーションパスワードを発行し、<code>Authorization: Basic &lt;Base64(username:application_password)&gt;</code> ヘッダーで使用します。', 'tsubakuro' ),
+					array( 'code' => array() )
+				);
+				?>
 			</li>
 			<li>
 				<strong><?php esc_html_e( 'Cookie 認証', 'tsubakuro' ); ?></strong>
@@ -79,6 +84,58 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</li>
 		</ul>
 		<p class="description"><?php esc_html_e( 'GET によるディスカバリーは認証不要です。', 'tsubakuro' ); ?></p>
+		<h3><?php esc_html_e( '接続方式の比較', 'tsubakuro' ); ?></h3>
+		<table class="widefat tsubakuro-guide-table">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( '方式', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( '扱い', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( '用途・注意点', 'tsubakuro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>Authorization: Basic</code></td>
+					<td><?php esc_html_e( 'メイン推奨・実装済み', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'WordPress 標準の Application Passwords を使います。ユーザー権限は edit_posts で判定されます。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( '任意ヘッダー値', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( '実用パターン', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'クライアントやローカルブリッジが Authorization などのヘッダーを設定できる場合に使います。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>OAuth 2.1 / Bearer</code></td>
+					<td><?php esc_html_e( '将来拡張または外部 proxy', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'MCP の HTTP transport では標準寄りの方式です。このプラグイン単体では OAuth endpoint や Bearer token 検証を提供していません。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'OAuth クライアント ID/シークレット', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'OAuth 導入時の補助情報', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'ツール呼び出し時に直接送る認証情報ではなく、OAuth フローでクライアントを識別するための情報です。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'URL パス/クエリトークン', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( '非推奨', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'URL はログ、履歴、Referer に残りやすいため採用しません。どうしても必要なクライアント向けの将来オプション扱いです。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>Cookie + X-WP-Nonce</code></td>
+					<td><?php esc_html_e( 'ブラウザ内操作向け', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'WordPress 管理画面や同一ブラウザセッションから呼び出す場合に使います。外部 MCP クライアントの主方式にはしません。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'ローカル STDIO/ブリッジ + 環境変数', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( '補助パターン', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( '直接 HTTP ヘッダーを扱いにくいクライアントでは、ローカルプロセスが環境変数からヘッダーを生成して中継します。', 'tsubakuro' ); ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'リバースプロキシ/API Gateway/OAuth proxy', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( '運用オプション', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'プラグイン外で OAuth、IP 制限、監査ログ、レート制限を追加したい場合に使います。', 'tsubakuro' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 
 	<!-- ==================================================================
@@ -501,8 +558,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div class="tsubakuro-guide-card">
 		<h2><?php esc_html_e( 'MCP クライアントの設定例', 'tsubakuro' ); ?></h2>
 		<p>
-			<?php esc_html_e( 'MCP 対応クライアントでは、以下のようにサーバー URL を設定します（クライアントによって設定方法は異なります）。', 'tsubakuro' ); ?>
+			<?php esc_html_e( 'MCP 対応クライアントでは、クライアントがサポートする設定形式に合わせてサーバー URL と認証ヘッダーを設定します。', 'tsubakuro' ); ?>
 		</p>
+		<h3><?php esc_html_e( 'URL とヘッダーを直接指定できるクライアント', 'tsubakuro' ); ?></h3>
 		<div class="tsubakuro-code-block-wrap">
 			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-config">
 				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
@@ -520,6 +578,45 @@ $example = '{
   }
 }';
 echo esc_html( $example );
+?>
+			</pre>
+		</div>
+		<h3><?php esc_html_e( 'ローカルブリッジ経由で接続するクライアント', 'tsubakuro' ); ?></h3>
+		<div class="tsubakuro-code-block-wrap">
+			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-bridge-config">
+				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+			</button>
+			<pre id="tsubakuro-guide-bridge-config" class="tsubakuro-code-block">
+<?php
+$bridge_example = '{
+  "mcpServers": {
+    "tsubakuro": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch",
+        "--url",
+        "' . esc_js( $mcp_url ) . '",
+        "--header",
+        "Authorization: Basic <Base64エンコードした認証情報>"
+      ]
+    }
+  }
+}';
+echo esc_html( $bridge_example );
+?>
+			</pre>
+		</div>
+		<h3><?php esc_html_e( '環境変数からヘッダーを組み立てる運用', 'tsubakuro' ); ?></h3>
+		<div class="tsubakuro-code-block-wrap">
+			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-env-config">
+				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
+			</button>
+			<pre id="tsubakuro-guide-env-config" class="tsubakuro-code-block">
+<?php
+$env_example = 'TSUBAKURO_MCP_URL="' . esc_js( $mcp_url ) . '"
+TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"';
+echo esc_html( $env_example );
 ?>
 			</pre>
 		</div>
@@ -541,6 +638,9 @@ echo esc_html( $example );
 				)
 			);
 			?>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'OAuth 2.1 / Bearer token は MCP の HTTP transport で標準寄りの方式ですが、このプラグイン単体ではまだ OAuth endpoint を提供していません。OAuth が必要な場合は、リバースプロキシや API Gateway で外側に追加する構成を検討してください。', 'tsubakuro' ); ?>
 		</p>
 	</div>
 
