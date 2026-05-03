@@ -35,6 +35,8 @@ class OAuthTest extends TestCase {
 		$this->assertArrayHasKey( 'determine_current_user', $GLOBALS['tsubakuro_test']['filters'] );
 		$this->assertArrayHasKey( 'wp_ajax_tsubakuro_generate_oauth_client', $GLOBALS['tsubakuro_test']['actions'] );
 		$this->assertArrayHasKey( 'wp_ajax_tsubakuro_revoke_oauth_client', $GLOBALS['tsubakuro_test']['actions'] );
+		$this->assertArrayHasKey( 'admin_post_tsubakuro_oauth_consent', $GLOBALS['tsubakuro_test']['actions'] );
+		$this->assertArrayHasKey( 'admin_post_nopriv_tsubakuro_oauth_consent', $GLOBALS['tsubakuro_test']['actions'] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -50,13 +52,31 @@ class OAuthTest extends TestCase {
 		);
 	}
 
+	public function test_register_routes_creates_authorize_endpoint(): void {
+		Tsubakuro_OAuth::register_routes();
+
+		$this->assertArrayHasKey(
+			'tsubakuro/v1/oauth/authorize',
+			$GLOBALS['tsubakuro_test']['rest_routes']
+		);
+	}
+
+	public function test_register_routes_creates_metadata_endpoint(): void {
+		Tsubakuro_OAuth::register_routes();
+
+		$this->assertArrayHasKey(
+			'tsubakuro/v1/oauth/metadata',
+			$GLOBALS['tsubakuro_test']['rest_routes']
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// handle_token() – token endpoint
 	// -------------------------------------------------------------------------
 
 	public function test_handle_token_returns_error_for_unsupported_grant_type(): void {
 		$req    = $this->make_token_request(
-			array( 'grant_type' => 'authorization_code', 'client_id' => 'x', 'client_secret' => 'y' )
+			array( 'grant_type' => 'implicit', 'client_id' => 'x', 'client_secret' => 'y' )
 		);
 		$result = Tsubakuro_OAuth::handle_token( $req );
 
@@ -132,6 +152,363 @@ class OAuthTest extends TestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'access_token', $result );
+	}
+
+	// -------------------------------------------------------------------------
+	// handle_token() – authorization_code grant type
+	// -------------------------------------------------------------------------
+
+	public function test_handle_token_authorization_code_returns_error_when_code_missing(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'AC Client', 1, 'https://example.com/callback' );
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'redirect_uri'  => 'https://example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_request', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_when_redirect_uri_missing(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'AC Client', 1, 'https://example.com/callback' );
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'somecode',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_request', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_for_unknown_client(): void {
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => 'no_such_client',
+				'client_secret' => 'secret',
+				'code'          => 'somecode',
+				'redirect_uri'  => 'https://example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_client', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_for_wrong_secret(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'AC Client', 1, 'https://example.com/callback' );
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => 'WRONG_SECRET',
+				'code'          => 'somecode',
+				'redirect_uri'  => 'https://example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_client', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_for_invalid_code(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'AC Client', 1, 'https://example.com/callback' );
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'bad_code_that_does_not_exist',
+				'redirect_uri'  => 'https://example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_grant', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_issues_token_for_valid_code(): void {
+		$generated    = Tsubakuro_OAuth::generate_client( 'AC Client', 9, 'https://claude.ai/callback' );
+		$redirect_uri = 'https://claude.ai/callback';
+
+		// Simulate a code that was issued after the user approved consent.
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'testcode123' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $generated['client_id'],
+			'user_id'      => 9,
+			'redirect_uri' => $redirect_uri,
+		);
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'testcode123',
+				'redirect_uri'  => $redirect_uri,
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Bearer', $result['token_type'] );
+		$this->assertNotEmpty( $result['access_token'] );
+
+		// Code must be consumed (one-time use).
+		$this->assertArrayNotHasKey( $code_key, $GLOBALS['tsubakuro_test']['transients'] );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_when_redirect_uri_mismatch(): void {
+		$generated    = Tsubakuro_OAuth::generate_client( 'AC Client', 9, 'https://claude.ai/callback' );
+
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'testcode456' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $generated['client_id'],
+			'user_id'      => 9,
+			'redirect_uri' => 'https://claude.ai/callback',
+		);
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'testcode456',
+				'redirect_uri'  => 'https://evil.example.com/callback', // Mismatch!
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_grant', $result->get_error_code() );
+	}
+
+	public function test_handle_token_authorization_code_returns_error_when_client_mismatch(): void {
+		$client_a = Tsubakuro_OAuth::generate_client( 'Client A', 1, 'https://a.example.com/callback' );
+		$client_b = Tsubakuro_OAuth::generate_client( 'Client B', 2, 'https://b.example.com/callback' );
+
+		// Code was issued for client_a but client_b is trying to use it.
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'testcodeX' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $client_a['client_id'],
+			'user_id'      => 1,
+			'redirect_uri' => 'https://a.example.com/callback',
+		);
+
+		$req    = $this->make_token_request(
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $client_b['client_id'],
+				'client_secret' => $client_b['client_secret'],
+				'code'          => 'testcodeX',
+				'redirect_uri'  => 'https://b.example.com/callback',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_grant', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// handle_authorize() – authorization endpoint
+	// -------------------------------------------------------------------------
+
+	public function test_handle_authorize_returns_error_for_non_code_response_type(): void {
+		$req    = new WP_REST_Request( array( 'response_type' => 'token', 'client_id' => 'x', 'redirect_uri' => 'https://example.com' ) );
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'unsupported_response_type', $result->get_error_code() );
+	}
+
+	public function test_handle_authorize_returns_error_when_client_id_missing(): void {
+		$req    = new WP_REST_Request( array( 'response_type' => 'code', 'redirect_uri' => 'https://example.com' ) );
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_request', $result->get_error_code() );
+	}
+
+	public function test_handle_authorize_returns_error_for_unknown_client(): void {
+		$req    = new WP_REST_Request( array( 'response_type' => 'code', 'client_id' => 'unknown', 'redirect_uri' => 'https://example.com' ) );
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_client', $result->get_error_code() );
+	}
+
+	public function test_handle_authorize_returns_error_when_redirect_uri_missing(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'Test App', 1, 'https://example.com/cb' );
+
+		$req    = new WP_REST_Request( array( 'response_type' => 'code', 'client_id' => $generated['client_id'] ) );
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_request', $result->get_error_code() );
+	}
+
+	public function test_handle_authorize_returns_error_for_mismatched_redirect_uri(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'Test App', 1, 'https://allowed.example.com/cb' );
+
+		$req    = new WP_REST_Request(
+			array(
+				'response_type' => 'code',
+				'client_id'     => $generated['client_id'],
+				'redirect_uri'  => 'https://evil.example.com/cb',
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_authorize( $req );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_redirect_uri', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// process_consent() – consent business logic
+	// -------------------------------------------------------------------------
+
+	public function test_process_consent_returns_error_on_invalid_nonce(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 1, 'https://example.com/cb' );
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://example.com/cb',
+			'xyz',
+			'approve',
+			'bad_nonce'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_nonce', $result->get_error_code() );
+	}
+
+	public function test_process_consent_returns_error_when_not_logged_in(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 1, 'https://example.com/cb' );
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = false;
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://example.com/cb',
+			'xyz',
+			'approve',
+			'nonce'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'not_logged_in', $result->get_error_code() );
+	}
+
+	public function test_process_consent_returns_redirect_with_error_when_denied(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 1, 'https://example.com/cb' );
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://example.com/cb',
+			'abc',
+			'deny',
+			'nonce'
+		);
+
+		$this->assertIsString( $result );
+		$this->assertStringContainsString( 'error=access_denied', $result );
+		$this->assertStringContainsString( 'state=abc', $result );
+	}
+
+	public function test_process_consent_returns_redirect_with_code_when_approved(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 7, 'https://claude.ai/callback' );
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://claude.ai/callback',
+			'mystate',
+			'approve',
+			'nonce'
+		);
+
+		$this->assertIsString( $result );
+		$this->assertStringContainsString( 'code=', $result );
+		$this->assertStringContainsString( 'state=mystate', $result );
+		$this->assertStringContainsString( 'claude.ai', $result );
+	}
+
+	public function test_process_consent_returns_error_for_invalid_redirect_uri(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 1, 'https://example.com/cb' );
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+
+		$result = Tsubakuro_OAuth::process_consent(
+			$generated['client_id'],
+			'https://evil.com/cb',    // Mismatched URI
+			'',
+			'approve',
+			'nonce'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_redirect_uri', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// handle_metadata()
+	// -------------------------------------------------------------------------
+
+	public function test_handle_metadata_returns_required_fields(): void {
+		$result = Tsubakuro_OAuth::handle_metadata();
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'issuer', $result );
+		$this->assertArrayHasKey( 'authorization_endpoint', $result );
+		$this->assertArrayHasKey( 'token_endpoint', $result );
+		$this->assertArrayHasKey( 'response_types_supported', $result );
+		$this->assertArrayHasKey( 'grant_types_supported', $result );
+	}
+
+	public function test_handle_metadata_endpoints_contain_correct_paths(): void {
+		$result = Tsubakuro_OAuth::handle_metadata();
+
+		$this->assertStringContainsString( 'oauth/authorize', $result['authorization_endpoint'] );
+		$this->assertStringContainsString( 'oauth/token', $result['token_endpoint'] );
+		$this->assertContains( 'code', $result['response_types_supported'] );
+		$this->assertContains( 'authorization_code', $result['grant_types_supported'] );
+		$this->assertContains( 'client_credentials', $result['grant_types_supported'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// generate_client() – redirect_uri support
+	// -------------------------------------------------------------------------
+
+	public function test_generate_client_stores_redirect_uri(): void {
+		$result = Tsubakuro_OAuth::generate_client( 'Claude App', 1, 'https://claude.ai/callback' );
+
+		$this->assertSame( 'https://claude.ai/callback', $result['redirect_uri'] );
+
+		$clients = Tsubakuro_OAuth::get_clients();
+		$this->assertSame( 'https://claude.ai/callback', $clients[0]['redirect_uri'] );
+	}
+
+	public function test_generate_client_stores_empty_redirect_uri_when_not_provided(): void {
+		$result = Tsubakuro_OAuth::generate_client( 'CLI App', 1 );
+
+		$this->assertSame( '', $result['redirect_uri'] );
 	}
 
 	// -------------------------------------------------------------------------

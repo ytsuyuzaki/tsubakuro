@@ -107,19 +107,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td><?php esc_html_e( 'WordPress 標準の Application Passwords を使います。ユーザー権限は edit_posts で判定されます。', 'tsubakuro' ); ?></td>
 				</tr>
 				<tr>
+					<td><code>OAuth 2.0 認可コードフロー / Bearer</code></td>
+					<td><?php esc_html_e( '実装済み（claude.ai 向け）', 'tsubakuro' ); ?></td>
+					<td>
+						<?php
+						$settings_link = sprintf(
+							'<a href="%s">%s</a>',
+							esc_url( admin_url( 'admin.php?page=tsubakuro-settings' ) ),
+							esc_html__( '設定ページ', 'tsubakuro' )
+						);
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to settings page */
+								__( 'claude.ai Custom Connector など OAuth 2.0 を必要とするクライアント向けです。%s でクライアントを登録し、認可コードフローでアクセストークンを取得します。', 'tsubakuro' ),
+								$settings_link
+							),
+							array( 'a' => array( 'href' => array() ) )
+						);
+						?>
+					</td>
+				</tr>
+				<tr>
 					<td><?php esc_html_e( '任意ヘッダー値', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( '実用パターン', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( 'クライアントやローカルブリッジが Authorization などのヘッダーを設定できる場合に使います。', 'tsubakuro' ); ?></td>
-				</tr>
-				<tr>
-					<td><code>OAuth 2.1 / Bearer</code></td>
-					<td><?php esc_html_e( '将来拡張または外部 proxy', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'MCP の HTTP transport では標準寄りの方式です。このプラグイン単体では OAuth endpoint や Bearer token 検証を提供していません。', 'tsubakuro' ); ?></td>
-				</tr>
-				<tr>
-					<td><?php esc_html_e( 'OAuth クライアント ID/シークレット', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'OAuth 導入時の補助情報', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'ツール呼び出し時に直接送る認証情報ではなく、OAuth フローでクライアントを識別するための情報です。', 'tsubakuro' ); ?></td>
 				</tr>
 				<tr>
 					<td><?php esc_html_e( 'URL パス/クエリトークン', 'tsubakuro' ); ?></td>
@@ -660,7 +671,21 @@ echo esc_html( $env_example );
 			?>
 		</p>
 		<p class="description">
-			<?php esc_html_e( 'OAuth 2.1 / Bearer token は MCP の HTTP transport で標準寄りの方式ですが、このプラグイン単体ではまだ OAuth endpoint を提供していません。OAuth が必要な場合は、リバースプロキシや API Gateway で外側に追加する構成を検討してください。', 'tsubakuro' ); ?>
+			<?php
+			$settings_oauth_link = sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( admin_url( 'admin.php?page=tsubakuro-settings' ) ),
+				esc_html__( '設定ページ', 'tsubakuro' )
+			);
+			echo wp_kses(
+				sprintf(
+					/* translators: %s: link to settings page */
+					__( 'claude.ai Custom Connector で接続する場合は、OAuth 2.0 認可コードフローを使用します。%s でクライアントを登録し、認可エンドポイントとトークンエンドポイントの URL を claude.ai に設定してください。', 'tsubakuro' ),
+					$settings_oauth_link
+				),
+				array( 'a' => array( 'href' => array() ) )
+			);
+			?>
 		</p>
 	</div>
 
