@@ -12,6 +12,58 @@ class AdminTest extends TestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Menu / about page
+	// -------------------------------------------------------------------------
+
+	public function test_add_menu_registers_about_page(): void {
+		Tsubakuro_Admin::add_menu();
+
+		$slugs = array_column( $GLOBALS['tsubakuro_test']['submenu_pages'], 'menu_slug' );
+
+		$this->assertContains( 'tsubakuro-about', $slugs );
+
+		$about_index = array_search( 'tsubakuro-about', $slugs, true );
+		$about_page  = $GLOBALS['tsubakuro_test']['submenu_pages'][ $about_index ];
+
+		$this->assertSame( 'tsubakuro-tasks', $about_page['parent_slug'] );
+		$this->assertSame( 'ツバクロについて', $about_page['menu_title'] );
+		$this->assertSame( 'edit_posts', $about_page['capability'] );
+		$this->assertSame( array( 'Tsubakuro_Admin', 'render_about' ), $about_page['callback'] );
+	}
+
+	public function test_about_page_data_is_filterable_and_contains_reference_links(): void {
+		$story_items     = Tsubakuro_Admin::get_about_story_items();
+		$value_points    = Tsubakuro_Admin::get_about_value_points();
+		$reference_links = Tsubakuro_Admin::get_about_reference_links();
+
+		$this->assertCount( 5, $story_items );
+		$this->assertSame( '巣作り', $story_items[0]['title'] );
+		$this->assertContains( 'tsubakuro_about_story_items', $GLOBALS['tsubakuro_test']['filters_applied'] );
+
+		$this->assertNotEmpty( $value_points );
+		$this->assertContains( 'tsubakuro_about_value_points', $GLOBALS['tsubakuro_test']['filters_applied'] );
+
+		$labels = array_column( $reference_links, 'label' );
+		$this->assertContains( 'タスク一覧', $labels );
+		$this->assertContains( '新規タスク追加', $labels );
+		$this->assertContains( 'MCP 設定', $labels );
+		$this->assertContains( 'tsubakuro_about_reference_links', $GLOBALS['tsubakuro_test']['filters_applied'] );
+	}
+
+	public function test_render_about_outputs_about_content_and_reference_links(): void {
+		ob_start();
+		Tsubakuro_Admin::render_about();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString( 'なぜツバクロなのか', $output );
+		$this->assertStringContainsString( 'WordPress 内の課題・依頼・改善案', $output );
+		$this->assertStringContainsString( '巣作り', $output );
+		$this->assertStringContainsString( '軽やかに巡回しながら、課題を運び、積み上げていく存在', $output );
+		$this->assertStringContainsString( 'admin.php?page=tsubakuro-tasks', $output );
+		$this->assertStringContainsString( 'admin.php?page=tsubakuro-settings', $output );
+	}
+
+	// -------------------------------------------------------------------------
 	// get_users_list()
 	// -------------------------------------------------------------------------
 

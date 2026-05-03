@@ -74,6 +74,15 @@ class Tsubakuro_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
+			'ツバクロについて',
+			'ツバクロについて',
+			'edit_posts',
+			'tsubakuro-about',
+			array( __CLASS__, 'render_about' )
+		);
+
+		add_submenu_page(
+			'tsubakuro-tasks',
 			'Tsubakuro 設定',
 			'設定',
 			'manage_options',
@@ -187,6 +196,21 @@ class Tsubakuro_Admin {
 	}
 
 	/**
+	 * Render the plugin about page.
+	 */
+	public static function render_about() {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( '権限がありません。' );
+		}
+
+		$story_items     = self::get_about_story_items();
+		$value_points    = self::get_about_value_points();
+		$reference_links = self::get_about_reference_links();
+
+		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/about.php';
+	}
+
+	/**
 	 * Render the plugin settings admin page.
 	 */
 	public static function render_settings() {
@@ -197,6 +221,81 @@ class Tsubakuro_Admin {
 		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/settings.php';
+	}
+
+	/**
+	 * Return the name-story points shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_about_story_items() {
+		$items = array(
+			array(
+				'title'       => '巣作り',
+				'description' => 'ツバメが少しずつ素材を集めて巣を完成させるように、issue を積み上げてプロジェクトの全体像を形にします。',
+			),
+			array(
+				'title'       => '往復して運ぶ',
+				'description' => '餌や泥を何度も運ぶ姿を、タスクを回し続け、対応を前に進める流れに重ねています。',
+			),
+			array(
+				'title'       => '帰ってくる',
+				'description' => '同じ場所へ戻る習性は、issue の履歴、継続対応、再発対応を WordPress 側に残す考え方につながります。',
+			),
+			array(
+				'title'       => '異変に敏感',
+				'description' => '環境の変化に影響を受けやすい性質を、問題の早期発見や状態変化の把握になぞらえています。',
+			),
+			array(
+				'title'       => '群れで動く',
+				'description' => '複数で活動する姿から、チームで issue を共有し、分担して処理するイメージを持たせています。',
+			),
+		);
+
+		return apply_filters( 'tsubakuro_about_story_items', $items );
+	}
+
+	/**
+	 * Return the value points shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_about_value_points() {
+		$points = array(
+			'サイト運用者が見ている WordPress 管理画面の中で issue を管理できること。',
+			'投稿、固定ページ、プラグイン、テーマなど、WordPress 文脈と課題を紐づけられること。',
+			'AI、手動、外部ツール実行など、課題ごとに実行先を選べること。',
+			'実行履歴や判断材料を WordPress 側に残し、後から参照できること。',
+		);
+
+		return apply_filters( 'tsubakuro_about_value_points', $points );
+	}
+
+	/**
+	 * Return reference links shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_about_reference_links() {
+		$links = array(
+			array(
+				'label'       => 'タスク一覧',
+				'description' => 'WordPress 内の課題を確認する',
+				'url'         => admin_url( 'admin.php?page=tsubakuro-tasks' ),
+			),
+			array(
+				'label'       => '新規タスク追加',
+				'description' => '課題、依頼、改善案を登録する',
+				'url'         => admin_url( 'admin.php?page=tsubakuro-task-form' ),
+			),
+			array(
+				'label'       => 'MCP 設定',
+				'description' => 'AI エージェントや外部ツールに渡す入口を確認する',
+				'url'         => admin_url( 'admin.php?page=tsubakuro-settings' ),
+			),
+		);
+
+		return apply_filters( 'tsubakuro_about_reference_links', $links );
 	}
 
 	// -------------------------------------------------------------------------
