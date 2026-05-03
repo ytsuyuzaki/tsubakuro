@@ -331,92 +331,28 @@ Content-Type: application/json
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( 'MCP クライアントへの設定方法', 'tsubakuro' ); ?></h2>
 		<p>
-			<?php esc_html_e( 'クライアントがサポートする形式に合わせて、URL 直指定型・ヘッダー指定型・ローカルブリッジ型のいずれかで設定します。', 'tsubakuro' ); ?>
-		</p>
-
-		<h3><?php esc_html_e( 'ローカルブリッジ型（Claude Desktop など）', 'tsubakuro' ); ?></h3>
-		<div class="tsubakuro-code-block-wrap">
-			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-claude-config">
-				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
-			</button>
-			<pre id="tsubakuro-claude-config" class="tsubakuro-code-block">
 			<?php
-			$example = '{
-  "mcpServers": {
-    "tsubakuro": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch",
-        "--url", "' . esc_js( $mcp_url ) . '",
-        "--header", "Authorization: Basic <Base64エンコードした認証情報>"
-      ]
-    }
-  }
-}';
-				echo esc_html( $example );
-			?>
-			</pre>
-		</div>
-
-		<h3><?php esc_html_e( 'URL とヘッダーを直接指定できるクライアント', 'tsubakuro' ); ?></h3>
-		<div class="tsubakuro-code-block-wrap">
-			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-direct-config">
-				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
-			</button>
-			<pre id="tsubakuro-direct-config" class="tsubakuro-code-block">
-			<?php
-			$direct_example = '{
-  "mcpServers": {
-    "tsubakuro": {
-      "url": "' . esc_js( $mcp_url ) . '",
-      "headers": {
-        "Authorization": "Basic <Base64エンコードした認証情報>"
-      }
-    }
-  }
-}';
-			echo esc_html( $direct_example );
-			?>
-			</pre>
-		</div>
-
-		<h3><?php esc_html_e( '環境変数からヘッダーを組み立てる運用', 'tsubakuro' ); ?></h3>
-		<div class="tsubakuro-code-block-wrap">
-			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-env-config">
-				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
-			</button>
-			<pre id="tsubakuro-env-config" class="tsubakuro-code-block">
-			<?php
-			$env_example = 'TSUBAKURO_MCP_URL="' . esc_js( $mcp_url ) . '"
-TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"';
-			echo esc_html( $env_example );
-			?>
-			</pre>
-		</div>
-
-		<h3><?php esc_html_e( 'その他の接続方式の扱い', 'tsubakuro' ); ?></h3>
-		<ul class="tsubakuro-guide-list">
-			<li><?php esc_html_e( 'OAuth クライアント ID/シークレットによる認証は、上記の「OAuth クライアント認証」セクションから設定できます。', 'tsubakuro' ); ?></li>
-			<li><?php esc_html_e( 'URL パス/クエリトークンはログ、履歴、Referer に残りやすいため推奨しません。どうしても必要なクライアント向けの将来オプション扱いです。', 'tsubakuro' ); ?></li>
-			<li><?php esc_html_e( 'OAuth や IP 制限、監査ログ、レート制限が必要な場合は、リバースプロキシや API Gateway で外側に追加する構成を検討してください。', 'tsubakuro' ); ?></li>
-		</ul>
-
-		<p><?php esc_html_e( '認証情報の生成例（ターミナル）:', 'tsubakuro' ); ?></p>
-		<div class="tsubakuro-code-block-wrap">
-			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-auth-cmd">
-				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
-			</button>
-			<pre id="tsubakuro-auth-cmd" class="tsubakuro-code-block" aria-label="<?php esc_attr_e( '認証情報生成コマンド', 'tsubakuro' ); ?>"><code><?php echo esc_html( 'echo -n "ユーザー名:アプリケーションパスワード" | base64' ); ?></code></pre>
-		</div>
-
-		<p class="description">
-			<?php
+			$mcp_guide_link = sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( admin_url( 'admin.php?page=tsubakuro-mcp-guide' ) ),
+				esc_html__( 'MCP ガイド', 'tsubakuro' )
+			);
 			echo wp_kses(
-				__( '<code>ユーザー名</code> は WordPress のログインユーザー名（メールアドレスではない）、<code>アプリケーションパスワード</code> は前のセクションで発行したパスワード（スペースを除去した文字列）に置き換えてください。', 'tsubakuro' ),
-				array( 'code' => array() )
+				sprintf(
+					/* translators: %s: link to MCP guide page */
+					__( 'MCP 接続についてのドキュメントはこちら: %s', 'tsubakuro' ),
+					$mcp_guide_link
+				),
+				array(
+					'a' => array(
+						'href' => array(),
+					),
+				)
 			);
 			?>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Codex CLI、Claude Code、GitHub Copilot、Claude.ai などの設定例と接続確認用 curl は MCP ガイドにまとめています。', 'tsubakuro' ); ?>
 		</p>
 	</div>
 </div><!-- .wrap -->
