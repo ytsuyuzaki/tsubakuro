@@ -24,22 +24,44 @@ class MockWpdb {
 		return 1;
 	}
 
-	// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+	/**
+	 * Return a single row from the mock database store, or null if none is set.
+	 *
+	 * @param string $sql         Ignored in the test stub.
+	 * @param string $output_type Ignored in the test stub.
+	 * @return array|null
+	 */
 	public function get_row( $sql, $output_type = null ) {
 		return $GLOBALS['tsubakuro_test']['wpdb_row'] ?? null;
 	}
 
-	// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+	/**
+	 * Return multiple rows from the mock database store.
+	 *
+	 * @param string $sql         Ignored in the test stub.
+	 * @param string $output_type Ignored in the test stub.
+	 * @return array
+	 */
 	public function get_results( $sql, $output_type = null ) {
 		return $GLOBALS['tsubakuro_test']['wpdb_rows'] ?? array();
 	}
 
-	// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+	/**
+	 * No-op stub that returns the SQL string unchanged (no real parameter binding).
+	 *
+	 * @param string $sql  Query template.
+	 * @param mixed  ...$args Ignored.
+	 * @return string
+	 */
 	public function prepare( $sql, ...$args ) {
 		return $sql;
 	}
 
-	// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+	/**
+	 * Returns an empty string; the test environment has no real charset to report.
+	 *
+	 * @return string
+	 */
 	public function get_charset_collate() {
 		return '';
 	}
