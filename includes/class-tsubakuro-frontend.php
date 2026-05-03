@@ -48,6 +48,24 @@ class Tsubakuro_Frontend {
 				'meta'  => array( 'class' => 'tsubakuro-admin-bar-btn' ),
 			)
 		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'tsubakuro-list',
+				'parent' => 'tsubakuro-panel-toggle',
+				'title'  => esc_html__( '一覧', 'tsubakuro' ),
+				'href'   => '#',
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'tsubakuro-new',
+				'parent' => 'tsubakuro-panel-toggle',
+				'title'  => esc_html__( '新規追加', 'tsubakuro' ),
+				'href'   => '#',
+			)
+		);
 	}
 
 	/**

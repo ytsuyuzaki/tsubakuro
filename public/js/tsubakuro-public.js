@@ -34,6 +34,14 @@
 	// =========================================================================
 	// Panel toggle
 	// =========================================================================
+	function openPanelToTab( tab ) {
+		const $panel = $( '#tsubakuro-panel' );
+		if ( ! $panel.is( ':visible' ) ) {
+			$panel.show();
+		}
+		$( '.tsubakuro-tab[data-tab="' + tab + '"]' ).trigger( 'click' );
+	}
+
 	$( document ).on(
 		'click',
 		'#wp-admin-bar-tsubakuro-panel-toggle > a',
@@ -46,6 +54,24 @@
 				$panel.show();
 				loadTaskList();
 			}
+		}
+	);
+
+	$( document ).on(
+		'click',
+		'#wp-admin-bar-tsubakuro-list > a',
+		function ( e ) {
+			e.preventDefault();
+			openPanelToTab( 'list' );
+		}
+	);
+
+	$( document ).on(
+		'click',
+		'#wp-admin-bar-tsubakuro-new > a',
+		function ( e ) {
+			e.preventDefault();
+			openPanelToTab( 'new' );
 		}
 	);
 
