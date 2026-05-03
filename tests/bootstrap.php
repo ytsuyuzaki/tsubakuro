@@ -469,6 +469,23 @@ function wp_send_json_success() {}
 function wp_safe_redirect( $location ) {
 	$GLOBALS['tsubakuro_test']['redirected_to'] = $location;
 }
+function wp_redirect( $location ) {
+	$GLOBALS['tsubakuro_test']['redirected_to'] = $location;
+}
+function wp_login_url( $redirect = '' ) {
+	$url = 'https://example.test/wp-login.php';
+	if ( $redirect ) {
+		$url .= '?redirect_to=' . rawurlencode( $redirect );
+	}
+	return $url;
+}
+function home_url( $path = '' ) {
+	return 'https://example.test' . $path;
+}
+function wp_verify_nonce( $nonce, $action = -1 ) {
+	return 'nonce' === $nonce ? 1 : false;
+}
+function status_header( $code ) {}
 function wp_die( $message = '' ) {
 	$GLOBALS['tsubakuro_test']['died'] = $message;
 }
@@ -535,6 +552,9 @@ function esc_attr_e( $text, $domain = 'default' ) {
 	echo esc_attr( $text );
 }
 function esc_url( $url ) {
+	return filter_var( (string) $url, FILTER_SANITIZE_URL );
+}
+function esc_url_raw( $url ) {
 	return filter_var( (string) $url, FILTER_SANITIZE_URL );
 }
 function selected( $selected, $current = true, $display = true ) {
