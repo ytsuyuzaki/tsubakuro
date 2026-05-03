@@ -29,11 +29,10 @@
     "lint:pkg-json": "wp-scripts lint-pkg-json",
     "lint:php": "vendor/bin/phpcs",
     "lint:php:fix": "vendor/bin/phpcbf",
-    "wp-env:test": "wp-env run tests-cli --env-cwd='wp-content/plugins/tsubakuro/' vendor/bin/phpunit",
+    "wp-env:test": "wp-env run tests-cli --env-cwd='wp-content/plugins/tsubakuro/' sh -c 'vendor/bin/phpunit && vendor/bin/phpunit -c phpunit-integration.xml.dist'",
     "wp-env:start": "wp-env start",
     "wp-env:stop": "wp-env stop",
     "wp-env:destroy": "wp-env destroy",
-    "test:wp": "wp-env run cli wp plugin activate tsubakuro && wp-env run cli wp eval-file /var/www/html/wp-content/plugins/tsubakuro/tests/integration/wp-env-smoke.php",
     "test:e2e": "wp-scripts test-playwright",
     "build:zip": "wp-scripts plugin-zip && mkdir -p dist && mv tsubakuro.zip dist/"
   }
