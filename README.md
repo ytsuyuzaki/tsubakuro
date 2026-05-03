@@ -2,6 +2,10 @@
 
 WordPress管理画面でのタスク管理プラグイン
 
+## ドキュメント
+
+- [MCP エンドポイント](docs/mcp.md) — 利用可能なパス・ツール一覧・生成AI接続フロー
+
 ## Development
 
 ```sh
