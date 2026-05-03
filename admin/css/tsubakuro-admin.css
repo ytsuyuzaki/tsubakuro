@@ -9,7 +9,10 @@
 
 /* Filter tabs */
 .tsubakuro-filter-tabs {
-	margin-bottom: 16px;
+	clear: both;
+	display: block;
+	float: none;
+	margin: 12px 0 16px;
 }
 
 /* Status badges */

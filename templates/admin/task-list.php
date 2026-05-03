@@ -37,6 +37,7 @@ $sortable_columns = array(
 	<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form' ) ); ?>" class="page-title-action">
 		<?php esc_html_e( '新規タスク追加', 'tsubakuro' ); ?>
 	</a>
+	<hr class="wp-header-end">
 
 	<?php if ( 'saved' === $message ) : ?>
 	<div class="notice notice-success is-dismissible">
