@@ -35,6 +35,7 @@ class OAuthTest extends TestCase {
 		$this->assertArrayHasKey( 'determine_current_user', $GLOBALS['tsubakuro_test']['filters'] );
 		$this->assertArrayHasKey( 'wp_ajax_tsubakuro_generate_oauth_client', $GLOBALS['tsubakuro_test']['actions'] );
 		$this->assertArrayHasKey( 'wp_ajax_tsubakuro_revoke_oauth_client', $GLOBALS['tsubakuro_test']['actions'] );
+		$this->assertArrayHasKey( 'wp_ajax_tsubakuro_revoke_grant', $GLOBALS['tsubakuro_test']['actions'] );
 		$this->assertArrayHasKey( 'admin_post_tsubakuro_oauth_consent', $GLOBALS['tsubakuro_test']['actions'] );
 		$this->assertArrayHasKey( 'admin_post_nopriv_tsubakuro_oauth_consent', $GLOBALS['tsubakuro_test']['actions'] );
 	}
@@ -706,5 +707,210 @@ class OAuthTest extends TestCase {
 
 		$this->expectNotToPerformAssertions();
 		Tsubakuro_OAuth::ajax_revoke_client();
+	}
+
+	// -------------------------------------------------------------------------
+	// build_auto_approve_redirect() – auto-approve business logic
+	// -------------------------------------------------------------------------
+
+	public function test_build_auto_approve_redirect_returns_url_with_code_and_state(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'Auto App', 1, 'https://claude.ai/callback' );
+		$client    = Tsubakuro_OAuth::get_clients()[0];
+
+		$result = Tsubakuro_OAuth::build_auto_approve_redirect(
+			$client,
+			1,
+			'https://claude.ai/callback',
+			'abc123'
+		);
+
+		$this->assertIsString( $result );
+		$this->assertStringContainsString( 'claude.ai', $result );
+		$this->assertStringContainsString( 'code=', $result );
+		$this->assertStringContainsString( 'state=abc123', $result );
+	}
+
+	public function test_build_auto_approve_redirect_omits_state_when_empty(): void {
+		$generated = Tsubakuro_OAuth::generate_client( 'App', 1, 'https://example.com/cb' );
+		$client    = Tsubakuro_OAuth::get_clients()[0];
+
+		$result = Tsubakuro_OAuth::build_auto_approve_redirect(
+			$client,
+			1,
+			'https://example.com/cb',
+			''
+		);
+
+		$this->assertStringContainsString( 'code=', $result );
+		$this->assertStringNotContainsString( 'state=', $result );
+	}
+
+	public function test_build_auto_approve_redirect_stores_valid_auth_code(): void {
+		$generated    = Tsubakuro_OAuth::generate_client( 'App', 9, 'https://claude.ai/callback' );
+		$client       = Tsubakuro_OAuth::get_clients()[0];
+		$redirect_uri = 'https://claude.ai/callback';
+
+		$redirect_url = Tsubakuro_OAuth::build_auto_approve_redirect( $client, 9, $redirect_uri, '' );
+
+		// Extract the code from the redirect URL.
+		parse_str( parse_url( $redirect_url, PHP_URL_QUERY ), $query );
+		$code = $query['code'] ?? '';
+
+		$this->assertNotEmpty( $code );
+
+		// The code should be exchangeable for a token.
+		$req = new WP_REST_Request(
+			array(),
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => $code,
+				'redirect_uri'  => $redirect_uri,
+			)
+		);
+		$result = Tsubakuro_OAuth::handle_token( $req );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Bearer', $result['token_type'] );
+		$this->assertNotEmpty( $result['access_token'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// record_grant() / get_user_grants() / revoke_grant()
+	// -------------------------------------------------------------------------
+
+	public function test_get_user_grants_returns_empty_when_no_grants(): void {
+		$grants = Tsubakuro_OAuth::get_user_grants( 1 );
+		$this->assertSame( array(), $grants );
+	}
+
+	public function test_get_user_grants_returns_only_current_users_grants(): void {
+		// Simulate the full flow for user 9 to generate a grant.
+		$generated    = Tsubakuro_OAuth::generate_client( 'AC Client', 9, 'https://claude.ai/callback' );
+		$redirect_uri = 'https://claude.ai/callback';
+
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'grantcode1' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $generated['client_id'],
+			'user_id'      => 9,
+			'redirect_uri' => $redirect_uri,
+		);
+
+		$req = new WP_REST_Request(
+			array(),
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'grantcode1',
+				'redirect_uri'  => $redirect_uri,
+			)
+		);
+		Tsubakuro_OAuth::handle_token( $req );
+
+		// User 9 should have 1 grant; user 5 should have none.
+		$grants_9 = Tsubakuro_OAuth::get_user_grants( 9 );
+		$grants_5 = Tsubakuro_OAuth::get_user_grants( 5 );
+
+		$this->assertCount( 1, $grants_9 );
+		$this->assertSame( $generated['client_id'], $grants_9[0]['client_id'] );
+		$this->assertSame( 9, $grants_9[0]['user_id'] );
+		$this->assertArrayHasKey( 'grant_id', $grants_9[0] );
+		$this->assertCount( 0, $grants_5 );
+	}
+
+	public function test_revoke_grant_invalidates_token_and_removes_grant(): void {
+		$generated    = Tsubakuro_OAuth::generate_client( 'AC Client', 7, 'https://example.com/cb' );
+		$redirect_uri = 'https://example.com/cb';
+
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'revoketest1' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $generated['client_id'],
+			'user_id'      => 7,
+			'redirect_uri' => $redirect_uri,
+		);
+
+		// Exchange code for token to create a grant.
+		$req = new WP_REST_Request(
+			array(),
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'revoketest1',
+				'redirect_uri'  => $redirect_uri,
+			)
+		);
+		$token_resp = Tsubakuro_OAuth::handle_token( $req );
+		$token      = $token_resp['access_token'];
+
+		// Verify the token is valid before revocation.
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token;
+		$this->assertSame( 7, Tsubakuro_OAuth::authenticate_bearer_token( false ) );
+
+		// Get the grant and revoke it.
+		$grants   = Tsubakuro_OAuth::get_user_grants( 7 );
+		$grant_id = $grants[0]['grant_id'];
+
+		$result = Tsubakuro_OAuth::revoke_grant( $grant_id, 7 );
+
+		$this->assertTrue( $result );
+		$this->assertCount( 0, Tsubakuro_OAuth::get_user_grants( 7 ) );
+
+		// Token must be invalidated.
+		$this->assertFalse( Tsubakuro_OAuth::authenticate_bearer_token( false ) );
+	}
+
+	public function test_revoke_grant_returns_error_for_unknown_grant(): void {
+		$result = Tsubakuro_OAuth::revoke_grant( 'nonexistent_grant_id', 7 );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
+	}
+
+	public function test_revoke_grant_returns_error_when_user_does_not_own_grant(): void {
+		// Create a grant for user 9.
+		$generated    = Tsubakuro_OAuth::generate_client( 'AC Client', 9, 'https://example.com/cb' );
+		$redirect_uri = 'https://example.com/cb';
+
+		$code_key = 'tsubakuro_code_' . hash( 'sha256', 'ownertest1' );
+		$GLOBALS['tsubakuro_test']['transients'][ $code_key ] = array(
+			'client_id'    => $generated['client_id'],
+			'user_id'      => 9,
+			'redirect_uri' => $redirect_uri,
+		);
+		$req = new WP_REST_Request(
+			array(),
+			array(
+				'grant_type'    => 'authorization_code',
+				'client_id'     => $generated['client_id'],
+				'client_secret' => $generated['client_secret'],
+				'code'          => 'ownertest1',
+				'redirect_uri'  => $redirect_uri,
+			)
+		);
+		Tsubakuro_OAuth::handle_token( $req );
+
+		$grants   = Tsubakuro_OAuth::get_user_grants( 9 );
+		$grant_id = $grants[0]['grant_id'];
+
+		// User 5 (not the owner) and without manage_options should be rejected.
+		$GLOBALS['tsubakuro_test']['can']['manage_options'] = false;
+		$result = Tsubakuro_OAuth::revoke_grant( $grant_id, 5 );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'forbidden', $result->get_error_code() );
+	}
+
+	// -------------------------------------------------------------------------
+	// ajax_revoke_grant()
+	// -------------------------------------------------------------------------
+
+	public function test_ajax_revoke_grant_returns_error_when_grant_id_missing(): void {
+		$_POST = array( 'nonce' => 'nonce' );
+
+		$this->expectNotToPerformAssertions();
+		Tsubakuro_OAuth::ajax_revoke_grant();
 	}
 }

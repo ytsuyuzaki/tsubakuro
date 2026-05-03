@@ -43,6 +43,9 @@ class Tsubakuro_OAuth {
 	/** Transient key prefix for authorization codes. */
 	const TRANSIENT_CODE_PREFIX = 'tsubakuro_code_';
 
+	/** WordPress option key that stores issued grants. */
+	const OPTION_GRANTS = 'tsubakuro_oauth_grants';
+
 	/** Access token lifetime in seconds (1 hour). */
 	const TOKEN_EXPIRY = 3600;
 
@@ -61,6 +64,7 @@ class Tsubakuro_OAuth {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 		add_action( 'wp_ajax_tsubakuro_generate_oauth_client', array( __CLASS__, 'ajax_generate_client' ) );
 		add_action( 'wp_ajax_tsubakuro_revoke_oauth_client', array( __CLASS__, 'ajax_revoke_client' ) );
+		add_action( 'wp_ajax_tsubakuro_revoke_grant', array( __CLASS__, 'ajax_revoke_grant' ) );
 		add_action( 'admin_post_tsubakuro_oauth_consent', array( __CLASS__, 'handle_consent_post' ) );
 		add_action( 'admin_post_nopriv_tsubakuro_oauth_consent', array( __CLASS__, 'handle_nopriv_consent' ) );
 	}
@@ -287,6 +291,8 @@ class Tsubakuro_OAuth {
 			)
 		);
 
+		self::record_grant( $client_id, (int) $code_data['user_id'], $token );
+
 		return rest_ensure_response(
 			array(
 				'access_token' => $token,
@@ -379,18 +385,37 @@ class Tsubakuro_OAuth {
 			exit;
 		}
 
-		$nonce       = wp_create_nonce( 'tsubakuro_oauth_consent_' . $client_id );
-		$consent_url = admin_url( 'admin-post.php' );
+		// User is already logged in: issue an authorization code immediately
+		// without showing a separate consent form.
+		$redirect_url = self::build_auto_approve_redirect( $client, get_current_user_id(), $redirect_uri, $state );
 
-		ob_start();
-		include TSUBAKURO_PLUGIN_DIR . 'templates/oauth/consent.php';
-		$html = ob_get_clean();
-
-		status_header( 200 );
-		header( 'Content-Type: text/html; charset=utf-8' );
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template already uses appropriate escaping
-		echo $html;
+		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- redirect_uri was validated against the registered client value.
+		wp_redirect( $redirect_url );
 		exit;
+	}
+
+	/**
+	 * Build the redirect URL for the auto-approve authorization code flow.
+	 *
+	 * Issues an authorization code for the given user and returns the redirect
+	 * URL (redirect_uri with code and optional state appended).
+	 *
+	 * Separated from handle_authorize() to allow unit-testing the business
+	 * logic without triggering the exit() call.
+	 *
+	 * @param array  $client       Registered client record.
+	 * @param int    $user_id      WordPress user ID.
+	 * @param string $redirect_uri Validated redirect URI for this client.
+	 * @param string $state        Opaque state value from the request.
+	 * @return string Redirect URL.
+	 */
+	public static function build_auto_approve_redirect( $client, $user_id, $redirect_uri, $state ) {
+		$code            = self::issue_code( $client, $user_id, $redirect_uri );
+		$redirect_params = array( 'code' => $code );
+		if ( $state ) {
+			$redirect_params['state'] = $state;
+		}
+		return add_query_arg( $redirect_params, $redirect_uri );
 	}
 
 	// -------------------------------------------------------------------------
@@ -647,6 +672,88 @@ class Tsubakuro_OAuth {
 	}
 
 	// -------------------------------------------------------------------------
+	// Grant management (per-user authorizations)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return all grants for a specific WordPress user.
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @return array
+	 */
+	public static function get_user_grants( $user_id ) {
+		$grants = get_option( self::OPTION_GRANTS, array() );
+		return array_values(
+			array_filter(
+				$grants,
+				static function ( $grant ) use ( $user_id ) {
+					return (int) $grant['user_id'] === (int) $user_id;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Revoke a grant: invalidate its access token and remove it from storage.
+	 *
+	 * The caller must ensure the current user is either the grant owner or
+	 * has the manage_options capability before invoking this method.
+	 *
+	 * @param string $grant_id Grant ID to revoke.
+	 * @param int    $user_id  User ID that owns the grant (used for ownership check).
+	 * @return true|WP_Error True on success, WP_Error when the grant is not found
+	 *                        or the caller does not have permission.
+	 */
+	public static function revoke_grant( $grant_id, $user_id ) {
+		$grants  = get_option( self::OPTION_GRANTS, array() );
+		$updated = array();
+		$found   = false;
+
+		foreach ( $grants as $grant ) {
+			if ( $grant['grant_id'] === $grant_id ) {
+				if ( (int) $grant['user_id'] !== (int) $user_id && ! current_user_can( 'manage_options' ) ) {
+					return new WP_Error( 'forbidden', '権限がありません。', array( 'status' => 403 ) );
+				}
+				// Invalidate the stored access token.
+				if ( ! empty( $grant['token_hash'] ) ) {
+					delete_transient( self::TRANSIENT_PREFIX . $grant['token_hash'] );
+				}
+				$found = true;
+				// Skip this grant so it is removed from the updated list.
+				continue;
+			}
+			$updated[] = $grant;
+		}
+
+		if ( ! $found ) {
+			return new WP_Error( 'not_found', '指定された認証が見つかりません。', array( 'status' => 404 ) );
+		}
+
+		update_option( self::OPTION_GRANTS, array_values( $updated ) );
+		return true;
+	}
+
+	/**
+	 * AJAX: revoke a grant (authorized connection) for the current user.
+	 */
+	public static function ajax_revoke_grant() {
+		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
+
+		$grant_id = sanitize_text_field( wp_unslash( $_POST['grant_id'] ?? '' ) );
+		if ( empty( $grant_id ) ) {
+			wp_send_json_error( array( 'message' => 'grant_id は必須です。' ), 400 );
+		}
+
+		$result = self::revoke_grant( $grant_id, get_current_user_id() );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), (int) ( $result->get_error_data()['status'] ?? 400 ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'revoked' => true ) );
+	}
+
+	// -------------------------------------------------------------------------
 	// Private helpers
 	// -------------------------------------------------------------------------
 
@@ -730,6 +837,30 @@ class Tsubakuro_OAuth {
 		);
 
 		return $token;
+	}
+
+	/**
+	 * Persist a grant record linking a client, user, and access token.
+	 *
+	 * Called after a token is successfully issued via the authorization_code
+	 * flow so users can later view and revoke their authorized connections.
+	 *
+	 * @param string $client_id OAuth client ID.
+	 * @param int    $user_id   WordPress user ID.
+	 * @param string $token     Plain-text access token (stored only as a hash).
+	 */
+	private static function record_grant( $client_id, $user_id, $token ) {
+		$grant_id = bin2hex( random_bytes( 8 ) );
+
+		$grants   = get_option( self::OPTION_GRANTS, array() );
+		$grants[] = array(
+			'grant_id'   => $grant_id,
+			'client_id'  => $client_id,
+			'user_id'    => (int) $user_id,
+			'token_hash' => hash( 'sha256', $token ),
+			'created_at' => current_time( 'mysql' ),
+		);
+		update_option( self::OPTION_GRANTS, $grants );
 	}
 
 	/**

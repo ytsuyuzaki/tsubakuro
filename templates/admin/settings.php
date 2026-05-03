@@ -193,6 +193,40 @@ $metadata_url  = rest_url( Tsubakuro_REST_API::NAMESPACE . '/oauth/metadata' );
 						><?php esc_html_e( '削除', 'tsubakuro' ); ?></button>
 					</td>
 				</tr>
+					<?php
+					if ( ! empty( $client['redirect_uri'] ) ) :
+						$full_authorize_url = add_query_arg(
+							array(
+								'response_type' => 'code',
+								'client_id'     => $client['client_id'],
+								'redirect_uri'  => $client['redirect_uri'],
+							),
+							$authorize_url
+						);
+							$auth_url_id    = 'tsubakuro-auth-url-' . esc_attr( $client['client_id'] );
+						?>
+				<tr>
+					<td colspan="5">
+						<label for="<?php echo esc_attr( $auth_url_id ); ?>" style="font-size:12px;color:#50575e;">
+							<?php esc_html_e( '認証 URL（ログイン済みユーザーがアクセスすると即時認証されます）', 'tsubakuro' ); ?>
+						</label>
+						<div class="tsubakuro-url-row" style="margin-top:4px;">
+							<input
+								type="text"
+								id="<?php echo esc_attr( $auth_url_id ); ?>"
+								class="large-text code"
+								value="<?php echo esc_attr( $full_authorize_url ); ?>"
+								readonly
+							/>
+							<button
+								type="button"
+								class="button tsubakuro-copy-btn"
+								data-target="<?php echo esc_attr( $auth_url_id ); ?>"
+							><?php esc_html_e( 'コピー', 'tsubakuro' ); ?></button>
+						</div>
+					</td>
+				</tr>
+					<?php endif; ?>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
@@ -200,7 +234,57 @@ $metadata_url  = rest_url( Tsubakuro_REST_API::NAMESPACE . '/oauth/metadata' );
 	</div>
 
 	<!-- ======================================================
-		Section 3 – アプリケーションパスワードの作成
+		Section 3 – 認証済みの接続（ grants ）
+		====================================================== -->
+	<?php
+	$current_user_id   = get_current_user_id();
+	$user_grants       = Tsubakuro_OAuth::get_user_grants( $current_user_id );
+	$oauth_clients_map = array();
+	foreach ( Tsubakuro_OAuth::get_clients() as $c ) {
+		$oauth_clients_map[ $c['client_id'] ] = $c['name'];
+	}
+	?>
+	<div class="tsubakuro-settings-card">
+		<h2><?php esc_html_e( '認証済みの接続', 'tsubakuro' ); ?></h2>
+		<p class="description">
+			<?php esc_html_e( 'あなたのアカウントに対して許可された OAuth 接続の一覧です。不要な接続は「解除」ボタンで無効化できます。', 'tsubakuro' ); ?>
+		</p>
+
+		<?php if ( empty( $user_grants ) ) : ?>
+			<p><?php esc_html_e( '現在、認証済みの接続はありません。', 'tsubakuro' ); ?></p>
+		<?php else : ?>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'クライアント名', 'tsubakuro' ); ?></th>
+						<th><?php esc_html_e( '認証日時', 'tsubakuro' ); ?></th>
+						<th><?php esc_html_e( '操作', 'tsubakuro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $user_grants as $grant ) : ?>
+					<tr>
+						<td><?php echo esc_html( $oauth_clients_map[ $grant['client_id'] ] ?? $grant['client_id'] ); ?></td>
+						<td><?php echo esc_html( $grant['created_at'] ?? '' ); ?></td>
+						<td>
+							<button
+								type="button"
+								class="button button-small tsubakuro-revoke-grant"
+								data-grant-id="<?php echo esc_attr( $grant['grant_id'] ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'tsubakuro_admin' ) ); ?>"
+								data-ajax-url="<?php echo esc_attr( admin_url( 'admin-ajax.php' ) ); ?>"
+								data-confirm="<?php esc_attr_e( 'この接続を解除しますか？', 'tsubakuro' ); ?>"
+							><?php esc_html_e( '解除', 'tsubakuro' ); ?></button>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+	</div>
+
+	<!-- ======================================================
+		Section 4 – アプリケーションパスワードの作成
 		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( '認証キー（アプリケーションパスワード）の作成', 'tsubakuro' ); ?></h2>
@@ -338,7 +422,7 @@ $metadata_url  = rest_url( Tsubakuro_REST_API::NAMESPACE . '/oauth/metadata' );
 	</div>
 
 	<!-- ======================================================
-		Section 3 – MCP クライアントへの設定方法
+		Section 5 – MCP クライアントへの設定方法
 		====================================================== -->
 	<div class="tsubakuro-settings-card">
 		<h2><?php esc_html_e( 'MCP クライアントへの設定方法', 'tsubakuro' ); ?></h2>
@@ -515,6 +599,42 @@ $metadata_url  = rest_url( Tsubakuro_REST_API::NAMESPACE . '/oauth/metadata' );
 				.catch( function () {
 					// eslint-disable-next-line no-alert
 					window.alert( '通信エラーが発生しました。' );
+				} );
+		} );
+	} );
+
+	// 認証済み接続の解除
+	document.querySelectorAll( '.tsubakuro-revoke-grant' ).forEach( function ( btn ) {
+		btn.addEventListener( 'click', function () {
+			var confirmMsg = btn.getAttribute( 'data-confirm' ) || 'この接続を解除しますか？';
+			// eslint-disable-next-line no-alert
+			if ( ! window.confirm( confirmMsg ) ) { return; }
+
+			var grantId = btn.getAttribute( 'data-grant-id' );
+			var ajaxUrl = btn.getAttribute( 'data-ajax-url' );
+			var nonce   = btn.getAttribute( 'data-nonce' );
+
+			var formData = new FormData();
+			formData.append( 'action', 'tsubakuro_revoke_grant' );
+			formData.append( 'nonce', nonce );
+			formData.append( 'grant_id', grantId );
+
+			btn.disabled = true;
+			fetch( ajaxUrl, { method: 'POST', body: formData } )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( data ) {
+					if ( data.success ) {
+						window.location.reload();
+					} else {
+						// eslint-disable-next-line no-alert
+						window.alert( ( data.data && data.data.message ) || '解除に失敗しました。' );
+						btn.disabled = false;
+					}
+				} )
+				.catch( function () {
+					// eslint-disable-next-line no-alert
+					window.alert( '通信エラーが発生しました。' );
+					btn.disabled = false;
 				} );
 		} );
 	} );
