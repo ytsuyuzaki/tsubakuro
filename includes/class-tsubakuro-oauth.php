@@ -184,8 +184,8 @@ class Tsubakuro_OAuth {
 	 * @return array Client data including client_secret.
 	 */
 	public static function generate_client( $name, $user_id ) {
-		$client_id     = wp_generate_password( 16, false );
-		$client_secret = wp_generate_password( 40, false );
+		$client_id     = bin2hex( random_bytes( 16 ) );
+		$client_secret = bin2hex( random_bytes( 32 ) );
 
 		$client = array(
 			'client_id'   => $client_id,
@@ -297,7 +297,7 @@ class Tsubakuro_OAuth {
 	 * @return string Plain-text access token.
 	 */
 	private static function issue_token( $client ) {
-		$token     = wp_generate_password( 40, false );
+		$token     = bin2hex( random_bytes( 32 ) );
 		$token_key = self::TRANSIENT_PREFIX . hash( 'sha256', $token );
 
 		set_transient(

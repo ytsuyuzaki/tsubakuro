@@ -224,7 +224,7 @@ $profile_url = admin_url( 'profile.php' );
 			</button>
 			<pre id="tsubakuro-token-request-example" class="tsubakuro-code-block">
 			<?php
-			$token_example = 'POST ' . esc_js( $token_url ) . '
+			$token_example = 'POST ' . esc_html( $token_url ) . '
 Content-Type: application/json
 
 {
