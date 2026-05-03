@@ -6,17 +6,133 @@ WordPress管理画面でのタスク管理プラグイン
 
 - MCP エンドポイント、利用可能なツール、生成AI接続フローは WordPress 管理画面の「Tsubakuro」→「MCP ガイド」で確認できます。
 
+## MCP リモートサーバー
+
+このプラグインは WordPress REST API 上に Streamable HTTP 形式の MCP エンドポイントを公開します。
+
+- URL: `https://gaichubase.com/wp-json/tsubakuro/v1/mcp`
+- Transport: Streamable HTTP
+- JSON-RPC: `2.0`
+- 認証: `Authorization: Basic <Base64(username:application_password)>` またはプラグイン発行の `Bearer` トークン
+- 最小ツール: `ping`
+
+WordPress の Application Passwords を使う場合は、`ユーザー名:アプリケーションパスワード` を Base64 エンコードして `Authorization` ヘッダーに設定します。
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}'
+```
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+```
+
+```sh
+curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Basic <Base64エンコードした認証情報>" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ping","arguments":{}}}'
+```
+
+### Codex CLI
+
+`~/.codex/config.toml` に追加します。
+
+```toml
+[mcp_servers.tsubakuro]
+url = "https://gaichubase.com/wp-json/tsubakuro/v1/mcp"
+http_headers = { "Authorization" = "Basic <Base64エンコードした認証情報>" }
+```
+
+環境変数から渡す場合:
+
+```toml
+[mcp_servers.tsubakuro]
+url = "https://gaichubase.com/wp-json/tsubakuro/v1/mcp"
+env_http_headers = { "Authorization" = "TSUBAKURO_MCP_AUTH" }
+```
+
+```sh
+export TSUBAKURO_MCP_AUTH="Basic <Base64エンコードした認証情報>"
+codex mcp list
+```
+
+### Claude Code
+
+HTTP transport と `Authorization` ヘッダーを指定します。
+
+```sh
+claude mcp add --transport http tsubakuro \
+  https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  --header "Authorization: Basic <Base64エンコードした認証情報>"
+```
+
+JSON で追加する場合:
+
+```sh
+claude mcp add-json tsubakuro \
+  '{"type":"http","url":"https://gaichubase.com/wp-json/tsubakuro/v1/mcp","headers":{"Authorization":"Basic <Base64エンコードした認証情報>"}}'
+```
+
+### GitHub Copilot / VS Code
+
+ワークスペースの `.vscode/mcp.json` に追加します。
+
+```json
+{
+  "servers": {
+    "tsubakuro": {
+      "type": "http",
+      "url": "https://gaichubase.com/wp-json/tsubakuro/v1/mcp",
+      "headers": {
+        "Authorization": "Basic ${input:tsubakuro-basic-auth}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "tsubakuro-basic-auth",
+      "description": "Authorization header value for Tsubakuro MCP",
+      "password": true
+    }
+  ]
+}
+```
+
+GitHub Copilot CLI を使う場合:
+
+```sh
+copilot mcp add tsubakuro \
+  --type http \
+  --url https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
+  --header "Authorization=Basic <Base64エンコードした認証情報>"
+```
+
+### Claude.ai
+
+Claude.ai のカスタムコネクタは、Claude 側のクラウド環境から公開 URL に接続します。`https://gaichubase.com/wp-json/tsubakuro/v1/mcp` がインターネットから到達可能である必要があります。
+
+Pro / Max では `Customize` → `Connectors` → `Add custom connector` から URL を追加します。Team / Enterprise では管理者が Organization settings の Connectors から追加します。
+
+このプラグインの現在の認証は Basic / Bearer ヘッダー方式です。Claude.ai 側で任意の `Authorization` ヘッダーを設定できない場合は、OAuth 2.1 対応またはリバースプロキシ側での認証変換が必要です。
+
 ## Development
 
 ```sh
 npm install
-npm test
-npm run test:wp
+composer test
+npm run wp-env:test
 npm run build:zip
 ```
 
-- `npm test`: PHP構文チェックと軽量ユニットテストを実行します。
-- `npm run test:wp`: `wp-env` 上でプラグインを有効化し、WordPress統合スモークテストを実行します。
+- `composer test`: 軽量ユニットテストを実行します。
+- `npm run wp-env:test`: `wp-env` 上でプラグインを有効化し、WordPress統合スモークテストを実行します。
 - `npm run build:zip`: `dist/tsubakuro.zip` を作成します。
 
 ## Distribution

@@ -113,12 +113,10 @@ class TsubakuroTest extends TestCase {
 
 	public function test_mcp_manifest_exposes_expected_tools(): void {
 		$manifest = Tsubakuro_MCP::get_manifest();
-		$tools    = array_column( $manifest['tools'], 'name' );
 
-		// '2024-11-05' is the MCP protocol schema version declared by the plugin.
-		$this->assertSame( '2024-11-05', $manifest['schema_version'] );
-		$this->assertContains( 'tsubakuro_list_tasks', $tools );
-		$this->assertContains( 'tsubakuro_add_comment', $tools );
+		$this->assertSame( '2024-11-05', $manifest['protocolVersion'] );
+		$this->assertSame( 'streamable-http', $manifest['transport'] );
+		$this->assertSame( 'tsubakuro-wordpress-mcp', $manifest['serverInfo']['name'] );
 	}
 
 	public function test_mcp_dispatcher_returns_json_rpc_errors_for_invalid_requests(): void {
@@ -130,13 +128,14 @@ class TsubakuroTest extends TestCase {
 		$missing = $dispatch->invoke(
 			null,
 			array(
-				'id'     => 2,
-				'method' => 'tsubakuro_get_task',
-				'params' => array(),
+				'jsonrpc' => '2.0',
+				'id'      => 2,
+				'method'  => 'unknown/method',
+				'params'  => array(),
 			)
 		);
 
 		$this->assertSame( -32600, $invalid['error']['code'] );
-		$this->assertSame( -32602, $missing['error']['code'] );
+		$this->assertSame( -32601, $missing['error']['code'] );
 	}
 }

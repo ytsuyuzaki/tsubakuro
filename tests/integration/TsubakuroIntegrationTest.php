@@ -74,9 +74,11 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase {
 		$this->assertSame( array( 1, 2 ), $task['related_pages'], 'Related pages meta is persisted.' );
 	}
 
-	public function test_mcp_manifest_exposes_list_task_tool(): void {
+	public function test_mcp_manifest_describes_streamable_http_endpoint(): void {
 		$manifest = Tsubakuro_MCP::get_manifest();
-		$tools    = wp_list_pluck( $manifest['tools'], 'name' );
-		$this->assertContains( 'tsubakuro_list_tasks', $tools, 'MCP manifest exposes list task tool.' );
+
+		$this->assertSame( '2024-11-05', $manifest['protocolVersion'], 'MCP protocol version is declared.' );
+		$this->assertSame( 'streamable-http', $manifest['transport'], 'MCP transport is declared.' );
+		$this->assertSame( 'tsubakuro-wordpress-mcp', $manifest['serverInfo']['name'], 'MCP server name is declared.' );
 	}
 }
