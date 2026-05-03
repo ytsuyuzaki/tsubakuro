@@ -221,9 +221,7 @@ class Tsubakuro_Admin {
 			wp_die( '権限がありません。' );
 		}
 
-		$mcp_url       = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
-		$token_url     = rest_url( Tsubakuro_REST_API::NAMESPACE . '/oauth/token' );
-		$oauth_clients = Tsubakuro_OAuth::get_clients();
+		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/settings.php';
 	}
