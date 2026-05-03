@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Tsubakuro_Admin {
 
-	const COMMENT_TYPE = 'tsubakuro_task_comment';
+	const COMMENT_TYPE = 'tsubakuro_task';
 
 	/**
 	 * Register WordPress action hooks.
