@@ -8,7 +8,7 @@ define( 'ABSPATH', dirname( __DIR__ ) . '/tests/wordpress/' );
 define( 'ARRAY_A', 'ARRAY_A' );
 
 /**
- * Minimal $wpdb mock that stores comments in the test globals.
+ * Minimal $wpdb mock used by code paths that still need database-like helpers.
  */
 class MockWpdb {
 	public $prefix    = 'wp_';
@@ -18,9 +18,9 @@ class MockWpdb {
 		if ( ! empty( $GLOBALS['tsubakuro_test']['wpdb_insert_fail'] ) ) {
 			return false;
 		}
-		$next_id          = count( $GLOBALS['tsubakuro_test']['comments'] ) + 1;
-		$this->insert_id  = $next_id;
-		$GLOBALS['tsubakuro_test']['comments'][ $next_id ] = array_merge( array( 'id' => $next_id ), $data );
+		$next_id         = count( $GLOBALS['tsubakuro_test']['wpdb_inserts'] ) + 1;
+		$this->insert_id = $next_id;
+		$GLOBALS['tsubakuro_test']['wpdb_inserts'][ $next_id ] = array_merge( array( 'id' => $next_id ), $data );
 		return 1;
 	}
 
@@ -222,6 +222,7 @@ function tsubakuro_test_reset() {
 		),
 		'last_query_args'    => array(),
 		'comments'           => array(),
+		'wpdb_inserts'       => array(),
 		'wpdb_row'           => null,
 		'wpdb_rows'          => array(),
 		'wpdb_insert_fail'   => false,
@@ -332,6 +333,63 @@ function get_user_by( $field, $value ) {
 		return false;
 	}
 	return $GLOBALS['tsubakuro_test']['users'][ (int) $value ] ?? false;
+}
+
+function wp_insert_comment( $data ) {
+	if ( ! empty( $GLOBALS['tsubakuro_test']['wpdb_insert_fail'] ) ) {
+		return false;
+	}
+
+	$next_id = count( $GLOBALS['tsubakuro_test']['comments'] ) + 1;
+
+	$GLOBALS['tsubakuro_test']['comments'][ $next_id ] = (object) array(
+		'comment_ID'       => $next_id,
+		'comment_post_ID'  => (int) ( $data['comment_post_ID'] ?? 0 ),
+		'user_id'          => (int) ( $data['user_id'] ?? 0 ),
+		'comment_content'  => (string) ( $data['comment_content'] ?? '' ),
+		'comment_type'     => (string) ( $data['comment_type'] ?? '' ),
+		'comment_approved' => $data['comment_approved'] ?? 1,
+		'comment_date'     => $data['comment_date'] ?? current_time( 'mysql' ),
+	);
+
+	return $next_id;
+}
+
+function get_comment( $comment_id ) {
+	return $GLOBALS['tsubakuro_test']['comments'][ (int) $comment_id ] ?? null;
+}
+
+function get_comments( $args = array() ) {
+	$comments = array_values( $GLOBALS['tsubakuro_test']['comments'] );
+
+	$comments = array_filter(
+		$comments,
+		static function ( $comment ) use ( $args ) {
+			if ( isset( $args['post_id'] ) && (int) $args['post_id'] !== (int) $comment->comment_post_ID ) {
+				return false;
+			}
+
+			if ( isset( $args['type'] ) && (string) $args['type'] !== (string) $comment->comment_type ) {
+				return false;
+			}
+
+			if ( isset( $args['status'] ) && 'approve' === $args['status'] && 1 !== (int) $comment->comment_approved ) {
+				return false;
+			}
+
+			return true;
+		}
+	);
+
+	usort(
+		$comments,
+		static function ( $a, $b ) use ( $args ) {
+			$result = strcmp( (string) $a->comment_date, (string) $b->comment_date );
+			return ( $args['order'] ?? 'ASC' ) === 'DESC' ? -$result : $result;
+		}
+	);
+
+	return array_values( $comments );
 }
 
 function get_users() {

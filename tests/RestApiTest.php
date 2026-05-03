@@ -126,14 +126,14 @@ class RestApiTest extends TestCase {
 			'ID'           => 7,
 			'display_name' => 'Author',
 		);
-		$GLOBALS['tsubakuro_test']['wpdb_rows']   = array(
-			array(
-				'id'         => 1,
-				'task_id'    => 101,
-				'user_id'    => 7,
-				'comment'    => 'First comment',
-				'created_at' => '2026-05-01 12:00:00',
-			),
+		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
+			'comment_ID'       => 1,
+			'comment_post_ID'  => 101,
+			'user_id'          => 7,
+			'comment_content'  => 'First comment',
+			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
+			'comment_approved' => 1,
+			'comment_date'     => '2026-05-01 12:00:00',
 		);
 
 		$req    = new WP_REST_Request( array( 'id' => 101 ) );
@@ -226,14 +226,14 @@ class RestApiTest extends TestCase {
 
 	public function test_get_comments_handler_returns_comment_list(): void {
 		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task', '' );
-		$GLOBALS['tsubakuro_test']['wpdb_rows']  = array(
-			array(
-				'id'         => 1,
-				'task_id'    => 101,
-				'user_id'    => 0,
-				'comment'    => 'Hello',
-				'created_at' => '2026-05-01 09:00:00',
-			),
+		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
+			'comment_ID'       => 1,
+			'comment_post_ID'  => 101,
+			'user_id'          => 0,
+			'comment_content'  => 'Hello',
+			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
+			'comment_approved' => 1,
+			'comment_date'     => '2026-05-01 09:00:00',
 		);
 
 		$req    = new WP_REST_Request( array( 'id' => 101 ) );
@@ -272,15 +272,6 @@ class RestApiTest extends TestCase {
 			'ID'           => 7,
 			'display_name' => 'Alice',
 		);
-		// Provide the row that get_comment() will read back via MockWpdb::get_row().
-		$GLOBALS['tsubakuro_test']['wpdb_row'] = array(
-			'id'         => 1,
-			'task_id'    => 101,
-			'user_id'    => 7,
-			'comment'    => 'My comment',
-			'created_at' => '2026-05-02 00:00:00',
-		);
-
 		$req    = new WP_REST_Request( array( 'id' => 101, 'comment' => 'My comment' ) );
 		$result = Tsubakuro_REST_API::add_comment( $req );
 

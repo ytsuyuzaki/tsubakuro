@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Tsubakuro_Admin {
 
+	const COMMENT_TYPE = 'tsubakuro_task_comment';
+
 	/**
 	 * Register WordPress action hooks.
 	 */
@@ -624,7 +626,7 @@ class Tsubakuro_Admin {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Insert a comment row into the custom comments table.
+	 * Insert a task comment using WordPress core comments.
 	 *
 	 * @param int    $task_id  ID of the task.
 	 * @param int    $user_id  ID of the commenter.
@@ -632,19 +634,17 @@ class Tsubakuro_Admin {
 	 * @return int|false Inserted comment ID, or false on failure.
 	 */
 	public static function insert_comment( $task_id, $user_id, $comment ) {
-		global $wpdb;
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- inserting into a custom table.
-		return $wpdb->insert(
-			$wpdb->prefix . 'tsubakuro_comments',
+		$comment_id = wp_insert_comment(
 			array(
-				'task_id'    => (int) $task_id,
-				'user_id'    => (int) $user_id,
-				'comment'    => $comment,
-				'created_at' => current_time( 'mysql' ),
-			),
-			array( '%d', '%d', '%s', '%s' )
-		) ? $wpdb->insert_id : false;
+				'comment_post_ID'  => (int) $task_id,
+				'user_id'          => (int) $user_id,
+				'comment_content'  => $comment,
+				'comment_type'     => self::COMMENT_TYPE,
+				'comment_approved' => 1,
+			)
+		);
+
+		return $comment_id ? (int) $comment_id : false;
 	}
 
 	/**
@@ -654,31 +654,13 @@ class Tsubakuro_Admin {
 	 * @return array|null
 	 */
 	public static function get_comment( $comment_id ) {
-		global $wpdb;
+		$comment = get_comment( $comment_id );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table.
-		$row = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT * FROM {$wpdb->prefix}tsubakuro_comments WHERE id = %d",
-				$comment_id
-			),
-			ARRAY_A
-		);
-
-		if ( ! $row ) {
+		if ( ! $comment || self::COMMENT_TYPE !== $comment->comment_type ) {
 			return null;
 		}
 
-		$user = get_user_by( 'id', $row['user_id'] );
-
-		return array(
-			'id'         => (int) $row['id'],
-			'task_id'    => (int) $row['task_id'],
-			'user_id'    => (int) $row['user_id'],
-			'user_name'  => $user ? $user->display_name : '不明',
-			'comment'    => $row['comment'],
-			'created_at' => $row['created_at'],
-		);
+		return self::format_comment( $comment );
 	}
 
 	/**
@@ -688,31 +670,42 @@ class Tsubakuro_Admin {
 	 * @return array
 	 */
 	public static function get_task_comments( $task_id ) {
-		global $wpdb;
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table.
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$wpdb->prefix}tsubakuro_comments WHERE task_id = %d ORDER BY created_at ASC",
-				$task_id
-			),
-			ARRAY_A
+		$comment_objects = get_comments(
+			array(
+				'post_id' => (int) $task_id,
+				'status'  => 'approve',
+				'type'    => self::COMMENT_TYPE,
+				'orderby' => 'comment_date',
+				'order'   => 'ASC',
+			)
 		);
 
 		$comments = array();
-		foreach ( $rows as $row ) {
-			$user       = get_user_by( 'id', $row['user_id'] );
-			$comments[] = array(
-				'id'         => (int) $row['id'],
-				'task_id'    => (int) $row['task_id'],
-				'user_id'    => (int) $row['user_id'],
-				'user_name'  => $user ? $user->display_name : '不明',
-				'comment'    => $row['comment'],
-				'created_at' => $row['created_at'],
-			);
+		foreach ( $comment_objects as $comment ) {
+			$comments[] = self::format_comment( $comment );
 		}
 
 		return $comments;
+	}
+
+	/**
+	 * Format a WordPress comment for REST, AJAX, and MCP responses.
+	 *
+	 * @param WP_Comment|object $comment WordPress comment object.
+	 * @return array
+	 */
+	private static function format_comment( $comment ) {
+		$user_id = (int) $comment->user_id;
+		$user    = get_user_by( 'id', $user_id );
+
+		return array(
+			'id'         => (int) $comment->comment_ID,
+			'task_id'    => (int) $comment->comment_post_ID,
+			'user_id'    => $user_id,
+			'user_name'  => $user ? $user->display_name : '不明',
+			'comment'    => $comment->comment_content,
+			'created_at' => $comment->comment_date,
+		);
 	}
 
 	// -------------------------------------------------------------------------

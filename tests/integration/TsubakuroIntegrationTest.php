@@ -14,11 +14,30 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase {
 		$this->assertTrue( post_type_exists( 'tsubakuro_task' ), 'Task post type is registered.' );
 	}
 
-	public function test_comments_table_exists_after_activation(): void {
-		global $wpdb;
-		$comments_table = $wpdb->prefix . 'tsubakuro_comments';
-		$table_exists   = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $comments_table ) );
-		$this->assertSame( $comments_table, $table_exists, 'Comments table exists after activation.' );
+	public function test_activation_records_db_version(): void {
+		$this->assertSame( '1.0', get_option( 'tsubakuro_db_version' ), 'DB version option is recorded after activation.' );
+	}
+
+	public function test_task_comments_use_wordpress_comments(): void {
+		$task_id = wp_insert_post(
+			array(
+				'post_type'   => 'tsubakuro_task',
+				'post_title'  => 'comment storage task',
+				'post_status' => 'publish',
+			),
+			true
+		);
+		$this->assertFalse( is_wp_error( $task_id ), 'Task can be inserted.' );
+
+		$comment_id = Tsubakuro_Admin::insert_comment( $task_id, get_current_user_id(), 'Stored in wp_comments' );
+		$this->assertIsInt( $comment_id, 'Comment can be inserted.' );
+
+		$wp_comment = get_comment( $comment_id );
+		$this->assertSame( Tsubakuro_Admin::COMMENT_TYPE, $wp_comment->comment_type, 'Comment type identifies Tsubakuro comments.' );
+
+		$comments = Tsubakuro_Admin::get_task_comments( $task_id );
+		$this->assertCount( 1, $comments, 'Comment can be loaded through plugin helper.' );
+		$this->assertSame( 'Stored in wp_comments', $comments[0]['comment'] );
 	}
 
 	public function test_rest_routes_are_registered(): void {
