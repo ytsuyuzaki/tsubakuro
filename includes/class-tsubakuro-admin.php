@@ -178,7 +178,7 @@ class Tsubakuro_Admin {
 	 */
 	public static function render_mcp_guide() {
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_die( '権限がありません。' );
+			wp_die( esc_html__( '権限がありません。', 'tsubakuro' ) );
 		}
 
 		$mcp_url = rest_url( Tsubakuro_REST_API::NAMESPACE . '/mcp' );

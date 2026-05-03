@@ -3,3 +3,4 @@ vendor/
 dist/
 .wp-env/
 npm-debug.log*
+.phpunit.result.cache
