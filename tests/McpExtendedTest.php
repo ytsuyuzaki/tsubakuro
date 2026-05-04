@@ -16,7 +16,7 @@ class McpExtendedTest extends TestCase {
 		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
 	}
 
-	private function dispatch( array $rpc ): array {
+	private function dispatch( array $rpc ): ?array {
 		$reflection = new ReflectionClass( 'Tsubakuro_MCP' );
 		$method     = $reflection->getMethod( 'dispatch' );
 		$method->setAccessible( true );
@@ -121,6 +121,46 @@ class McpExtendedTest extends TestCase {
 			array(
 				'jsonrpc' => '2.0',
 				'method'  => 'initialized',
+			)
+		);
+
+		$this->assertNull( $result );
+	}
+
+	public function test_standard_initialized_notification_returns_no_json_rpc_response(): void {
+		$reflection = new ReflectionClass( 'Tsubakuro_MCP' );
+		$method     = $reflection->getMethod( 'dispatch' );
+		$method->setAccessible( true );
+		$result     = $method->invoke(
+			null,
+			array(
+				'jsonrpc' => '2.0',
+				'method'  => 'notifications/initialized',
+			)
+		);
+
+		$this->assertNull( $result );
+	}
+
+	public function test_handle_jsonrpc_returns_empty_response_for_standard_notification(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
+		$req                           = new WP_REST_Request(
+			array(),
+			array(
+				'jsonrpc' => '2.0',
+				'method'  => 'notifications/initialized',
+			)
+		);
+		$result                        = Tsubakuro_MCP::handle_jsonrpc( $req );
+
+		$this->assertSame( '', $result );
+	}
+
+	public function test_unknown_notification_returns_no_json_rpc_response(): void {
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'method'  => 'notifications/unknown',
 			)
 		);
 

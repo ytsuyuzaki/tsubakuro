@@ -129,7 +129,7 @@ class Tsubakuro_MCP {
 			}
 
 			if ( empty( $responses ) ) {
-				return self::json_response( null, 202 );
+				return self::empty_response();
 			}
 
 			return self::jsonrpc_response( $responses );
@@ -137,7 +137,7 @@ class Tsubakuro_MCP {
 
 		$response = self::dispatch( $body );
 		if ( null === $response ) {
-			return self::json_response( null, 202 );
+			return self::empty_response();
 		}
 
 		return self::jsonrpc_response( $response );
@@ -176,6 +176,7 @@ class Tsubakuro_MCP {
 				);
 
 			case 'initialized':
+			case 'notifications/initialized':
 				return $is_notification ? null : self::success_response( $id, (object) array() );
 
 			case 'tools/list':
@@ -209,6 +210,10 @@ class Tsubakuro_MCP {
 				);
 
 			default:
+				if ( $is_notification ) {
+					return null;
+				}
+
 				return self::error_response( $id, -32601, 'Method not found: ' . $method );
 		}
 	}
@@ -942,6 +947,26 @@ class Tsubakuro_MCP {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Return an empty response for JSON-RPC notifications.
+	 *
+	 * MCP clients do not expect a JSON-RPC response for notifications. Returning
+	 * JSON null makes some clients try to deserialize null as a JSON-RPC message.
+	 *
+	 * @return WP_REST_Response|string
+	 */
+	private static function empty_response() {
+		if ( class_exists( 'WP_REST_Response' ) ) {
+			$response = new WP_REST_Response( '', 202 );
+			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, MCP-Protocol-Version' );
+			$response->header( 'Access-Control-Allow-Origin', '*' );
+			return $response;
+		}
+
+		return '';
 	}
 
 	/**
