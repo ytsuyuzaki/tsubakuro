@@ -129,6 +129,72 @@
 }
 
 /* =========================================================================
+   Content preview / edit toggle
+   ========================================================================= */
+
+.tsubakuro-content-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 4px;
+}
+
+.tsubakuro-content-header label {
+	margin-bottom: 0;
+}
+
+.tsubakuro-content-tabs {
+	display: flex;
+	gap: 0;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.tsubakuro-content-tab {
+	background: #f6f7f7;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	padding: 3px 12px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.tsubakuro-content-tab + .tsubakuro-content-tab {
+	border-left: 1px solid #ddd;
+}
+
+.tsubakuro-content-tab:hover {
+	background: #e9eaec;
+}
+
+.tsubakuro-content-tab.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+.tsubakuro-content-preview {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 80px;
+	padding: 8px 10px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	background: #fafafa;
+	font-size: 14px;
+	line-height: 1.7;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: #1d2327;
+}
+
+.tsubakuro-content-preview.is-empty {
+	color: #aaa;
+	font-style: italic;
+}
+
+/* =========================================================================
    Related pages field
    ========================================================================= */
 
