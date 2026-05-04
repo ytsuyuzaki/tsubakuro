@@ -13,7 +13,7 @@ WordPress管理画面でのタスク管理プラグイン
 - URL: `https://gaichubase.com/wp-json/tsubakuro/v1/mcp`
 - Transport: Streamable HTTP
 - JSON-RPC: `2.0`
-- 認証: `Authorization: Basic <Base64(username:application_password)>` またはプラグイン発行の `Bearer` トークン
+- 認証: `Authorization: Basic <Base64(username:application_password)>`
 - ツール: `tsubakuro_list_tasks`, `tsubakuro_get_task`, `tsubakuro_create_task`, `tsubakuro_update_task`, `tsubakuro_delete_task`, `tsubakuro_add_comment`
 
 WordPress の Application Passwords を使う場合は、`ユーザー名:アプリケーションパスワード` を Base64 エンコードして `Authorization` ヘッダーに設定します。
@@ -151,14 +151,6 @@ copilot mcp add tsubakuro \
   --url https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   --header "Authorization=Basic <Base64エンコードした認証情報>"
 ```
-
-### Claude.ai
-
-Claude.ai のカスタムコネクタは、Claude 側のクラウド環境から公開 URL に接続します。`https://gaichubase.com/wp-json/tsubakuro/v1/mcp` がインターネットから到達可能である必要があります。
-
-Pro / Max では `Customize` → `Connectors` → `Add custom connector` から URL を追加します。Team / Enterprise では管理者が Organization settings の Connectors から追加します。
-
-このプラグインの現在の認証は Basic / Bearer ヘッダー方式です。Claude.ai 側で任意の `Authorization` ヘッダーを設定できない場合は、OAuth 2.1 対応またはリバースプロキシ側での認証変換が必要です。
 
 ## Development
 

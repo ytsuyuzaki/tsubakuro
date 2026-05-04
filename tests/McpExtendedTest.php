@@ -23,20 +23,6 @@ class McpExtendedTest extends TestCase {
 		return $method->invoke( null, $rpc );
 	}
 
-	private function set_valid_bearer_header(): void {
-		$generated = Tsubakuro_OAuth::generate_client( 'Test Client', 1 );
-		$req       = new WP_REST_Request(
-			array(),
-			array(
-				'grant_type'    => 'client_credentials',
-				'client_id'     => $generated['client_id'],
-				'client_secret' => $generated['client_secret'],
-			)
-		);
-		$token_response                = Tsubakuro_OAuth::handle_token( $req );
-		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token_response['access_token'];
-	}
-
 	private function make_post( int $id, string $title, string $content = '' ): object {
 		return (object) array(
 			'ID'            => $id,
@@ -416,18 +402,12 @@ class McpExtendedTest extends TestCase {
 		$this->assertTrue( Tsubakuro_MCP::check_permission() );
 	}
 
-	public function test_check_permission_returns_true_for_valid_bearer_token(): void {
-		$this->set_valid_bearer_header();
-
-		$this->assertTrue( Tsubakuro_MCP::check_permission() );
-	}
-
 	public function test_check_permission_returns_false_when_no_authorization_header(): void {
 		$this->assertFalse( Tsubakuro_MCP::check_permission() );
 	}
 
-	public function test_check_permission_returns_false_for_invalid_bearer_token(): void {
-		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer invalidtoken';
+	public function test_check_permission_returns_false_for_bearer_token(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer unsupported-token';
 
 		$this->assertFalse( Tsubakuro_MCP::check_permission() );
 	}

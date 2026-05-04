@@ -112,16 +112,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td><?php esc_html_e( 'クライアントやローカルブリッジが Authorization などのヘッダーを設定できる場合に使います。', 'tsubakuro' ); ?></td>
 				</tr>
 				<tr>
-					<td><code>OAuth 2.1 / Bearer</code></td>
-					<td><?php esc_html_e( '将来拡張または外部 proxy', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'MCP の HTTP transport では標準寄りの方式です。このプラグイン単体では OAuth endpoint や Bearer token 検証を提供していません。', 'tsubakuro' ); ?></td>
-				</tr>
-				<tr>
-					<td><?php esc_html_e( 'OAuth クライアント ID/シークレット', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'OAuth 導入時の補助情報', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'ツール呼び出し時に直接送る認証情報ではなく、OAuth フローでクライアントを識別するための情報です。', 'tsubakuro' ); ?></td>
-				</tr>
-				<tr>
 					<td><?php esc_html_e( 'URL パス/クエリトークン', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( '非推奨', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( 'URL はログ、履歴、Referer に残りやすいため採用しません。どうしても必要なクライアント向けの将来オプション扱いです。', 'tsubakuro' ); ?></td>
@@ -137,16 +127,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td><?php esc_html_e( '直接 HTTP ヘッダーを扱いにくいクライアントでは、ローカルプロセスが環境変数からヘッダーを生成して中継します。', 'tsubakuro' ); ?></td>
 				</tr>
 				<tr>
-					<td><?php esc_html_e( 'リバースプロキシ/API Gateway/OAuth proxy', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'リバースプロキシ/API Gateway', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( '運用オプション', 'tsubakuro' ); ?></td>
-					<td><?php esc_html_e( 'プラグイン外で OAuth、IP 制限、監査ログ、レート制限を追加したい場合に使います。', 'tsubakuro' ); ?></td>
+					<td><?php esc_html_e( 'プラグイン外で IP 制限、監査ログ、レート制限を追加したい場合に使います。', 'tsubakuro' ); ?></td>
 				</tr>
 			</tbody>
 		</table>
 		<p class="description">
 			<?php
 			echo wp_kses(
-				__( 'MCP 公式仕様では、HTTP transport の認可として OAuth 2.1 / Bearer token / Protected Resource Metadata が中心に整理されています。このプラグインは WordPress プラグインとして配布しやすいことを優先し、現時点では WordPress 標準の Application Passwords を採用しています。参考: <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization" target="_blank">Authorization specification</a> / <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic" target="_blank">Basic specification</a>', 'tsubakuro' ),
+				__( 'このプラグインは WordPress プラグインとして配布しやすいことを優先し、現時点では WordPress 標準の Application Passwords を採用しています。参考: <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization" target="_blank">Authorization specification</a> / <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic" target="_blank">Basic specification</a>', 'tsubakuro' ),
 				array(
 					'a' => array(
 						'href'   => array(),
@@ -658,9 +648,6 @@ echo esc_html( $env_example );
 				)
 			);
 			?>
-		</p>
-		<p class="description">
-			<?php esc_html_e( 'OAuth 2.1 / Bearer token は MCP の HTTP transport で標準寄りの方式ですが、このプラグイン単体ではまだ OAuth endpoint を提供していません。OAuth が必要な場合は、リバースプロキシや API Gateway で外側に追加する構成を検討してください。', 'tsubakuro' ); ?>
 		</p>
 	</div>
 

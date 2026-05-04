@@ -730,7 +730,6 @@ class Tsubakuro_MCP {
 				'## Authentication',
 				'',
 				'- Use `Authorization: Basic <Base64(username:application_password)>` with WordPress Application Passwords.',
-				'- Bearer tokens issued by this plugin are also accepted when valid.',
 				'- The authenticated WordPress user must have the `edit_posts` capability.',
 				'',
 				'## Tools',
@@ -868,8 +867,7 @@ class Tsubakuro_MCP {
 	 * Permission check for MCP requests.
 	 *
 	 * WordPress Application Passwords authenticate Basic Authorization before
-	 * the REST callback runs. Bearer tokens issued by this plugin are accepted
-	 * as an additional transport-friendly option.
+	 * the REST callback runs.
 	 *
 	 * @return bool
 	 */
@@ -878,10 +876,6 @@ class Tsubakuro_MCP {
 
 		if ( '' === $authorization ) {
 			return false;
-		}
-
-		if ( preg_match( '/^Bearer\s+\S+$/i', $authorization ) ) {
-			return Tsubakuro_OAuth::has_valid_bearer_token() && current_user_can( 'edit_posts' );
 		}
 
 		if ( preg_match( '/^Basic\s+\S+$/i', $authorization ) ) {
