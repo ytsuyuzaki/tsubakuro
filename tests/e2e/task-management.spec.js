@@ -44,4 +44,69 @@ test.describe( 'Tsubakuro task management', () => {
 		} );
 		expect( deleteBody.deleted ).toBe( true );
 	} );
+
+	test.describe( 'task list column visibility', () => {
+		test.beforeEach( async ( { page } ) => {
+			// Clear localStorage before each test to ensure default state.
+			await page.goto( '/wp-admin/admin.php?page=tsubakuro-tasks' );
+			await page.evaluate( () =>
+				window.localStorage.removeItem( 'tsubakuro_visible_cols' )
+			);
+			await page.reload();
+		} );
+
+		test( 'optional columns are hidden by default', async ( { page } ) => {
+			const assigneeHeader = page.locator( 'th.tsubakuro-col--assignee' );
+			const dateHeader = page.locator( 'th.tsubakuro-col--date' );
+
+			await expect( assigneeHeader ).toBeHidden();
+			await expect( dateHeader ).toBeHidden();
+		} );
+
+		test( 'display options panel opens on button click', async ( {
+			page,
+		} ) => {
+			const panel = page.locator( '#tsubakuro-screen-options-panel' );
+			await expect( panel ).toBeHidden();
+
+			await page.locator( '#tsubakuro-screen-options-toggle' ).click();
+			await expect( panel ).toBeVisible();
+		} );
+
+		test( 'checking assignee column makes it visible', async ( {
+			page,
+		} ) => {
+			await page.locator( '#tsubakuro-screen-options-toggle' ).click();
+
+			const checkbox = page.locator(
+				'.tsubakuro-col-toggle[data-column="assignee"]'
+			);
+			await checkbox.check();
+
+			const assigneeHeader = page.locator( 'th.tsubakuro-col--assignee' );
+			await expect( assigneeHeader ).toBeVisible();
+		} );
+
+		test( 'column visibility preference is persisted across page reloads', async ( {
+			page,
+		} ) => {
+			// Enable the assignee column.
+			await page.locator( '#tsubakuro-screen-options-toggle' ).click();
+			await page
+				.locator( '.tsubakuro-col-toggle[data-column="assignee"]' )
+				.check();
+
+			// Reload and verify column is still visible.
+			await page.reload();
+			const assigneeHeader = page.locator( 'th.tsubakuro-col--assignee' );
+			await expect( assigneeHeader ).toBeVisible();
+
+			// The checkbox should reflect the saved state.
+			const checkbox = page.locator(
+				'.tsubakuro-col-toggle[data-column="assignee"]'
+			);
+			await page.locator( '#tsubakuro-screen-options-toggle' ).click();
+			await expect( checkbox ).toBeChecked();
+		} );
+	} );
 } );

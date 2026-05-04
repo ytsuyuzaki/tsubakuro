@@ -29,6 +29,9 @@ $sortable_columns = array(
 	'assignee' => __( 'アサイン', 'tsubakuro' ),
 	'date'     => __( '作成日', 'tsubakuro' ),
 );
+
+// Columns hidden by default; users can enable them via the display options panel.
+$optional_columns = array( 'assignee', 'date' );
 ?>
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline">
@@ -38,6 +41,23 @@ $sortable_columns = array(
 		<?php esc_html_e( '新規タスク追加', 'tsubakuro' ); ?>
 	</a>
 	<hr class="wp-header-end">
+
+	<div class="tsubakuro-screen-options">
+		<button type="button" class="button" id="tsubakuro-screen-options-toggle" aria-expanded="false" aria-controls="tsubakuro-screen-options-panel">
+			<?php esc_html_e( '表示オプション', 'tsubakuro' ); ?> <span class="dashicons dashicons-arrow-down" aria-hidden="true"></span>
+		</button>
+		<div class="tsubakuro-screen-options-panel" id="tsubakuro-screen-options-panel" hidden>
+			<fieldset>
+				<legend><?php esc_html_e( '表示する列', 'tsubakuro' ); ?></legend>
+				<?php foreach ( $optional_columns as $col_key ) : ?>
+					<label>
+						<input type="checkbox" class="tsubakuro-col-toggle" data-column="<?php echo esc_attr( $col_key ); ?>" />
+						<?php echo esc_html( $sortable_columns[ $col_key ] ); ?>
+					</label>
+				<?php endforeach; ?>
+			</fieldset>
+		</div>
+	</div>
 
 	<?php if ( 'saved' === $message ) : ?>
 	<div class="notice notice-success is-dismissible">
@@ -150,7 +170,7 @@ $sortable_columns = array(
 							)
 						);
 						?>
-						<th scope="col" class="manage-column column-<?php echo esc_attr( $column ); ?> <?php echo esc_attr( $sort_class ); ?>">
+						<th scope="col" class="manage-column column-<?php echo esc_attr( $column ); ?> <?php echo esc_attr( $sort_class ); ?><?php echo in_array( $column, $optional_columns, true ) ? ' tsubakuro-optional-col tsubakuro-col--' . esc_attr( $column ) : ''; ?>">
 							<a href="<?php echo esc_url( $sort_url ); ?>">
 								<span><?php echo esc_html( $label ); ?></span>
 								<span class="sorting-indicators">
@@ -197,10 +217,10 @@ $sortable_columns = array(
 							<?php echo esc_html( $task['status_label'] ); ?>
 						</span>
 					</td>
-					<td>
+					<td class="tsubakuro-optional-col tsubakuro-col--assignee">
 						<?php echo $task['assignee'] ? esc_html( $task['assignee']['display_name'] ) : '&#8212;'; ?>
 					</td>
-					<td><?php echo esc_html( mysql2date( 'Y/m/d', $task['created_at'] ) ); ?></td>
+					<td class="tsubakuro-optional-col tsubakuro-col--date"><?php echo esc_html( mysql2date( 'Y/m/d', $task['created_at'] ) ); ?></td>
 					<td>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&task_id=' . $task['id'] ) ); ?>" class="button button-small">
 							<?php esc_html_e( '詳細', 'tsubakuro' ); ?>
