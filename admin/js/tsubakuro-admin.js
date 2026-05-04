@@ -3,6 +3,39 @@
 	'use strict';
 
 	// =========================================================================
+	// Content preview / edit toggle (task form page)
+	// =========================================================================
+	function setContentMode( mode ) {
+		const $textarea = $( '#tsubakuro-task-content' );
+		const $preview = $( '#tsubakuro-content-preview' );
+		const $tabs = $( '.tsubakuro-content-tab' );
+
+		$tabs.removeClass( 'is-active' );
+		$tabs.filter( '[data-mode="' + mode + '"]' ).addClass( 'is-active' );
+
+		if ( mode === 'preview' ) {
+			const text = $textarea.val();
+			if ( text ) {
+				$preview.text( text ).removeClass( 'is-empty' );
+			} else {
+				$preview
+					.text( $textarea.attr( 'placeholder' ) || '' )
+					.addClass( 'is-empty' );
+			}
+			$preview
+				.attr(
+					'aria-label',
+					$tabs.filter( '[data-mode="preview"]' ).text()
+				)
+				.show();
+			$textarea.hide();
+		} else {
+			$preview.hide();
+			$textarea.show().trigger( 'focus' );
+		}
+	}
+
+	// =========================================================================
 	// Delete task
 	// =========================================================================
 	function deleteTask( taskId ) {
@@ -371,5 +404,18 @@
 				$( '#tsubakuro-related-results' ).prop( 'hidden', true );
 			}
 		} );
+
+		// Content preview / edit toggle.
+		if ( $( '#tsubakuro-content-preview' ).length ) {
+			$( document ).on( 'click', '.tsubakuro-content-tab', function () {
+				setContentMode( $( this ).data( 'mode' ) );
+			} );
+
+			// Default: show preview when there is existing content, otherwise edit.
+			const initialMode = $( '#tsubakuro-task-content' ).val().trim()
+				? 'preview'
+				: 'edit';
+			setContentMode( initialMode );
+		}
 	} );
 } )( jQuery );

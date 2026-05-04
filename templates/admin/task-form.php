@@ -64,9 +64,16 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 			</div>
 
 			<div class="tsubakuro-form-row">
-				<label for="tsubakuro-task-content">
-					<?php esc_html_e( '内容・説明', 'tsubakuro' ); ?>
-				</label>
+				<div class="tsubakuro-content-header">
+					<label><?php esc_html_e( '内容・説明', 'tsubakuro' ); ?></label>
+					<div class="tsubakuro-content-tabs" role="group" aria-label="<?php esc_attr_e( '表示モード', 'tsubakuro' ); ?>">
+						<button type="button" class="tsubakuro-content-tab" data-mode="preview"><?php esc_html_e( 'プレビュー', 'tsubakuro' ); ?></button>
+						<button type="button" class="tsubakuro-content-tab" data-mode="edit"><?php esc_html_e( '編集', 'tsubakuro' ); ?></button>
+					</div>
+				</div>
+
+				<div id="tsubakuro-content-preview" class="tsubakuro-content-preview" aria-live="polite"></div>
+
 				<textarea id="tsubakuro-task-content" name="content" class="widefat" rows="6"
 					placeholder="<?php esc_attr_e( 'タスクの詳細を入力してください', 'tsubakuro' ); ?>"><?php echo esc_textarea( $task['content'] ?? '' ); ?></textarea>
 			</div>
