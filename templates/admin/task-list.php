@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $status_filter   = $list_args['status'] ?? '';
+$priority_filter = $list_args['priority'] ?? '';
 $assignee_filter = (int) ( $list_args['assignee'] ?? 0 );
 $search_query    = $list_args['s'] ?? '';
 $current_orderby = $list_args['orderby'] ?? 'date';
@@ -26,6 +27,7 @@ $sortable_columns = array(
 	'id'       => __( 'ID', 'tsubakuro' ),
 	'title'    => __( 'タイトル', 'tsubakuro' ),
 	'status'   => __( 'ステータス', 'tsubakuro' ),
+	'priority' => __( '優先度', 'tsubakuro' ),
 	'assignee' => __( 'アサイン', 'tsubakuro' ),
 	'date'     => __( '作成日', 'tsubakuro' ),
 );
@@ -98,6 +100,14 @@ $sortable_columns = array(
 					<?php endforeach; ?>
 				</select>
 
+				<label class="screen-reader-text" for="tsubakuro-filter-priority"><?php esc_html_e( '優先度で絞り込み', 'tsubakuro' ); ?></label>
+				<select id="tsubakuro-filter-priority" name="priority">
+					<option value=""><?php esc_html_e( 'すべての優先度', 'tsubakuro' ); ?></option>
+					<?php foreach ( Tsubakuro_Post_Types::PRIORITIES as $key => $label ) : ?>
+						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $priority_filter, $key ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
 				<label class="screen-reader-text" for="tsubakuro-filter-assignee"><?php esc_html_e( '担当者で絞り込み', 'tsubakuro' ); ?></label>
 				<select id="tsubakuro-filter-assignee" name="assignee">
 					<option value="0"><?php esc_html_e( 'すべての担当者', 'tsubakuro' ); ?></option>
@@ -166,7 +176,7 @@ $sortable_columns = array(
 			<tbody>
 			<?php if ( empty( $tasks ) ) : ?>
 				<tr>
-					<td colspan="7"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
+					<td colspan="8"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
 				</tr>
 			<?php else : ?>
 				<?php foreach ( $tasks as $task ) : ?>
@@ -195,6 +205,11 @@ $sortable_columns = array(
 					<td>
 						<span class="tsubakuro-status tsubakuro-status--<?php echo esc_attr( $task['status'] ); ?>">
 							<?php echo esc_html( $task['status_label'] ); ?>
+						</span>
+					</td>
+					<td>
+						<span class="tsubakuro-priority tsubakuro-priority--<?php echo esc_attr( $task['priority'] ); ?>">
+							<?php echo esc_html( $task['priority_label'] ); ?>
 						</span>
 					</td>
 					<td>

@@ -49,6 +49,7 @@ class Tsubakuro_REST_API {
 					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 					'args'                => array(
 						'status'       => array( 'type' => 'string' ),
+						'priority'     => array( 'type' => 'string' ),
 						'related_page' => array( 'type' => 'integer' ),
 						'per_page'     => array(
 							'type'    => 'integer',
@@ -75,6 +76,10 @@ class Tsubakuro_REST_API {
 						'status'        => array(
 							'type'    => 'string',
 							'default' => 'todo',
+						),
+						'priority'      => array(
+							'type'    => 'string',
+							'default' => 'medium',
 						),
 						'assignee'      => array(
 							'type'    => 'integer',
@@ -121,6 +126,7 @@ class Tsubakuro_REST_API {
 						),
 						'content'       => array( 'type' => 'string' ),
 						'status'        => array( 'type' => 'string' ),
+						'priority'      => array( 'type' => 'string' ),
 						'assignee'      => array( 'type' => 'integer' ),
 						'related_pages' => array(
 							'type'  => 'array',
@@ -195,6 +201,10 @@ class Tsubakuro_REST_API {
 			$args['status'] = $request->get_param( 'status' );
 		}
 
+		if ( $request->get_param( 'priority' ) ) {
+			$args['priority'] = $request->get_param( 'priority' );
+		}
+
 		if ( $request->get_param( 'related_page' ) ) {
 			$args['related_page'] = $request->get_param( 'related_page' );
 		}
@@ -231,6 +241,7 @@ class Tsubakuro_REST_API {
 			$task_id,
 			array(
 				'status'        => $request->get_param( 'status' ),
+				'priority'      => $request->get_param( 'priority' ),
 				'assignee'      => $request->get_param( 'assignee' ),
 				'related_pages' => $request->get_param( 'related_pages' ),
 			)
@@ -284,7 +295,7 @@ class Tsubakuro_REST_API {
 		wp_update_post( $update );
 
 		$meta = array();
-		foreach ( array( 'status', 'assignee', 'related_pages' ) as $field ) {
+		foreach ( array( 'status', 'priority', 'assignee', 'related_pages' ) as $field ) {
 			if ( null !== $request->get_param( $field ) ) {
 				$meta[ $field ] = $request->get_param( $field );
 			}
