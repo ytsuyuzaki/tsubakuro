@@ -205,9 +205,104 @@
 	}
 
 	// =========================================================================
-	// Event bindings
+	// Column visibility (task list page)
+	// =========================================================================
+	const OPTIONAL_COLS = [ 'priority', 'assignee', 'date' ];
+	const COL_STORAGE_KEY = 'tsubakuro_visible_cols';
+
+	function getVisibleCols() {
+		try {
+			const stored = window.localStorage.getItem( COL_STORAGE_KEY );
+			if ( stored ) {
+				return JSON.parse( stored );
+			}
+		} catch {
+			// localStorage unavailable; fall through to default.
+		}
+		return [];
+	}
+
+	function saveVisibleCols( cols ) {
+		try {
+			window.localStorage.setItem(
+				COL_STORAGE_KEY,
+				JSON.stringify( cols )
+			);
+		} catch {
+			// Ignore write failures.
+		}
+	}
+
+	function applyColumnVisibility() {
+		const visibleCols = getVisibleCols();
+		OPTIONAL_COLS.forEach( function ( col ) {
+			const isVisible = visibleCols.indexOf( col ) !== -1;
+			$(
+				'.tsubakuro-col-toggle[data-column="' +
+					$.escapeSelector( col ) +
+					'"]'
+			).prop( 'checked', isVisible );
+			$( '.tsubakuro-col--' + $.escapeSelector( col ) ).toggleClass(
+				'tsubakuro-col-visible',
+				isVisible
+			);
+		} );
+	}
+
+	// =========================================================================
 	// =========================================================================
 	$( document ).ready( function () {
+		// Apply column visibility from stored preferences.
+		applyColumnVisibility();
+
+		// Toggle display options panel.
+		$( document ).on(
+			'click',
+			'#tsubakuro-screen-options-toggle',
+			function () {
+				const $panel = $( '#tsubakuro-screen-options-panel' );
+				const isExpanded = $panel.prop( 'hidden' ) === false;
+				$panel.prop( 'hidden', isExpanded );
+				$( this ).attr(
+					'aria-expanded',
+					isExpanded ? 'false' : 'true'
+				);
+				$( this )
+					.find( '.dashicons' )
+					.toggleClass( 'dashicons-arrow-down', isExpanded )
+					.toggleClass( 'dashicons-arrow-up', ! isExpanded );
+			}
+		);
+
+		// Column visibility checkbox change.
+		$( document ).on( 'change', '.tsubakuro-col-toggle', function () {
+			const col = $( this ).data( 'column' );
+
+			// Validate column name against the allowed list.
+			if ( OPTIONAL_COLS.indexOf( col ) === -1 ) {
+				return;
+			}
+
+			const isChecked = $( this ).prop( 'checked' );
+			let visibleCols = getVisibleCols();
+
+			if ( isChecked ) {
+				if ( visibleCols.indexOf( col ) === -1 ) {
+					visibleCols.push( col );
+				}
+			} else {
+				visibleCols = visibleCols.filter( function ( c ) {
+					return c !== col;
+				} );
+			}
+
+			$( '.tsubakuro-col--' + $.escapeSelector( col ) ).toggleClass(
+				'tsubakuro-col-visible',
+				isChecked
+			);
+			saveVisibleCols( visibleCols );
+		} );
+
 		// List table: select all checkboxes.
 		$( document ).on( 'change', '.tsubakuro-select-all', function () {
 			$( '.tsubakuro-task-table tbody input[name="task_ids[]"]' ).prop(
