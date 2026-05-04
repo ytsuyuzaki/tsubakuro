@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $status_filter   = $list_args['status'] ?? '';
+$priority_filter = $list_args['priority'] ?? '';
 $assignee_filter = (int) ( $list_args['assignee'] ?? 0 );
 $search_query    = $list_args['s'] ?? '';
 $current_orderby = $list_args['orderby'] ?? 'date';
@@ -26,12 +27,13 @@ $sortable_columns = array(
 	'id'       => __( 'ID', 'tsubakuro' ),
 	'title'    => __( 'タイトル', 'tsubakuro' ),
 	'status'   => __( 'ステータス', 'tsubakuro' ),
+	'priority' => __( '優先度', 'tsubakuro' ),
 	'assignee' => __( 'アサイン', 'tsubakuro' ),
 	'date'     => __( '作成日', 'tsubakuro' ),
 );
 
 // Columns hidden by default; users can enable them via the display options panel.
-$optional_columns = array( 'assignee', 'date' );
+$optional_columns = array( 'priority', 'assignee', 'date' );
 ?>
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline">
@@ -83,8 +85,8 @@ $optional_columns = array( 'assignee', 'date' );
 
 	<ul class="subsubsub tsubakuro-filter-tabs">
 		<li>
-			<a href="<?php echo esc_url( Tsubakuro_Admin::get_task_list_url( array( 'status' => null ) ) ); ?>"
-				class="<?php echo ( '' === $status_filter ) ? 'current' : ''; ?>">
+			<a href="<?php echo esc_url( Tsubakuro_Admin::get_task_list_url( array( 'status' => 'all' ) ) ); ?>"
+				class="<?php echo ( 'all' === $status_filter ) ? 'current' : ''; ?>">
 				<?php esc_html_e( 'すべて', 'tsubakuro' ); ?>
 			</a> |
 		</li>
@@ -112,9 +114,17 @@ $optional_columns = array( 'assignee', 'date' );
 			<div class="alignleft actions">
 				<label class="screen-reader-text" for="tsubakuro-filter-status"><?php esc_html_e( 'ステータスで絞り込み', 'tsubakuro' ); ?></label>
 				<select id="tsubakuro-filter-status" name="status">
-					<option value=""><?php esc_html_e( 'すべてのステータス', 'tsubakuro' ); ?></option>
+					<option value="all" <?php selected( 'all', $status_filter ); ?>><?php esc_html_e( 'すべてのステータス', 'tsubakuro' ); ?></option>
 					<?php foreach ( Tsubakuro_Post_Types::STATUSES as $key => $label ) : ?>
 						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $status_filter, $key ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<label class="screen-reader-text" for="tsubakuro-filter-priority"><?php esc_html_e( '優先度で絞り込み', 'tsubakuro' ); ?></label>
+				<select id="tsubakuro-filter-priority" name="priority">
+					<option value=""><?php esc_html_e( 'すべての優先度', 'tsubakuro' ); ?></option>
+					<?php foreach ( Tsubakuro_Post_Types::PRIORITIES as $key => $label ) : ?>
+						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $priority_filter, $key ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>
 
@@ -186,7 +196,7 @@ $optional_columns = array( 'assignee', 'date' );
 			<tbody>
 			<?php if ( empty( $tasks ) ) : ?>
 				<tr>
-					<td colspan="7"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
+					<td colspan="8"><?php esc_html_e( 'タスクがありません。', 'tsubakuro' ); ?></td>
 				</tr>
 			<?php else : ?>
 				<?php foreach ( $tasks as $task ) : ?>
@@ -215,6 +225,11 @@ $optional_columns = array( 'assignee', 'date' );
 					<td>
 						<span class="tsubakuro-status tsubakuro-status--<?php echo esc_attr( $task['status'] ); ?>">
 							<?php echo esc_html( $task['status_label'] ); ?>
+						</span>
+					</td>
+					<td class="tsubakuro-optional-col tsubakuro-col--priority">
+						<span class="tsubakuro-priority tsubakuro-priority--<?php echo esc_attr( $task['priority'] ); ?>">
+							<?php echo esc_html( $task['priority_label'] ); ?>
 						</span>
 					</td>
 					<td class="tsubakuro-optional-col tsubakuro-col--assignee">

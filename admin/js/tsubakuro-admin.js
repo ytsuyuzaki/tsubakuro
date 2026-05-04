@@ -207,7 +207,7 @@
 	// =========================================================================
 	// Column visibility (task list page)
 	// =========================================================================
-	const OPTIONAL_COLS = [ 'assignee', 'date' ];
+	const OPTIONAL_COLS = [ 'priority', 'assignee', 'date' ];
 	const COL_STORAGE_KEY = 'tsubakuro_visible_cols';
 
 	function getVisibleCols() {

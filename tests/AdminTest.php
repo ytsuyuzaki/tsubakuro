@@ -108,9 +108,25 @@ class AdminTest extends TestCase {
 
 		$args = Tsubakuro_Admin::get_task_list_args_from_request();
 
-		$this->assertArrayNotHasKey( 'status', $args );
+		$this->assertSame( 'todo', $args['status'] );
 		$this->assertSame( 'date', $args['orderby'] );
 		$this->assertSame( 'DESC', $args['order'] );
+	}
+
+	public function test_task_list_args_from_request_defaults_to_todo_when_no_status_param(): void {
+		$_GET = array();
+
+		$args = Tsubakuro_Admin::get_task_list_args_from_request();
+
+		$this->assertSame( 'todo', $args['status'] );
+	}
+
+	public function test_task_list_args_from_request_accepts_all_as_show_all(): void {
+		$_GET = array( 'status' => 'all' );
+
+		$args = Tsubakuro_Admin::get_task_list_args_from_request();
+
+		$this->assertSame( 'all', $args['status'] );
 	}
 
 	public function test_render_task_list_outputs_wp_style_controls_and_task_rows(): void {
