@@ -33,13 +33,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</thead>
 			<tbody>
 				<tr>
-					<td><?php esc_html_e( 'ディスカバリー（マニフェスト取得）', 'tsubakuro' ); ?></td>
-					<td><code>GET</code></td>
+					<td><?php esc_html_e( 'ツール呼び出し（JSON-RPC 2.0）', 'tsubakuro' ); ?></td>
+					<td><code>POST</code></td>
 					<td><code>/wp-json/tsubakuro/v1/mcp</code></td>
 				</tr>
 				<tr>
-					<td><?php esc_html_e( 'ツール呼び出し（JSON-RPC 2.0）', 'tsubakuro' ); ?></td>
-					<td><code>POST</code></td>
+					<td><?php esc_html_e( 'GET リクエスト', 'tsubakuro' ); ?></td>
+					<td><code>GET</code></td>
 					<td><code>/wp-json/tsubakuro/v1/mcp</code></td>
 				</tr>
 			</tbody>
@@ -48,12 +48,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php esc_html_e( 'このサイトの MCP エンドポイント URL:', 'tsubakuro' ); ?>
 			<code><?php echo esc_html( $mcp_url ); ?></code>
 		</p>
-		<p><?php esc_html_e( 'ディスカバリーを呼び出すと、利用可能なツールの一覧を含む MCP サーバーマニフェストが返ります。', 'tsubakuro' ); ?></p>
+		<p><?php esc_html_e( 'このエンドポイントは POST の JSON-RPC 2.0 リクエストを受け付けます。GET は一部の MCP クライアントが SSE ストリームとして扱うため、互換性のため無効化しています。', 'tsubakuro' ); ?></p>
 		<div class="tsubakuro-code-block-wrap">
 			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-manifest-example">
 				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 			</button>
-			<pre id="tsubakuro-guide-manifest-example" class="tsubakuro-code-block"><?php echo esc_html( '{"schema_version":"2024-11-05","name":"tsubakuro-task-manager","version":"1.0.0","description":"WordPress task management plugin - manage tasks, comments, status, assignees and related pages.","tools":[...]}' ); ?></pre>
+			<pre id="tsubakuro-guide-manifest-example" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example-client","version":"1.0.0"}}}' ); ?></pre>
 		</div>
 	</div>
 

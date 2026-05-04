@@ -59,6 +59,10 @@ class Tsubakuro_MCP {
 	/**
 	 * Handle GET /mcp.
 	 *
+	 * MCP Streamable HTTP uses POST for JSON-RPC messages. Some clients open
+	 * GET as an optional SSE stream and try to decode any response as MCP
+	 * messages, so do not return a non-JSON-RPC manifest here.
+	 *
 	 * @return WP_REST_Response|array
 	 */
 	public static function handle_get() {
@@ -66,7 +70,7 @@ class Tsubakuro_MCP {
 			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
 		}
 
-		return self::json_response( self::get_manifest() );
+		return self::jsonrpc_response( self::error_response( null, -32000, 'GET is not supported for this MCP endpoint. Use POST with JSON-RPC 2.0.' ), 405 );
 	}
 
 	/**

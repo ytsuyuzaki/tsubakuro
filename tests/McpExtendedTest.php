@@ -35,13 +35,14 @@ class McpExtendedTest extends TestCase {
 		);
 	}
 
-	public function test_handle_get_returns_manifest_when_authorized(): void {
+	public function test_handle_get_returns_json_rpc_error_when_authorized(): void {
 		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
 
 		$result = Tsubakuro_MCP::handle_get();
 
-		$this->assertSame( '2024-11-05', $result['protocolVersion'] );
-		$this->assertSame( 'streamable-http', $result['transport'] );
+		$this->assertSame( '2.0', $result['jsonrpc'] );
+		$this->assertSame( -32000, $result['error']['code'] );
+		$this->assertStringContainsString( 'Use POST', $result['error']['message'] );
 	}
 
 	public function test_handle_jsonrpc_returns_401_when_unauthorized(): void {
