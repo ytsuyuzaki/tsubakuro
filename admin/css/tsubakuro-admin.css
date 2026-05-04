@@ -136,6 +136,10 @@
 	font-size: 13px;
 }
 
+.tsubakuro-content-header label {
+	margin-bottom: 0;
+}
+
 .tsubakuro-screen-options-panel label:last-child {
 	margin-bottom: 0;
 }
@@ -188,10 +192,6 @@
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 4px;
-}
-
-.tsubakuro-content-header label {
-	margin-bottom: 0;
 }
 
 .tsubakuro-content-tabs {
