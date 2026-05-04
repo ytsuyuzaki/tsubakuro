@@ -633,17 +633,19 @@ class Tsubakuro_Admin {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Exclude task comments from the standard WordPress comments list.
+	 * Exclude task comments from all standard WordPress comment queries.
 	 *
 	 * Fires on the `pre_get_comments` action so that comments stored with the
-	 * plugin's custom comment type do not appear on the wp-admin Comments page.
+	 * plugin's custom comment type do not appear in the wp-admin Comments page,
+	 * the admin-dashboard Recent Comments widget, or any frontend comment list.
+	 * Queries issued by the plugin itself (which already set `type` to the
+	 * plugin's comment type) are left untouched.
 	 *
 	 * @param WP_Comment_Query $query The comment query object.
 	 */
 	public static function exclude_task_comments_from_list( $query ) {
-		global $pagenow;
-
-		if ( ! is_admin() || 'edit-comments.php' !== $pagenow ) {
+		// Skip queries that explicitly target the plugin's own comment type.
+		if ( self::COMMENT_TYPE === ( $query->query_vars['type'] ?? '' ) ) {
 			return;
 		}
 
