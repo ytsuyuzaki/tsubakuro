@@ -42,7 +42,7 @@ class McpExtendedTest extends TestCase {
 
 		$this->assertSame( '2.0', $result['jsonrpc'] );
 		$this->assertSame( -32000, $result['error']['code'] );
-		$this->assertStringContainsString( 'Use POST', $result['error']['message'] );
+		$this->assertStringContainsString( 'SSE stream is not available', $result['error']['message'] );
 	}
 
 	public function test_handle_jsonrpc_returns_401_when_unauthorized(): void {
@@ -67,7 +67,7 @@ class McpExtendedTest extends TestCase {
 		$this->assertSame( -32700, $result['error']['code'] );
 	}
 
-	public function test_handle_jsonrpc_dispatches_batch_requests(): void {
+	public function test_handle_jsonrpc_rejects_batch_requests(): void {
 		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
 		$req                           = new WP_REST_Request(
 			array(),
@@ -86,9 +86,24 @@ class McpExtendedTest extends TestCase {
 		);
 		$result                        = Tsubakuro_MCP::handle_jsonrpc( $req );
 
-		$this->assertCount( 2, $result );
-		$this->assertSame( 1, $result[0]['id'] );
-		$this->assertSame( 2, $result[1]['id'] );
+		$this->assertSame( '2.0', $result['jsonrpc'] );
+		$this->assertSame( -32600, $result['error']['code'] );
+		$this->assertNull( $result['id'] );
+	}
+
+	public function test_handle_jsonrpc_accepts_json_rpc_response_messages(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
+		$req                           = new WP_REST_Request(
+			array(),
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'result'  => array(),
+			)
+		);
+		$result                        = Tsubakuro_MCP::handle_jsonrpc( $req );
+
+		$this->assertSame( '', $result );
 	}
 
 	public function test_initialize_returns_mcp_server_metadata(): void {
@@ -98,7 +113,7 @@ class McpExtendedTest extends TestCase {
 				'id'      => 1,
 				'method'  => 'initialize',
 				'params'  => array(
-					'protocolVersion' => '2024-11-05',
+					'protocolVersion' => '2025-11-25',
 					'capabilities'    => array(),
 					'clientInfo'      => array(
 						'name'    => 'curl-test',
@@ -109,7 +124,7 @@ class McpExtendedTest extends TestCase {
 		);
 
 		$this->assertSame( '2.0', $result['jsonrpc'] );
-		$this->assertSame( '2024-11-05', $result['result']['protocolVersion'] );
+		$this->assertSame( '2025-11-25', $result['result']['protocolVersion'] );
 		$this->assertSame( 'tsubakuro-wordpress-mcp', $result['result']['serverInfo']['name'] );
 	}
 
@@ -126,6 +141,19 @@ class McpExtendedTest extends TestCase {
 		);
 
 		$this->assertNull( $result );
+	}
+
+	public function test_request_with_null_id_is_invalid(): void {
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => null,
+				'method'  => 'tools/list',
+			)
+		);
+
+		$this->assertSame( -32600, $result['error']['code'] );
+		$this->assertNull( $result['id'] );
 	}
 
 	public function test_standard_initialized_notification_returns_no_json_rpc_response(): void {

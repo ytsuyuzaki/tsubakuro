@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Tsubakuro_MCP {
 
 	const ROUTE            = '/mcp';
-	const PROTOCOL_VERSION = '2024-11-05';
+	const PROTOCOL_VERSION = '2025-11-25';
 	const SERVER_NAME      = 'tsubakuro-wordpress-mcp';
 	const GUIDE_PAGE_SLUG  = 'tsubakuro-mcp-guide';
 
@@ -70,7 +70,7 @@ class Tsubakuro_MCP {
 			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
 		}
 
-		return self::jsonrpc_response( self::error_response( null, -32000, 'GET is not supported for this MCP endpoint. Use POST with JSON-RPC 2.0.' ), 405 );
+		return self::jsonrpc_response( self::error_response( null, -32000, 'SSE stream is not available for this MCP endpoint. Use POST with JSON-RPC 2.0.' ), 405 );
 	}
 
 	/**
@@ -120,23 +120,11 @@ class Tsubakuro_MCP {
 		}
 
 		if ( self::is_list( $body ) ) {
-			if ( empty( $body ) ) {
-				return self::jsonrpc_response( self::error_response( null, -32600, 'Invalid Request' ), 400 );
-			}
+			return self::jsonrpc_response( self::error_response( null, -32600, 'Invalid Request' ), 400 );
+		}
 
-			$responses = array();
-			foreach ( $body as $single ) {
-				$response = self::dispatch( $single );
-				if ( null !== $response ) {
-					$responses[] = $response;
-				}
-			}
-
-			if ( empty( $responses ) ) {
-				return self::empty_response();
-			}
-
-			return self::jsonrpc_response( $responses );
+		if ( self::is_jsonrpc_response_message( $body ) ) {
+			return self::empty_response();
 		}
 
 		$response = self::dispatch( $body );
@@ -162,10 +150,11 @@ class Tsubakuro_MCP {
 		$is_notification  = ! array_key_exists( 'id', $rpc );
 		$method           = $rpc['method'] ?? null;
 		$params           = $rpc['params'] ?? array();
-		$invalid_envelope = ( $rpc['jsonrpc'] ?? null ) !== '2.0' || ! is_string( $method ) || '' === $method;
+		$invalid_id       = ! $is_notification && ! self::is_valid_request_id( $id );
+		$invalid_envelope = ( $rpc['jsonrpc'] ?? null ) !== '2.0' || ! is_string( $method ) || '' === $method || $invalid_id;
 
 		if ( $invalid_envelope ) {
-			return self::error_response( $id, -32600, 'Invalid Request' );
+			return self::error_response( $invalid_id ? null : $id, -32600, 'Invalid Request' );
 		}
 
 		switch ( $method ) {
@@ -786,7 +775,7 @@ class Tsubakuro_MCP {
 				'## Example JSON-RPC',
 				'',
 				'```json',
-				'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}',
+				'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}',
 				'```',
 				'',
 				'```json',
@@ -985,5 +974,32 @@ class Tsubakuro_MCP {
 		}
 
 		return array_keys( $value ) === range( 0, count( $value ) - 1 );
+	}
+
+	/**
+	 * Determine whether a decoded body is a JSON-RPC response message.
+	 *
+	 * @param mixed $value Decoded JSON value.
+	 * @return bool
+	 */
+	private static function is_jsonrpc_response_message( $value ) {
+		if ( ! is_array( $value ) || ( $value['jsonrpc'] ?? null ) !== '2.0' || ! array_key_exists( 'id', $value ) ) {
+			return false;
+		}
+
+		$has_result = array_key_exists( 'result', $value );
+		$has_error  = array_key_exists( 'error', $value );
+
+		return ! array_key_exists( 'method', $value ) && $has_result !== $has_error;
+	}
+
+	/**
+	 * Check MCP request id validity.
+	 *
+	 * @param mixed $id Request id.
+	 * @return bool
+	 */
+	private static function is_valid_request_id( $id ) {
+		return is_string( $id ) || is_int( $id );
 	}
 }

@@ -48,12 +48,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php esc_html_e( 'このサイトの MCP エンドポイント URL:', 'tsubakuro' ); ?>
 			<code><?php echo esc_html( $mcp_url ); ?></code>
 		</p>
-		<p><?php esc_html_e( 'このエンドポイントは POST の JSON-RPC 2.0 リクエストを受け付けます。GET は一部の MCP クライアントが SSE ストリームとして扱うため、互換性のため無効化しています。', 'tsubakuro' ); ?></p>
+		<p><?php esc_html_e( 'このエンドポイントは POST の JSON-RPC 2.0 リクエストを受け付けます。GET は MCP の SSE ストリーム開始に使われますが、このプラグインは SSE 非対応のため 405 を返します。', 'tsubakuro' ); ?></p>
 		<div class="tsubakuro-code-block-wrap">
 			<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-guide-manifest-example">
 				<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 			</button>
-			<pre id="tsubakuro-guide-manifest-example" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example-client","version":"1.0.0"}}}' ); ?></pre>
+			<pre id="tsubakuro-guide-manifest-example" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"example-client","version":"1.0.0"}}}' ); ?></pre>
 		</div>
 	</div>
 
@@ -206,7 +206,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-list">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-list" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":1,"method":"tsubakuro_list_tasks","params":{"status":"in_progress","per_page":10}}' ); ?></pre>
+				<pre id="tsubakuro-ex-list" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tsubakuro_list_tasks","arguments":{"status":"in_progress","per_page":10}}}' ); ?></pre>
 			</div>
 		</div>
 
@@ -236,7 +236,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-get">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-get" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":2,"method":"tsubakuro_get_task","params":{"id":42}}' ); ?></pre>
+				<pre id="tsubakuro-ex-get" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"tsubakuro_get_task","arguments":{"id":42}}}' ); ?></pre>
 			</div>
 		</div>
 
@@ -290,7 +290,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-create">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-create" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":3,"method":"tsubakuro_create_task","params":{"title":"お問い合わせフォームの文言修正","content":"送信完了メッセージを見直す","status":"todo","assignee":2,"related_pages":[5]}}' ); ?></pre>
+				<pre id="tsubakuro-ex-create" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"tsubakuro_create_task","arguments":{"title":"お問い合わせフォームの文言修正","content":"送信完了メッセージを見直す","status":"todo","assignee":2,"related_pages":[5]}}}' ); ?></pre>
 			</div>
 		</div>
 
@@ -350,7 +350,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-update">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-update" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":4,"method":"tsubakuro_update_task","params":{"id":42,"status":"completed"}}' ); ?></pre>
+				<pre id="tsubakuro-ex-update" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"tsubakuro_update_task","arguments":{"id":42,"status":"completed"}}}' ); ?></pre>
 			</div>
 		</div>
 
@@ -380,7 +380,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-delete">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-delete" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":5,"method":"tsubakuro_delete_task","params":{"id":42}}' ); ?></pre>
+				<pre id="tsubakuro-ex-delete" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"tsubakuro_delete_task","arguments":{"id":42}}}' ); ?></pre>
 			</div>
 		</div>
 
@@ -416,7 +416,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="button" class="button tsubakuro-copy-btn" data-target="tsubakuro-ex-comment">
 					<?php esc_html_e( 'コピー', 'tsubakuro' ); ?>
 				</button>
-				<pre id="tsubakuro-ex-comment" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":6,"method":"tsubakuro_add_comment","params":{"id":42,"comment":"クライアント確認が完了しました。"}}' ); ?></pre>
+				<pre id="tsubakuro-ex-comment" class="tsubakuro-code-block"><?php echo esc_html( '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"tsubakuro_add_comment","arguments":{"id":42,"comment":"クライアント確認が完了しました。"}}}' ); ?></pre>
 			</div>
 		</div>
 	</div><!-- .tsubakuro-guide-card (ツール一覧) -->

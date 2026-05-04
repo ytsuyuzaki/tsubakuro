@@ -114,7 +114,7 @@ class TsubakuroTest extends TestCase {
 	public function test_mcp_manifest_exposes_expected_tools(): void {
 		$manifest = Tsubakuro_MCP::get_manifest();
 
-		$this->assertSame( '2024-11-05', $manifest['protocolVersion'] );
+		$this->assertSame( '2025-11-25', $manifest['protocolVersion'] );
 		$this->assertSame( 'streamable-http', $manifest['transport'] );
 		$this->assertSame( 'tsubakuro-wordpress-mcp', $manifest['serverInfo']['name'] );
 	}

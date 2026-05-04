@@ -77,7 +77,7 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase {
 	public function test_mcp_manifest_describes_streamable_http_endpoint(): void {
 		$manifest = Tsubakuro_MCP::get_manifest();
 
-		$this->assertSame( '2024-11-05', $manifest['protocolVersion'], 'MCP protocol version is declared.' );
+		$this->assertSame( '2025-11-25', $manifest['protocolVersion'], 'MCP protocol version is declared.' );
 		$this->assertSame( 'streamable-http', $manifest['transport'], 'MCP transport is declared.' );
 		$this->assertSame( 'tsubakuro-wordpress-mcp', $manifest['serverInfo']['name'], 'MCP server name is declared.' );
 	}

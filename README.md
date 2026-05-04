@@ -12,6 +12,7 @@ WordPress管理画面でのタスク管理プラグイン
 
 - URL: `https://gaichubase.com/wp-json/tsubakuro/v1/mcp`
 - Transport: Streamable HTTP
+- MCP Protocol Version: `2025-11-25`
 - JSON-RPC: `2.0`
 - 認証: `Authorization: Basic <Base64(username:application_password)>`
 - ツール: `tsubakuro_list_tasks`, `tsubakuro_get_task`, `tsubakuro_create_task`, `tsubakuro_update_task`, `tsubakuro_delete_task`, `tsubakuro_add_comment`
@@ -21,13 +22,17 @@ WordPress の Application Passwords を使う場合は、`ユーザー名:アプ
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}'
 ```
 
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
@@ -37,6 +42,8 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"tsubakuro_list_tasks","arguments":{"status":"in_progress","per_page":10}}}'
 ```
@@ -46,6 +53,8 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"tsubakuro_update_task","arguments":{"id":42,"status":"completed"}}}'
 ```
@@ -55,6 +64,8 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"tsubakuro_add_comment","arguments":{"id":42,"comment":"クライアント確認が完了しました。"}}}'
 ```
@@ -64,6 +75,8 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":6,"method":"resources/list","params":{}}'
 ```
@@ -73,6 +86,8 @@ curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
 ```sh
 curl -X POST https://gaichubase.com/wp-json/tsubakuro/v1/mcp \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-11-25" \
   -H "Authorization: Basic <Base64エンコードした認証情報>" \
   -d '{"jsonrpc":"2.0","id":7,"method":"resources/read","params":{"uri":"https://gaichubase.com/wp-admin/admin.php?page=tsubakuro-mcp-guide"}}'
 ```
