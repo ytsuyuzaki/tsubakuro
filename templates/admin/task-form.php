@@ -80,6 +80,22 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 				</div>
 
 				<div>
+					<label for="tsubakuro-task-priority">
+						<?php esc_html_e( '優先度', 'tsubakuro' ); ?>
+					</label>
+					<select id="tsubakuro-task-priority" name="priority" class="widefat">
+						<?php foreach ( Tsubakuro_Post_Types::PRIORITIES as $key => $label ) : ?>
+						<option value="<?php echo esc_attr( $key ); ?>"
+							<?php selected( $task['priority'] ?? 'medium', $key ); ?>>
+							<?php echo esc_html( $label ); ?>
+						</option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+			</div>
+
+			<div class="tsubakuro-form-row tsubakuro-form-row--half">
+				<div>
 					<label for="tsubakuro-task-assignee">
 						<?php esc_html_e( 'アサイン', 'tsubakuro' ); ?>
 					</label>

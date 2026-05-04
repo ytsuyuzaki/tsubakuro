@@ -81,6 +81,27 @@ class PostTypesTest extends TestCase {
 		}
 	}
 
+	public function test_save_meta_ignores_unrecognized_priority(): void {
+		Tsubakuro_Post_Types::save_meta( 101, array( 'priority' => 'invalid_priority' ) );
+
+		$this->assertArrayNotHasKey(
+			'_tsubakuro_priority',
+			$GLOBALS['tsubakuro_test']['post_meta'][101] ?? array()
+		);
+	}
+
+	public function test_save_meta_stores_all_three_priorities(): void {
+		foreach ( array( 'low', 'medium', 'high' ) as $priority ) {
+			tsubakuro_test_reset();
+			Tsubakuro_Post_Types::save_meta( 1, array( 'priority' => $priority ) );
+			$this->assertSame(
+				array( $priority ),
+				$GLOBALS['tsubakuro_test']['post_meta'][1]['_tsubakuro_priority'],
+				"Expected priority '$priority' to be stored."
+			);
+		}
+	}
+
 	public function test_save_meta_accepts_comma_separated_related_pages_string(): void {
 		Tsubakuro_Post_Types::save_meta( 101, array( 'related_pages' => '10,20,30' ) );
 
@@ -116,6 +137,26 @@ class PostTypesTest extends TestCase {
 
 		$this->assertSame( 'todo', $task['status'] );
 		$this->assertSame( 'ToDo', $task['status_label'] );
+	}
+
+	public function test_format_task_defaults_priority_to_medium_when_meta_missing(): void {
+		$GLOBALS['tsubakuro_test']['post_meta'][10] = array();
+
+		$task = Tsubakuro_Post_Types::format_task( $this->make_post( 10, 'T', 'C' ) );
+
+		$this->assertSame( 'medium', $task['priority'] );
+		$this->assertSame( '中', $task['priority_label'] );
+	}
+
+	public function test_format_task_returns_correct_priority_label(): void {
+		$GLOBALS['tsubakuro_test']['post_meta'][10] = array(
+			'_tsubakuro_priority' => array( 'high' ),
+		);
+
+		$task = Tsubakuro_Post_Types::format_task( $this->make_post( 10, 'T', 'C' ) );
+
+		$this->assertSame( 'high', $task['priority'] );
+		$this->assertSame( '高', $task['priority_label'] );
 	}
 
 	public function test_format_task_returns_null_assignee_when_not_set(): void {
@@ -255,5 +296,33 @@ class PostTypesTest extends TestCase {
 		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
 		$this->assertSame( 'meta_value', $args['orderby'] );
 		$this->assertSame( '_tsubakuro_status', $args['meta_key'] );
+	}
+
+	public function test_get_tasks_with_priority_filter_adds_meta_query(): void {
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Task A', 'Body' );
+		$GLOBALS['tsubakuro_test']['post_meta'][1] = array(
+			'_tsubakuro_priority' => array( 'high' ),
+		);
+
+		Tsubakuro_Post_Types::get_tasks( array( 'priority' => 'high' ) );
+
+		$meta_query = $GLOBALS['tsubakuro_test']['last_query_args']['meta_query'];
+		$keys       = array_column( $meta_query, 'key' );
+		$this->assertContains( '_tsubakuro_priority', $keys );
+	}
+
+	public function test_get_tasks_sorts_by_priority_meta_value(): void {
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Task A', 'Body' );
+
+		Tsubakuro_Post_Types::get_tasks(
+			array(
+				'orderby' => 'priority',
+				'order'   => 'ASC',
+			)
+		);
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame( 'meta_value', $args['orderby'] );
+		$this->assertSame( '_tsubakuro_priority', $args['meta_key'] );
 	}
 }

@@ -4,6 +4,7 @@
  *
  * Task meta fields:
  *   _tsubakuro_status        – todo | in_progress | completed
+ *   _tsubakuro_priority      – low | medium | high
  *   _tsubakuro_assignee      – WordPress user ID
  *   _tsubakuro_related_pages – comma-separated post/page IDs
  *
@@ -24,6 +25,13 @@ class Tsubakuro_Post_Types {
 		'todo'        => 'ToDo',
 		'in_progress' => '実行中',
 		'completed'   => '実行完了',
+	);
+
+	/** All valid task priorities. */
+	const PRIORITIES = array(
+		'low'    => '低',
+		'medium' => '中',
+		'high'   => '高',
 	);
 
 	/**
@@ -80,6 +88,10 @@ class Tsubakuro_Post_Types {
 			update_post_meta( $task_id, '_tsubakuro_status', sanitize_text_field( $data['status'] ) );
 		}
 
+		if ( isset( $data['priority'] ) && array_key_exists( $data['priority'], self::PRIORITIES ) ) {
+			update_post_meta( $task_id, '_tsubakuro_priority', sanitize_text_field( $data['priority'] ) );
+		}
+
 		if ( isset( $data['assignee'] ) ) {
 			update_post_meta( $task_id, '_tsubakuro_assignee', absint( $data['assignee'] ) );
 		}
@@ -123,6 +135,8 @@ class Tsubakuro_Post_Types {
 	public static function format_task( $post ) {
 		$status_raw    = get_post_meta( $post->ID, '_tsubakuro_status', true );
 		$status        = $status_raw ? $status_raw : 'todo';
+		$priority_raw  = get_post_meta( $post->ID, '_tsubakuro_priority', true );
+		$priority      = $priority_raw ? $priority_raw : 'medium';
 		$assignee_id   = (int) get_post_meta( $post->ID, '_tsubakuro_assignee', true );
 		$related_pages = array_map( 'intval', get_post_meta( $post->ID, '_tsubakuro_related_page', false ) );
 
@@ -138,16 +152,18 @@ class Tsubakuro_Post_Types {
 		}
 
 		return array(
-			'id'            => $post->ID,
-			'title'         => $post->post_title,
-			'content'       => $post->post_content,
-			'status'        => $status,
-			'status_label'  => self::STATUSES[ $status ] ?? $status,
-			'assignee'      => $assignee,
-			'related_pages' => $related_pages,
-			'created_at'    => $post->post_date,
-			'updated_at'    => $post->post_modified,
-			'author_id'     => (int) $post->post_author,
+			'id'             => $post->ID,
+			'title'          => $post->post_title,
+			'content'        => $post->post_content,
+			'status'         => $status,
+			'status_label'   => self::STATUSES[ $status ] ?? $status,
+			'priority'       => $priority,
+			'priority_label' => self::PRIORITIES[ $priority ] ?? $priority,
+			'assignee'       => $assignee,
+			'related_pages'  => $related_pages,
+			'created_at'     => $post->post_date,
+			'updated_at'     => $post->post_modified,
+			'author_id'      => (int) $post->post_author,
 		);
 	}
 
@@ -175,6 +191,15 @@ class Tsubakuro_Post_Types {
 				'value' => sanitize_text_field( $args['status'] ),
 			);
 			unset( $args['status'] );
+		}
+
+		if ( ! empty( $args['priority'] ) ) {
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for priority filtering.
+			$meta_query[] = array(
+				'key'   => '_tsubakuro_priority',
+				'value' => sanitize_text_field( $args['priority'] ),
+			);
+			unset( $args['priority'] );
 		}
 
 		if ( ! empty( $args['assignee'] ) ) {
@@ -216,6 +241,7 @@ class Tsubakuro_Post_Types {
 				'title'    => 'title',
 				'date'     => 'date',
 				'status'   => 'meta_value',
+				'priority' => 'meta_value',
 				'assignee' => 'meta_value_num',
 			);
 			$orderby     = sanitize_key( $args['orderby'] );
@@ -223,6 +249,9 @@ class Tsubakuro_Post_Types {
 				$defaults['orderby'] = $orderby_map[ $orderby ];
 				if ( 'status' === $orderby ) {
 					$defaults['meta_key'] = '_tsubakuro_status'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
+				}
+				if ( 'priority' === $orderby ) {
+					$defaults['meta_key'] = '_tsubakuro_priority'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
 				}
 				if ( 'assignee' === $orderby ) {
 					$defaults['meta_key'] = '_tsubakuro_assignee'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
