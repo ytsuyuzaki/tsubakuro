@@ -5,11 +5,11 @@ This repository implements an MCP endpoint over Streamable HTTP.
 When changing the MCP implementation, use these references to confirm the
 expected request and response shapes:
 
-- MCP Transports: https://modelcontextprotocol.io/specification/2025-11-25/basic/transports
-- MCP Schema Reference: https://modelcontextprotocol.io/specification/2025-11-25/schema
-- MCP Lifecycle: https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle
-- MCP Tools: https://modelcontextprotocol.io/specification/2025-11-25/server/tools
-- JSON-RPC 2.0: https://www.jsonrpc.org/specification
+- MCP Transports: <https://modelcontextprotocol.io/specification/2025-11-25/basic/transports>
+- MCP Schema Reference: <https://modelcontextprotocol.io/specification/2025-11-25/schema>
+- MCP Lifecycle: <https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle>
+- MCP Tools: <https://modelcontextprotocol.io/specification/2025-11-25/server/tools>
+- JSON-RPC 2.0: <https://www.jsonrpc.org/specification>
 
 ## Current Implementation Notes
 
