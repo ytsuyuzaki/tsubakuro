@@ -65,8 +65,8 @@ $sortable_columns = array(
 
 	<ul class="subsubsub tsubakuro-filter-tabs">
 		<li>
-			<a href="<?php echo esc_url( Tsubakuro_Admin::get_task_list_url( array( 'status' => null ) ) ); ?>"
-				class="<?php echo ( '' === $status_filter ) ? 'current' : ''; ?>">
+			<a href="<?php echo esc_url( Tsubakuro_Admin::get_task_list_url( array( 'status' => 'all' ) ) ); ?>"
+				class="<?php echo ( 'all' === $status_filter ) ? 'current' : ''; ?>">
 				<?php esc_html_e( 'すべて', 'tsubakuro' ); ?>
 			</a> |
 		</li>
@@ -94,7 +94,7 @@ $sortable_columns = array(
 			<div class="alignleft actions">
 				<label class="screen-reader-text" for="tsubakuro-filter-status"><?php esc_html_e( 'ステータスで絞り込み', 'tsubakuro' ); ?></label>
 				<select id="tsubakuro-filter-status" name="status">
-					<option value=""><?php esc_html_e( 'すべてのステータス', 'tsubakuro' ); ?></option>
+					<option value="all" <?php selected( 'all', $status_filter ); ?>><?php esc_html_e( 'すべてのステータス', 'tsubakuro' ); ?></option>
 					<?php foreach ( Tsubakuro_Post_Types::STATUSES as $key => $label ) : ?>
 						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $status_filter, $key ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
