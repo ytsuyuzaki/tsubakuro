@@ -234,7 +234,7 @@ class Tsubakuro_Admin {
 	public static function get_task_list_args_from_request() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only list table filters.
 		$args = array(
-			'status'   => isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '',
+			'status'   => isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : 'todo',
 			'assignee' => isset( $_GET['assignee'] ) ? absint( wp_unslash( $_GET['assignee'] ) ) : 0,
 			's'        => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
 			'orderby'  => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date',
@@ -242,8 +242,8 @@ class Tsubakuro_Admin {
 		);
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		if ( ! array_key_exists( $args['status'], Tsubakuro_Post_Types::STATUSES ) ) {
-			$args['status'] = '';
+		if ( 'all' !== $args['status'] && ! array_key_exists( $args['status'], Tsubakuro_Post_Types::STATUSES ) ) {
+			$args['status'] = 'todo';
 		}
 
 		if ( ! in_array( $args['orderby'], array( 'id', 'title', 'status', 'assignee', 'date' ), true ) ) {

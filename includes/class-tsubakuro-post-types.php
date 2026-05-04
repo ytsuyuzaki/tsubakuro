@@ -168,14 +168,14 @@ class Tsubakuro_Post_Types {
 
 		$meta_query = array();
 
-		if ( ! empty( $args['status'] ) ) {
+		if ( ! empty( $args['status'] ) && 'all' !== $args['status'] ) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for status filtering.
 			$meta_query[] = array(
 				'key'   => '_tsubakuro_status',
 				'value' => sanitize_text_field( $args['status'] ),
 			);
-			unset( $args['status'] );
 		}
+		unset( $args['status'] );
 
 		if ( ! empty( $args['assignee'] ) ) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for assignee filtering.
