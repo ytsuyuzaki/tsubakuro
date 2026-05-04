@@ -45,6 +45,13 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 		<?php endif; ?>
 
 		<div class="tsubakuro-form-card">
+			<?php if ( $is_edit ) : ?>
+			<div class="tsubakuro-form-row">
+				<label><?php esc_html_e( 'ID', 'tsubakuro' ); ?></label>
+				<span class="tsubakuro-task-id"><?php echo esc_html( $task['id'] ); ?></span>
+			</div>
+			<?php endif; ?>
+
 			<div class="tsubakuro-form-row">
 				<label for="tsubakuro-task-title">
 					<?php esc_html_e( 'タイトル', 'tsubakuro' ); ?>
