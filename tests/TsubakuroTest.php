@@ -26,7 +26,7 @@ class TsubakuroTest extends TestCase {
 		$this->assertArrayHasKey( 'plugins_loaded', $bootstrap_state['actions'] );
 		$this->assertSame( 'tsubakuro_init', $bootstrap_state['actions']['plugins_loaded'][0] );
 		$this->assertSame( array( 'Tsubakuro_Activator', 'activate' ), $bootstrap_state['activation_hooks'][0][1] );
-		$this->assertSame( '1.0.0', TSUBAKURO_VERSION );
+		$this->assertSame( '0.0.1', TSUBAKURO_VERSION );
 	}
 
 	public function test_init_methods_register_wordpress_hooks_and_routes(): void {
