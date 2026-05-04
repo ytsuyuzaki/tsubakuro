@@ -107,6 +107,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td><?php esc_html_e( 'WordPress 標準の Application Passwords を使います。ユーザー権限は edit_posts で判定されます。', 'tsubakuro' ); ?></td>
 				</tr>
 				<tr>
+					<td><code>OAuth 2.0 認可コードフロー / Bearer</code></td>
+					<td><?php esc_html_e( '実装済み（claude.ai 向け）', 'tsubakuro' ); ?></td>
+					<td>
+						<?php
+						$settings_link = sprintf(
+							'<a href="%s">%s</a>',
+							esc_url( admin_url( 'admin.php?page=tsubakuro-settings' ) ),
+							esc_html__( '設定ページ', 'tsubakuro' )
+						);
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to settings page */
+								__( 'claude.ai Custom Connector など OAuth 2.0 を必要とするクライアント向けです。%s でクライアントを登録し、認可コードフローでアクセストークンを取得します。', 'tsubakuro' ),
+								$settings_link
+							),
+							array( 'a' => array( 'href' => array() ) )
+						);
+						?>
+					</td>
+				</tr>
+				<tr>
 					<td><?php esc_html_e( '任意ヘッダー値', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( '実用パターン', 'tsubakuro' ); ?></td>
 					<td><?php esc_html_e( 'クライアントやローカルブリッジが Authorization などのヘッダーを設定できる場合に使います。', 'tsubakuro' ); ?></td>
