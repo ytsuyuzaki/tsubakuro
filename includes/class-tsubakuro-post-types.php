@@ -175,6 +175,7 @@ class Tsubakuro_Post_Types {
 				'value' => sanitize_text_field( $args['status'] ),
 			);
 		}
+		// status is always unset because it is not a valid WP_Query parameter.
 		unset( $args['status'] );
 
 		if ( ! empty( $args['assignee'] ) ) {
