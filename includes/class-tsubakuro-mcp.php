@@ -278,6 +278,10 @@ class Tsubakuro_MCP {
 			$args['status'] = sanitize_text_field( $arguments['status'] );
 		}
 
+		if ( ! empty( $arguments['priority'] ) ) {
+			$args['priority'] = sanitize_text_field( $arguments['priority'] );
+		}
+
 		if ( ! empty( $arguments['assignee'] ) ) {
 			$args['assignee'] = absint( $arguments['assignee'] );
 		}
@@ -541,13 +545,17 @@ class Tsubakuro_MCP {
 		return array(
 			array(
 				'name'        => 'tsubakuro_list_tasks',
-				'description' => 'タスク一覧を取得します。status、assignee、related_page、per_page、s、orderby、order で絞り込みできます。',
+				'description' => 'タスク一覧を取得します。status、priority、assignee、related_page、per_page、s、orderby、order で絞り込みできます。',
 				'inputSchema' => array(
 					'type'       => 'object',
 					'properties' => array(
 						'status'       => array(
 							'type'        => 'string',
 							'description' => 'todo / in_progress / completed',
+						),
+						'priority'     => array(
+							'type'        => 'string',
+							'description' => 'low / medium / high',
 						),
 						'assignee'     => array(
 							'type'        => 'integer',
@@ -567,7 +575,7 @@ class Tsubakuro_MCP {
 						),
 						'orderby'      => array(
 							'type'        => 'string',
-							'description' => 'id / title / date / status / assignee',
+							'description' => 'id / title / date / status / priority / assignee',
 						),
 						'order'        => array(
 							'type'        => 'string',
@@ -609,6 +617,10 @@ class Tsubakuro_MCP {
 							'type'        => 'string',
 							'description' => 'todo / in_progress / completed',
 						),
+						'priority'      => array(
+							'type'        => 'string',
+							'description' => 'low / medium / high',
+						),
 						'assignee'      => array(
 							'type'        => 'integer',
 							'description' => 'アサインする WordPress ユーザー ID',
@@ -632,6 +644,7 @@ class Tsubakuro_MCP {
 						'title'         => array( 'type' => 'string' ),
 						'content'       => array( 'type' => 'string' ),
 						'status'        => array( 'type' => 'string' ),
+						'priority'      => array( 'type' => 'string' ),
 						'assignee'      => array( 'type' => 'integer' ),
 						'related_pages' => array(
 							'type'  => 'array',
@@ -735,7 +748,7 @@ class Tsubakuro_MCP {
 				'### tsubakuro_list_tasks',
 				'',
 				'- Description: タスク一覧を取得します。',
-				'- Arguments: `status`, `assignee`, `related_page`, `per_page`, `s`, `orderby`, `order`',
+				'- Arguments: `status`, `priority`, `assignee`, `related_page`, `per_page`, `s`, `orderby`, `order`',
 				'',
 				'### tsubakuro_get_task',
 				'',
@@ -746,13 +759,13 @@ class Tsubakuro_MCP {
 				'',
 				'- Description: 新しいタスクを作成します。',
 				'- Required arguments: `title`',
-				'- Optional arguments: `content`, `status`, `assignee`, `related_pages`',
+				'- Optional arguments: `content`, `status`, `priority`, `assignee`, `related_pages`',
 				'',
 				'### tsubakuro_update_task',
 				'',
 				'- Description: 既存タスクを更新します。',
 				'- Required arguments: `id`',
-				'- Optional arguments: `title`, `content`, `status`, `assignee`, `related_pages`',
+				'- Optional arguments: `title`, `content`, `status`, `priority`, `assignee`, `related_pages`',
 				'',
 				'### tsubakuro_delete_task',
 				'',

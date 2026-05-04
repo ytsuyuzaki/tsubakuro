@@ -128,10 +128,11 @@ class Tsubakuro_Admin {
 			'tsubakuro-admin',
 			'tsubakuroAdmin',
 			array(
-				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'tsubakuro_admin' ),
-				'statuses' => Tsubakuro_Post_Types::STATUSES,
-				'users'    => self::get_users_list(),
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'tsubakuro_admin' ),
+				'statuses'   => Tsubakuro_Post_Types::STATUSES,
+				'priorities' => Tsubakuro_Post_Types::PRIORITIES,
+				'users'      => self::get_users_list(),
 			)
 		);
 	}
@@ -235,6 +236,7 @@ class Tsubakuro_Admin {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only list table filters.
 		$args = array(
 			'status'   => isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '',
+			'priority' => isset( $_GET['priority'] ) ? sanitize_text_field( wp_unslash( $_GET['priority'] ) ) : '',
 			'assignee' => isset( $_GET['assignee'] ) ? absint( wp_unslash( $_GET['assignee'] ) ) : 0,
 			's'        => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
 			'orderby'  => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date',
@@ -246,7 +248,11 @@ class Tsubakuro_Admin {
 			$args['status'] = '';
 		}
 
-		if ( ! in_array( $args['orderby'], array( 'id', 'title', 'status', 'assignee', 'date' ), true ) ) {
+		if ( ! array_key_exists( $args['priority'], Tsubakuro_Post_Types::PRIORITIES ) ) {
+			$args['priority'] = '';
+		}
+
+		if ( ! in_array( $args['orderby'], array( 'id', 'title', 'status', 'priority', 'assignee', 'date' ), true ) ) {
 			$args['orderby'] = 'date';
 		}
 
