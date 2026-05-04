@@ -163,6 +163,7 @@ $optional_columns = array( 'priority', 'assignee', 'date' );
 			<br class="clear" />
 		</div>
 
+		<div class="tsubakuro-table-scroll">
 		<table class="wp-list-table widefat fixed striped table-view-list tsubakuro-task-table">
 			<thead>
 				<tr>
@@ -246,6 +247,7 @@ $optional_columns = array( 'priority', 'assignee', 'date' );
 			<?php endif; ?>
 			</tbody>
 		</table>
+		</div><!-- .tsubakuro-table-scroll -->
 
 		<div class="tablenav bottom">
 			<div class="alignleft actions bulkactions">

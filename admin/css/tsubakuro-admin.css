@@ -42,8 +42,21 @@
 }
 
 /* Task table */
+.tsubakuro-table-scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.tsubakuro-task-table {
+	min-width: 600px;
+}
+
 .tsubakuro-task-table .column-id {
 	width: 60px;
+}
+
+.tsubakuro-task-table .column-title {
+	min-width: 200px;
 }
 
 /* Optional columns: hidden by default, shown when user enables them. */
