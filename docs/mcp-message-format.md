@@ -13,6 +13,7 @@ expected request and response shapes:
 
 ## Current Implementation Notes
 
+- Adapter reference: `WordPress/mcp-adapter@530a541318c13d9039cb15cbd3d77507643218ab`
 - The endpoint is `/wp-json/tsubakuro/v1/mcp`.
 - The implementation target is MCP protocol version `2025-11-25`.
 - Client-to-server JSON-RPC messages are sent with `POST`.
@@ -27,12 +28,22 @@ expected request and response shapes:
 - After successful initialization, clients send the
   `notifications/initialized` notification.
 - Tools are exposed through `tools/list` and invoked through `tools/call`.
+- Supported MCP methods are `initialize`, `notifications/initialized`,
+  `tools/list`, and `tools/call`.
 - Tool call results should use MCP tool result fields such as `content`,
   `structuredContent`, and `isError`.
 - `GET` is reserved for optional SSE streams in Streamable HTTP. This
   implementation does not provide an SSE stream and returns `405 Method Not
   Allowed`.
 - Plain manifest JSON is not an MCP JSON-RPC message.
+
+## Adapter Alignment Checklist
+
+- [x] `initialize` returns `protocolVersion`, `capabilities`, and `serverInfo`.
+- [x] `tools/list` returns tool definitions with `name`, `description`, and `inputSchema`.
+- [x] `tools/call` returns MCP-compatible `content` and `structuredContent` for success.
+- [x] Unsupported MCP method requests return JSON-RPC `-32601 Method not found`.
+- [x] Authentication accepts WordPress Application Passwords via `Authorization: Basic ...` only.
 
 ## Version Note
 

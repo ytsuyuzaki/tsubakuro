@@ -9,11 +9,11 @@ class McpExtendedTest extends TestCase {
 
 	protected function setUp(): void {
 		tsubakuro_test_reset();
-		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] );
 	}
 
 	protected function tearDown(): void {
-		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		unset( $_SERVER['HTTP_AUTHORIZATION'], $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] );
 	}
 
 	private function dispatch( array $rpc ): ?array {
@@ -80,7 +80,7 @@ class McpExtendedTest extends TestCase {
 				array(
 					'jsonrpc' => '2.0',
 					'id'      => 2,
-					'method'  => 'resources/list',
+					'method'  => 'tools/list',
 				),
 			)
 		);
@@ -126,9 +126,11 @@ class McpExtendedTest extends TestCase {
 		$this->assertSame( '2.0', $result['jsonrpc'] );
 		$this->assertSame( '2025-11-25', $result['result']['protocolVersion'] );
 		$this->assertSame( 'tsubakuro-wordpress-mcp', $result['result']['serverInfo']['name'] );
+		$this->assertArrayHasKey( 'tools', $result['result']['capabilities'] );
+		$this->assertArrayNotHasKey( 'resources', $result['result']['capabilities'] );
 	}
 
-	public function test_initialized_notification_returns_no_json_rpc_response(): void {
+	public function test_initialized_request_returns_method_not_found(): void {
 		$reflection = new ReflectionClass( 'Tsubakuro_MCP' );
 		$method     = $reflection->getMethod( 'dispatch' );
 		$method->setAccessible( true );
@@ -136,11 +138,13 @@ class McpExtendedTest extends TestCase {
 			null,
 			array(
 				'jsonrpc' => '2.0',
+				'id'      => 99,
 				'method'  => 'initialized',
 			)
 		);
 
-		$this->assertNull( $result );
+		$this->assertSame( -32601, $result['error']['code'] );
+		$this->assertSame( 99, $result['id'] );
 	}
 
 	public function test_request_with_null_id_is_invalid(): void {
@@ -391,71 +395,11 @@ class McpExtendedTest extends TestCase {
 		$this->assertStringContainsString( 'missing', $result['error']['message'] );
 	}
 
-	public function test_resources_list_returns_mcp_guide_resource(): void {
-		$resources = $this->dispatch(
-			array(
-				'jsonrpc' => '2.0',
-				'id'      => 5,
-				'method'  => 'resources/list',
-			)
-		);
-
-		$this->assertSame( 'Tsubakuro MCP Guide', $resources['result']['resources'][0]['name'] );
-		$this->assertSame( 'text/markdown', $resources['result']['resources'][0]['mimeType'] );
-		$this->assertStringContainsString( 'page=tsubakuro-mcp-guide', $resources['result']['resources'][0]['uri'] );
-	}
-
-	public function test_resources_read_returns_mcp_guide_document(): void {
-		$uri    = 'https://example.test/wp-admin/admin.php?page=tsubakuro-mcp-guide';
-		$result = $this->dispatch(
-			array(
-				'jsonrpc' => '2.0',
-				'id'      => 6,
-				'method'  => 'resources/read',
-				'params'  => array(
-					'uri' => $uri,
-				),
-			)
-		);
-
-		$this->assertSame( $uri, $result['result']['contents'][0]['uri'] );
-		$this->assertSame( 'text/markdown', $result['result']['contents'][0]['mimeType'] );
-		$this->assertStringContainsString( 'page=tsubakuro-mcp-guide', $result['result']['contents'][0]['text'] );
-		$this->assertStringContainsString( 'resources/read', $result['result']['contents'][0]['text'] );
-	}
-
-	public function test_resources_read_unknown_resource_returns_json_rpc_error(): void {
-		$result = $this->dispatch(
-			array(
-				'jsonrpc' => '2.0',
-				'id'      => 7,
-				'method'  => 'resources/read',
-				'params'  => array(
-					'uri' => 'https://example.test/wp-admin/admin.php?page=missing',
-				),
-			)
-		);
-
-		$this->assertSame( -32602, $result['error']['code'] );
-	}
-
-	public function test_prompts_list_returns_empty_array(): void {
-		$prompts   = $this->dispatch(
-			array(
-				'jsonrpc' => '2.0',
-				'id'      => 8,
-				'method'  => 'prompts/list',
-			)
-		);
-
-		$this->assertSame( array(), $prompts['result']['prompts'] );
-	}
-
 	public function test_dispatch_returns_method_not_found_for_unknown_method(): void {
 		$result = $this->dispatch(
 			array(
 				'jsonrpc' => '2.0',
-				'id'      => 9,
+				'id'      => 8,
 				'method'  => 'totally_unknown',
 				'params'  => array(),
 			)
@@ -463,6 +407,24 @@ class McpExtendedTest extends TestCase {
 
 		$this->assertSame( -32601, $result['error']['code'] );
 		$this->assertStringContainsString( 'totally_unknown', $result['error']['message'] );
+	}
+
+	public function test_non_initialize_request_rejects_unsupported_protocol_header(): void {
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode( 'admin:password' );
+		$req                           = new WP_REST_Request(
+			array(),
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 17,
+				'method'  => 'tools/list',
+				'params'  => array(),
+			)
+		);
+		$_SERVER['HTTP_MCP_PROTOCOL_VERSION'] = '2024-11-05';
+		$result = Tsubakuro_MCP::handle_jsonrpc( $req );
+
+		$this->assertSame( -32600, $result['error']['code'] );
+		$this->assertStringContainsString( 'Unsupported protocol version', $result['error']['message'] );
 	}
 
 	public function test_check_permission_returns_true_for_basic_auth_when_user_can_edit(): void {

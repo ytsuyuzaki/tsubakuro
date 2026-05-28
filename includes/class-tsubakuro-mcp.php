@@ -20,7 +20,6 @@ class Tsubakuro_MCP {
 	const ROUTE            = '/mcp';
 	const PROTOCOL_VERSION = '2025-11-25';
 	const SERVER_NAME      = 'tsubakuro-wordpress-mcp';
-	const GUIDE_PAGE_SLUG  = 'tsubakuro-mcp-guide';
 
 	/**
 	 * Register WordPress hooks.
@@ -127,12 +126,66 @@ class Tsubakuro_MCP {
 			return self::empty_response();
 		}
 
+		$protocol_validation_error = self::validate_protocol_version_header( $request, $body );
+		if ( null !== $protocol_validation_error ) {
+			return self::jsonrpc_response( $protocol_validation_error, 400 );
+		}
+
 		$response = self::dispatch( $body );
 		if ( null === $response ) {
 			return self::empty_response();
 		}
 
 		return self::jsonrpc_response( $response );
+	}
+
+	/**
+	 * Validate the MCP-Protocol-Version header for non-initialize requests.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @param mixed           $body    Decoded request body.
+	 * @return array|null
+	 */
+	private static function validate_protocol_version_header( $request, $body ) {
+		if ( ! is_array( $body ) || ( $body['method'] ?? '' ) === 'initialize' ) {
+			return null;
+		}
+
+		$header_version = self::get_mcp_protocol_version_header( $request );
+		if ( '' === $header_version || self::PROTOCOL_VERSION === $header_version ) {
+			return null;
+		}
+
+		$id = self::is_valid_request_id( $body['id'] ?? null ) ? $body['id'] : null;
+
+		return self::error_response(
+			$id,
+			-32600,
+			sprintf(
+				'Bad Request: Unsupported protocol version: %s (supported versions: %s)',
+				$header_version,
+				self::PROTOCOL_VERSION
+			)
+		);
+	}
+
+	/**
+	 * Get MCP-Protocol-Version header from request/server variables.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return string
+	 */
+	private static function get_mcp_protocol_version_header( $request ) {
+		if ( is_object( $request ) && method_exists( $request, 'get_header' ) ) {
+			return trim( (string) $request->get_header( 'MCP-Protocol-Version' ) );
+		}
+
+		if ( ! empty( $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Value is compared against an allow-listed protocol version.
+			return trim( wp_unslash( (string) $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] ) );
+		}
+
+		return '';
 	}
 
 	/**
@@ -168,7 +221,6 @@ class Tsubakuro_MCP {
 					)
 				);
 
-			case 'initialized':
 			case 'notifications/initialized':
 				return $is_notification ? null : self::success_response( $id, (object) array() );
 
@@ -182,25 +234,6 @@ class Tsubakuro_MCP {
 
 			case 'tools/call':
 				return self::handle_tool_call( $id, $params );
-
-			case 'resources/list':
-				return self::success_response(
-					$id,
-					array(
-						'resources' => self::get_resources(),
-					)
-				);
-
-			case 'resources/read':
-				return self::handle_resource_read( $id, $params );
-
-			case 'prompts/list':
-				return self::success_response(
-					$id,
-					array(
-						'prompts' => array(),
-					)
-				);
 
 			default:
 				if ( $is_notification ) {
@@ -223,31 +256,15 @@ class Tsubakuro_MCP {
 			return self::error_response( $id, -32602, 'Tool name is required' );
 		}
 
-		$name      = sanitize_key( $params['name'] );
-		$arguments = self::get_tool_arguments( $params );
+		$name          = sanitize_key( $params['name'] );
+		$arguments     = self::get_tool_arguments( $params );
+		$tool_handlers = self::get_tool_handlers();
 
-		switch ( $name ) {
-			case 'tsubakuro_list_tasks':
-				return self::tool_list_tasks( $id, $arguments );
-
-			case 'tsubakuro_get_task':
-				return self::tool_get_task( $id, $arguments );
-
-			case 'tsubakuro_create_task':
-				return self::tool_create_task( $id, $arguments );
-
-			case 'tsubakuro_update_task':
-				return self::tool_update_task( $id, $arguments );
-
-			case 'tsubakuro_delete_task':
-				return self::tool_delete_task( $id, $arguments );
-
-			case 'tsubakuro_add_comment':
-				return self::tool_add_comment( $id, $arguments );
-
-			default:
-				return self::error_response( $id, -32602, 'Unknown tool: ' . sanitize_text_field( $params['name'] ) );
+		if ( ! isset( $tool_handlers[ $name ] ) ) {
+			return self::error_response( $id, -32602, 'Unknown tool: ' . sanitize_text_field( $params['name'] ) );
 		}
+
+		return call_user_func( $tool_handlers[ $name ], $id, $arguments );
 	}
 
 	/**
@@ -262,6 +279,22 @@ class Tsubakuro_MCP {
 		}
 
 		return array();
+	}
+
+	/**
+	 * Return a map from MCP tool name to tool handler method.
+	 *
+	 * @return array<string, array{string, string}>
+	 */
+	private static function get_tool_handlers() {
+		return array(
+			'tsubakuro_list_tasks'   => array( __CLASS__, 'tool_list_tasks' ),
+			'tsubakuro_get_task'     => array( __CLASS__, 'tool_get_task' ),
+			'tsubakuro_create_task'  => array( __CLASS__, 'tool_create_task' ),
+			'tsubakuro_update_task'  => array( __CLASS__, 'tool_update_task' ),
+			'tsubakuro_delete_task'  => array( __CLASS__, 'tool_delete_task' ),
+			'tsubakuro_add_comment'  => array( __CLASS__, 'tool_add_comment' ),
+		);
 	}
 
 	/**
@@ -483,44 +516,13 @@ class Tsubakuro_MCP {
 	}
 
 	/**
-	 * Handle resources/read.
-	 *
-	 * @param mixed $id     JSON-RPC request id.
-	 * @param mixed $params Resource read parameters.
-	 * @return array
-	 */
-	private static function handle_resource_read( $id, $params ) {
-		if ( ! is_array( $params ) || empty( $params['uri'] ) ) {
-			return self::error_response( $id, -32602, 'Resource uri is required' );
-		}
-
-		if ( self::get_guide_resource_uri() !== $params['uri'] ) {
-			return self::error_response( $id, -32602, 'Unknown resource: ' . sanitize_text_field( $params['uri'] ) );
-		}
-
-		return self::success_response(
-			$id,
-			array(
-				'contents' => array(
-					array(
-						'uri'      => self::get_guide_resource_uri(),
-						'mimeType' => 'text/markdown',
-						'text'     => self::get_guide_resource_text(),
-					),
-				),
-			)
-		);
-	}
-
-	/**
 	 * Return server capabilities.
 	 *
 	 * @return array
 	 */
 	private static function get_capabilities() {
 		return array(
-			'tools'     => (object) array(),
-			'resources' => (object) array(),
+			'tools' => (object) array(),
 		);
 	}
 
@@ -682,124 +684,6 @@ class Tsubakuro_MCP {
 					),
 				),
 			),
-		);
-	}
-
-	/**
-	 * Return available MCP resources.
-	 *
-	 * @return array
-	 */
-	private static function get_resources() {
-		return array(
-			array(
-				'uri'         => self::get_guide_resource_uri(),
-				'name'        => 'Tsubakuro MCP Guide',
-				'description' => 'WordPress 管理画面の page=tsubakuro-mcp-guide に記載している MCP / タスク管理ドキュメントです。',
-				'mimeType'    => 'text/markdown',
-			),
-		);
-	}
-
-	/**
-	 * Return the MCP guide resource URI.
-	 *
-	 * @return string
-	 */
-	private static function get_guide_resource_uri() {
-		return admin_url( 'admin.php?page=' . self::GUIDE_PAGE_SLUG );
-	}
-
-	/**
-	 * Return the MCP guide resource text.
-	 *
-	 * @return string
-	 */
-	private static function get_guide_resource_text() {
-		$mcp_url   = rest_url( Tsubakuro_REST_API::NAMESPACE . self::ROUTE );
-		$admin_url = self::get_guide_resource_uri();
-
-		return implode(
-			"\n",
-			array(
-				'# Tsubakuro MCP Guide',
-				'',
-				'WordPress 管理画面の `page=tsubakuro-mcp-guide` に記載している MCP 接続ガイドです。',
-				'',
-				'## Paths',
-				'',
-				'- Admin guide: `' . $admin_url . '`',
-				'- MCP endpoint: `' . $mcp_url . '`',
-				'- REST route: `/wp-json/tsubakuro/v1/mcp`',
-				'',
-				'## Transport',
-				'',
-				'- Streamable HTTP',
-				'- JSON-RPC 2.0',
-				'- Methods: `initialize`, `initialized`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`',
-				'',
-				'## Authentication',
-				'',
-				'- Use `Authorization: Basic <Base64(username:application_password)>` with WordPress Application Passwords.',
-				'- The authenticated WordPress user must have the `edit_posts` capability.',
-				'',
-				'## Tools',
-				'',
-				'### tsubakuro_list_tasks',
-				'',
-				'- Description: タスク一覧を取得します。',
-				'- Arguments: `status`, `priority`, `assignee`, `related_page`, `per_page`, `s`, `orderby`, `order`',
-				'',
-				'### tsubakuro_get_task',
-				'',
-				'- Description: 指定IDのタスク詳細をコメント込みで取得します。',
-				'- Required arguments: `id`',
-				'',
-				'### tsubakuro_create_task',
-				'',
-				'- Description: 新しいタスクを作成します。',
-				'- Required arguments: `title`',
-				'- Optional arguments: `content`, `status`, `priority`, `assignee`, `related_pages`',
-				'',
-				'### tsubakuro_update_task',
-				'',
-				'- Description: 既存タスクを更新します。',
-				'- Required arguments: `id`',
-				'- Optional arguments: `title`, `content`, `status`, `priority`, `assignee`, `related_pages`',
-				'',
-				'### tsubakuro_delete_task',
-				'',
-				'- Description: 指定したタスクを削除します。',
-				'- Required arguments: `id`',
-				'',
-				'### tsubakuro_add_comment',
-				'',
-				'- Description: 指定したタスクにコメントを追加します。',
-				'- Required arguments: `id`, `comment`',
-				'',
-				'## Resources',
-				'',
-				'### Tsubakuro MCP Guide',
-				'',
-				'- URI: `' . $admin_url . '`',
-				'- Read with: `resources/read`',
-				'- Content type: `text/markdown`',
-				'',
-				'## Example JSON-RPC',
-				'',
-				'```json',
-				'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl-test","version":"0.1.0"}}}',
-				'```',
-				'',
-				'```json',
-				'{"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}',
-				'```',
-				'',
-				'```json',
-				'{"jsonrpc":"2.0","id":3,"method":"resources/read","params":{"uri":"' . $admin_url . '"}}',
-				'```',
-				'',
-			)
 		);
 	}
 
