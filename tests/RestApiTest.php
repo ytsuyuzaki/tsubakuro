@@ -126,15 +126,15 @@ class RestApiTest extends TestCase {
 			'ID'           => 7,
 			'display_name' => 'Author',
 		);
-		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
-			'comment_ID'       => 1,
-			'comment_post_ID'  => 101,
-			'user_id'          => 7,
-			'comment_content'  => 'First comment',
-			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
-			'comment_approved' => 1,
-			'comment_date'     => '2026-05-01 12:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][201] = (object) array(
+			'ID'            => 201,
+			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+			'post_author'   => 7,
+			'post_content'  => 'First comment',
+			'post_date'     => '2026-05-01 12:00:00',
+			'post_modified' => '2026-05-01 12:00:00',
 		);
+		$GLOBALS['tsubakuro_test']['post_meta'][201]['_tsubakuro_task_id'] = array( 101 );
 
 		$req    = new WP_REST_Request( array( 'id' => 101 ) );
 		$result = Tsubakuro_REST_API::get_task( $req );
@@ -226,15 +226,15 @@ class RestApiTest extends TestCase {
 
 	public function test_get_comments_handler_returns_comment_list(): void {
 		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task', '' );
-		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
-			'comment_ID'       => 1,
-			'comment_post_ID'  => 101,
-			'user_id'          => 0,
-			'comment_content'  => 'Hello',
-			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
-			'comment_approved' => 1,
-			'comment_date'     => '2026-05-01 09:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][201] = (object) array(
+			'ID'            => 201,
+			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+			'post_author'   => 0,
+			'post_content'  => 'Hello',
+			'post_date'     => '2026-05-01 09:00:00',
+			'post_modified' => '2026-05-01 09:00:00',
 		);
+		$GLOBALS['tsubakuro_test']['post_meta'][201]['_tsubakuro_task_id'] = array( 101 );
 
 		$req    = new WP_REST_Request( array( 'id' => 101 ) );
 		$result = Tsubakuro_REST_API::get_comments( $req );
@@ -275,7 +275,7 @@ class RestApiTest extends TestCase {
 		$req    = new WP_REST_Request( array( 'id' => 101, 'comment' => 'My comment' ) );
 		$result = Tsubakuro_REST_API::add_comment( $req );
 
-		$this->assertSame( 1, $result['id'] );
+		$this->assertIsInt( $result['id'] );
 		$this->assertSame( 'My comment', $result['comment'] );
 		$this->assertSame( 'Alice', $result['user_name'] );
 	}

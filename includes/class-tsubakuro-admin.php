@@ -662,7 +662,7 @@ class Tsubakuro_Admin {
 	}
 
 	/**
-	 * Insert a task comment using WordPress core comments.
+	 * Insert a task comment as a dedicated internal post.
 	 *
 	 * @param int    $task_id  ID of the task.
 	 * @param int    $user_id  ID of the commenter.
@@ -670,17 +670,25 @@ class Tsubakuro_Admin {
 	 * @return int|false Inserted comment ID, or false on failure.
 	 */
 	public static function insert_comment( $task_id, $user_id, $comment ) {
-		$comment_id = wp_insert_comment(
+		$comment_id = wp_insert_post(
 			array(
-				'comment_post_ID'  => (int) $task_id,
-				'user_id'          => (int) $user_id,
-				'comment_content'  => $comment,
-				'comment_type'     => self::COMMENT_TYPE,
-				'comment_approved' => 1,
-			)
+				'post_type'    => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+				'post_status'  => 'publish',
+				'post_title'   => '',
+				'post_content' => $comment,
+				'post_author'  => (int) $user_id,
+				'post_parent'  => (int) $task_id,
+			),
+			true
 		);
 
-		return $comment_id ? (int) $comment_id : false;
+		if ( is_wp_error( $comment_id ) || ! $comment_id ) {
+			return false;
+		}
+
+		update_post_meta( $comment_id, '_tsubakuro_task_id', (int) $task_id );
+
+		return (int) $comment_id;
 	}
 
 	/**
@@ -690,9 +698,9 @@ class Tsubakuro_Admin {
 	 * @return array|null
 	 */
 	public static function get_comment( $comment_id ) {
-		$comment = get_comment( $comment_id );
+		$comment = get_post( $comment_id );
 
-		if ( ! $comment || self::COMMENT_TYPE !== $comment->comment_type ) {
+		if ( ! $comment || Tsubakuro_Post_Types::COMMENT_POST_TYPE !== $comment->post_type ) {
 			return null;
 		}
 
@@ -706,15 +714,25 @@ class Tsubakuro_Admin {
 	 * @return array
 	 */
 	public static function get_task_comments( $task_id ) {
-		$comment_objects = get_comments(
+		$query           = new WP_Query(
 			array(
-				'post_id' => (int) $task_id,
-				'status'  => 'approve',
-				'type'    => self::COMMENT_TYPE,
-				'orderby' => 'comment_date',
-				'order'   => 'ASC',
+				'post_type'      => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 200,
+				'orderby'        => 'date',
+				'order'          => 'ASC',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- required to filter comments by task.
+				'meta_query'     => array(
+					array(
+						'key'     => '_tsubakuro_task_id',
+						'value'   => (int) $task_id,
+						'compare' => '=',
+						'type'    => 'NUMERIC',
+					),
+				),
 			)
 		);
+		$comment_objects = $query->posts;
 
 		$comments = array();
 		foreach ( $comment_objects as $comment ) {
@@ -725,22 +743,23 @@ class Tsubakuro_Admin {
 	}
 
 	/**
-	 * Format a WordPress comment for REST, AJAX, and MCP responses.
+	 * Format a task comment post for REST, AJAX, and MCP responses.
 	 *
-	 * @param WP_Comment|object $comment WordPress comment object.
+	 * @param WP_Post|object $comment Task comment post object.
 	 * @return array
 	 */
 	private static function format_comment( $comment ) {
-		$user_id = (int) $comment->user_id;
+		$user_id = (int) $comment->post_author;
 		$user    = get_user_by( 'id', $user_id );
+		$task_id = (int) get_post_meta( $comment->ID, '_tsubakuro_task_id', true );
 
 		return array(
-			'id'         => (int) $comment->comment_ID,
-			'task_id'    => (int) $comment->comment_post_ID,
+			'id'         => (int) $comment->ID,
+			'task_id'    => $task_id,
 			'user_id'    => $user_id,
 			'user_name'  => $user ? $user->display_name : '不明',
-			'comment'    => $comment->comment_content,
-			'created_at' => $comment->comment_date,
+			'comment'    => $comment->post_content,
+			'created_at' => $comment->post_date,
 		);
 	}
 

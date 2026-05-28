@@ -240,16 +240,16 @@ class McpExtendedTest extends TestCase {
 	}
 
 	public function test_tools_call_get_task_returns_task_with_comments(): void {
-		$GLOBALS['tsubakuro_test']['posts'][101]    = $this->make_post( 101, 'Task Z' );
-		$GLOBALS['tsubakuro_test']['comments'][1] = (object) array(
-			'comment_ID'       => 1,
-			'comment_post_ID'  => 101,
-			'user_id'          => 0,
-			'comment_content'  => 'Note',
-			'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
-			'comment_approved' => 1,
-			'comment_date'     => '2026-05-01 10:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post( 101, 'Task Z' );
+		$GLOBALS['tsubakuro_test']['posts'][201] = (object) array(
+			'ID'            => 201,
+			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+			'post_author'   => 0,
+			'post_content'  => 'Note',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 10:00:00',
 		);
+		$GLOBALS['tsubakuro_test']['post_meta'][201]['_tsubakuro_task_id'] = array( 101 );
 
 		$result = $this->dispatch(
 			array(
