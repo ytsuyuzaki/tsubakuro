@@ -156,6 +156,10 @@ class WP_Query {
 						return false;
 					}
 
+					if ( isset( $args['post_parent'] ) && (int) $args['post_parent'] !== (int) ( $post->post_parent ?? 0 ) ) {
+						return false;
+					}
+
 					foreach ( $args['meta_query'] ?? array() as $meta_filter ) {
 						$values = $GLOBALS['tsubakuro_test']['post_meta'][ $post->ID ][ $meta_filter['key'] ] ?? array();
 						if ( ! in_array( $meta_filter['value'], $values, false ) ) {
@@ -413,7 +417,34 @@ function is_wp_error( $thing ) {
 	return $thing instanceof WP_Error;
 }
 
-function wp_insert_post() {
+function wp_insert_post( $postarr = array(), $wp_error = false ) {
+	if ( ! empty( $GLOBALS['tsubakuro_test']['wpdb_insert_fail'] ) ) {
+		return $wp_error ? new WP_Error( 'insert_failed', 'Insert failed' ) : 0;
+	}
+
+	if ( ( $postarr['post_type'] ?? '' ) === Tsubakuro_Post_Types::COMMENT_POST_TYPE ) {
+		$post_ids = array_keys( $GLOBALS['tsubakuro_test']['posts'] );
+		$next_id  = empty( $post_ids ) ? 1 : ( max( $post_ids ) + 1 );
+
+		$GLOBALS['tsubakuro_test']['posts'][ $next_id ] = (object) array(
+			'ID'            => $next_id,
+			'post_type'     => (string) $postarr['post_type'],
+			'post_title'    => (string) ( $postarr['post_title'] ?? '' ),
+			'post_content'  => (string) ( $postarr['post_content'] ?? '' ),
+			'post_date'     => current_time( 'mysql' ),
+			'post_modified' => current_time( 'mysql' ),
+			'post_author'   => (int) ( $postarr['post_author'] ?? 0 ),
+			'post_parent'   => (int) ( $postarr['post_parent'] ?? 0 ),
+			'post_status'   => (string) ( $postarr['post_status'] ?? 'publish' ),
+		);
+
+		foreach ( $postarr['meta_input'] ?? array() as $meta_key => $meta_value ) {
+			update_post_meta( $next_id, $meta_key, $meta_value );
+		}
+
+		return $next_id;
+	}
+
 	return 123;
 }
 

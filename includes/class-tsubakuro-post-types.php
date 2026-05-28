@@ -20,6 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Tsubakuro_Post_Types {
 
+	const TASK_POST_TYPE    = 'tsubakuro_task';
+	const COMMENT_POST_TYPE = 'tsubakuro_task_comment';
+
 	/** All valid task statuses. */
 	const STATUSES = array(
 		'todo'        => 'ToDo',
@@ -42,7 +45,7 @@ class Tsubakuro_Post_Types {
 	}
 
 	/**
-	 * Register the tsubakuro_task custom post type.
+	 * Register plugin custom post types.
 	 */
 	public static function register_post_type() {
 		$labels = array(
@@ -74,7 +77,28 @@ class Tsubakuro_Post_Types {
 			'rest_base'          => 'tsubakuro-tasks',
 		);
 
-		register_post_type( 'tsubakuro_task', $args );
+		register_post_type( self::TASK_POST_TYPE, $args );
+
+		$comment_labels = array(
+			'name'          => 'タスクコメント',
+			'singular_name' => 'タスクコメント',
+		);
+
+		$comment_args = array(
+			'labels'             => $comment_labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => false,
+			'show_in_menu'       => false,
+			'query_var'          => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'supports'           => array( 'editor', 'author' ),
+		);
+
+		register_post_type( self::COMMENT_POST_TYPE, $comment_args );
 	}
 
 	/**
@@ -119,7 +143,7 @@ class Tsubakuro_Post_Types {
 	 */
 	public static function get_task( $task_id ) {
 		$post = get_post( $task_id );
-		if ( ! $post || 'tsubakuro_task' !== $post->post_type ) {
+		if ( ! $post || self::TASK_POST_TYPE !== $post->post_type ) {
 			return null;
 		}
 
@@ -175,7 +199,7 @@ class Tsubakuro_Post_Types {
 	 */
 	public static function get_tasks( $args = array() ) {
 		$defaults = array(
-			'post_type'      => 'tsubakuro_task',
+			'post_type'      => self::TASK_POST_TYPE,
 			'post_status'    => 'publish',
 			'posts_per_page' => 50,
 			'orderby'        => 'date',

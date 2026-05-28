@@ -202,17 +202,18 @@ class AdminTest extends TestCase {
 	public function test_insert_comment_returns_new_comment_id(): void {
 		$id = Tsubakuro_Admin::insert_comment( 101, 7, 'Hello world' );
 
-		$this->assertSame( 1, $id );
+		$this->assertIsInt( $id );
+		$this->assertGreaterThan( 0, $id );
 	}
 
-	public function test_insert_comment_stores_data_as_wordpress_comment(): void {
-		Tsubakuro_Admin::insert_comment( 101, 7, 'My comment' );
+	public function test_insert_comment_stores_data_as_task_comment_post(): void {
+		$id = Tsubakuro_Admin::insert_comment( 101, 7, 'My comment' );
 
-		$row = $GLOBALS['tsubakuro_test']['comments'][1];
-		$this->assertSame( 101, $row->comment_post_ID );
-		$this->assertSame( 7, $row->user_id );
-		$this->assertSame( 'My comment', $row->comment_content );
-		$this->assertSame( Tsubakuro_Admin::COMMENT_TYPE, $row->comment_type );
+		$row = $GLOBALS['tsubakuro_test']['posts'][ $id ];
+		$this->assertSame( Tsubakuro_Post_Types::COMMENT_POST_TYPE, $row->post_type );
+		$this->assertSame( 101, $row->post_parent );
+		$this->assertSame( 7, $row->post_author );
+		$this->assertSame( 'My comment', $row->post_content );
 	}
 
 	public function test_insert_comment_returns_false_on_db_failure(): void {
@@ -227,8 +228,8 @@ class AdminTest extends TestCase {
 		$first  = Tsubakuro_Admin::insert_comment( 101, 7, 'First' );
 		$second = Tsubakuro_Admin::insert_comment( 101, 7, 'Second' );
 
-		$this->assertSame( 1, $first );
-		$this->assertSame( 2, $second );
+		$this->assertNotSame( $first, $second );
+		$this->assertGreaterThan( $first, $second );
 	}
 
 	// -------------------------------------------------------------------------
@@ -242,13 +243,14 @@ class AdminTest extends TestCase {
 	}
 
 	public function test_get_comment_returns_formatted_comment_with_known_user(): void {
-		$GLOBALS['tsubakuro_test']['comments'][5] = (object) array(
-			'comment_ID'      => 5,
-			'comment_post_ID' => 101,
-			'user_id'         => 7,
-			'comment_content' => 'Great progress',
-			'comment_type'    => Tsubakuro_Admin::COMMENT_TYPE,
-			'comment_date'    => '2026-05-01 12:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][5] = (object) array(
+			'ID'            => 5,
+			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+			'post_author'   => 7,
+			'post_parent'   => 101,
+			'post_content'  => 'Great progress',
+			'post_date'     => '2026-05-01 12:00:00',
+			'post_modified' => '2026-05-01 12:00:00',
 		);
 		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
 			'ID'           => 7,
@@ -265,13 +267,14 @@ class AdminTest extends TestCase {
 	}
 
 	public function test_get_comment_returns_null_for_non_tsubakuro_comment(): void {
-		$GLOBALS['tsubakuro_test']['comments'][5] = (object) array(
-			'comment_ID'      => 5,
-			'comment_post_ID' => 101,
-			'user_id'         => 7,
-			'comment_content' => 'Regular comment',
-			'comment_type'    => 'comment',
-			'comment_date'    => '2026-05-01 12:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][5] = (object) array(
+			'ID'            => 5,
+			'post_type'     => 'post',
+			'post_author'   => 7,
+			'post_parent'   => 101,
+			'post_content'  => 'Regular comment',
+			'post_date'     => '2026-05-01 12:00:00',
+			'post_modified' => '2026-05-01 12:00:00',
 		);
 
 		$result = Tsubakuro_Admin::get_comment( 5 );
@@ -280,13 +283,14 @@ class AdminTest extends TestCase {
 	}
 
 	public function test_get_comment_uses_fallback_username_when_user_not_found(): void {
-		$GLOBALS['tsubakuro_test']['comments'][5] = (object) array(
-			'comment_ID'      => 5,
-			'comment_post_ID' => 101,
-			'user_id'         => 99,
-			'comment_content' => 'Hi',
-			'comment_type'    => Tsubakuro_Admin::COMMENT_TYPE,
-			'comment_date'    => '2026-05-01 12:00:00',
+		$GLOBALS['tsubakuro_test']['posts'][5] = (object) array(
+			'ID'            => 5,
+			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+			'post_author'   => 99,
+			'post_parent'   => 101,
+			'post_content'  => 'Hi',
+			'post_date'     => '2026-05-01 12:00:00',
+			'post_modified' => '2026-05-01 12:00:00',
 		);
 		// User 99 not in store.
 
@@ -306,33 +310,41 @@ class AdminTest extends TestCase {
 	}
 
 	public function test_get_task_comments_returns_formatted_comment_list(): void {
-		$GLOBALS['tsubakuro_test']['comments'] = array(
+		$GLOBALS['tsubakuro_test']['posts'] = array(
 			1 => (object) array(
-				'comment_ID'       => 1,
-				'comment_post_ID'  => 101,
-				'user_id'          => 7,
-				'comment_content'  => 'First',
-				'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
-				'comment_approved' => 1,
-				'comment_date'     => '2026-05-01 09:00:00',
+				'ID'            => 1,
+				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+				'post_author'   => 7,
+				'post_parent'   => 101,
+				'post_content'  => 'First',
+				'post_date'     => '2026-05-01 09:00:00',
+				'post_modified' => '2026-05-01 09:00:00',
 			),
 			2 => (object) array(
-				'comment_ID'       => 2,
-				'comment_post_ID'  => 101,
-				'user_id'          => 0,
-				'comment_content'  => 'Second',
-				'comment_type'     => Tsubakuro_Admin::COMMENT_TYPE,
-				'comment_approved' => 1,
-				'comment_date'     => '2026-05-01 10:00:00',
+				'ID'            => 2,
+				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+				'post_author'   => 0,
+				'post_parent'   => 101,
+				'post_content'  => 'Second',
+				'post_date'     => '2026-05-01 10:00:00',
+				'post_modified' => '2026-05-01 10:00:00',
 			),
 			3 => (object) array(
-				'comment_ID'       => 3,
-				'comment_post_ID'  => 101,
-				'user_id'          => 7,
-				'comment_content'  => 'Ignored regular comment',
-				'comment_type'     => 'comment',
-				'comment_approved' => 1,
-				'comment_date'     => '2026-05-01 11:00:00',
+				'ID'            => 3,
+				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
+				'post_author'   => 7,
+				'post_parent'   => 999,
+				'post_content'  => 'Other task comment',
+				'post_date'     => '2026-05-01 11:00:00',
+				'post_modified' => '2026-05-01 11:00:00',
+			),
+			100 => (object) array(
+				'ID'            => 100,
+				'post_type'     => 'post',
+				'post_author'   => 7,
+				'post_content'  => 'Ignored regular post',
+				'post_date'     => '2026-05-01 11:30:00',
+				'post_modified' => '2026-05-01 11:30:00',
 			),
 		);
 		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
