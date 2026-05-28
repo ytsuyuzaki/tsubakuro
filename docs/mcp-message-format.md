@@ -34,6 +34,24 @@ expected request and response shapes:
   Allowed`.
 - Plain manifest JSON is not an MCP JSON-RPC message.
 
+## Adapter-Compatible MCP Configuration
+
+`Tsubakuro_MCP` can read adapter-style configuration from the
+`tsubakuro_mcp_adapter_config` option. Supported keys include:
+
+- `enabled`
+- `protocol_version`
+- `server_name`
+- `server_version`
+- `capabilities`
+- `tools` (tool allow-list for `tools/list` and `tools/call`)
+- `auth.basic`
+- `auth.bearer` + `auth.bearer_tokens`
+- `auth.cookie`
+
+Legacy `tsubakuro_mcp_enabled` is still accepted as a fallback when
+`enabled` is not defined in the adapter-style option.
+
 ## Version Note
 
 The official MCP specification evolves over time. This document points to the

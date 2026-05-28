@@ -216,6 +216,26 @@ class McpExtendedTest extends TestCase {
 		$this->assertContains( 'tsubakuro_add_comment', $tools );
 	}
 
+	public function test_tools_list_respects_configured_tool_allowlist(): void {
+		update_option(
+			'tsubakuro_mcp_adapter_config',
+			array(
+				'tools' => array( 'tsubakuro_get_task' ),
+			)
+		);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 2,
+				'method'  => 'tools/list',
+				'params'  => array(),
+			)
+		);
+
+		$this->assertSame( array( 'tsubakuro_get_task' ), array_column( $result['result']['tools'], 'name' ) );
+	}
+
 	public function test_tools_call_list_tasks_returns_task_list(): void {
 		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post( 1, 'Alpha' );
 		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post( 2, 'Beta' );
@@ -391,6 +411,29 @@ class McpExtendedTest extends TestCase {
 		$this->assertStringContainsString( 'missing', $result['error']['message'] );
 	}
 
+	public function test_tools_call_returns_error_for_disabled_tool(): void {
+		update_option(
+			'tsubakuro_mcp_adapter_config',
+			array(
+				'tools' => array( 'tsubakuro_get_task' ),
+			)
+		);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 4,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name' => 'tsubakuro_list_tasks',
+				),
+			)
+		);
+
+		$this->assertSame( -32602, $result['error']['code'] );
+		$this->assertStringContainsString( 'disabled', $result['error']['message'] );
+	}
+
 	public function test_resources_list_returns_mcp_guide_resource(): void {
 		$resources = $this->dispatch(
 			array(
@@ -486,5 +529,55 @@ class McpExtendedTest extends TestCase {
 		$GLOBALS['tsubakuro_test']['can']['edit_posts'] = false;
 
 		$this->assertFalse( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_check_permission_returns_true_for_cookie_auth_when_enabled(): void {
+		update_option(
+			'tsubakuro_mcp_adapter_config',
+			array(
+				'auth' => array(
+					'cookie' => true,
+				),
+			)
+		);
+		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+
+		$this->assertTrue( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_check_permission_returns_true_for_bearer_auth_when_token_matches(): void {
+		update_option(
+			'tsubakuro_mcp_adapter_config',
+			array(
+				'auth' => array(
+					'basic'         => false,
+					'bearer'        => true,
+					'bearer_tokens' => array( 'supported-token' ),
+				),
+			)
+		);
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . implode( '', array( 'supported', '-token' ) );
+
+		$this->assertTrue( Tsubakuro_MCP::check_permission() );
+	}
+
+	public function test_handle_jsonrpc_returns_disabled_error_when_endpoint_disabled(): void {
+		update_option(
+			'tsubakuro_mcp_adapter_config',
+			array(
+				'enabled' => false,
+			)
+		);
+		$req    = new WP_REST_Request(
+			array(),
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'initialize',
+			)
+		);
+		$result = Tsubakuro_MCP::handle_jsonrpc( $req );
+
+		$this->assertSame( -32004, $result['error']['code'] );
 	}
 }

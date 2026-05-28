@@ -20,7 +20,10 @@ class Tsubakuro_MCP {
 	const ROUTE            = '/mcp';
 	const PROTOCOL_VERSION = '2025-11-25';
 	const SERVER_NAME      = 'tsubakuro-wordpress-mcp';
+	const SERVER_VERSION   = '0.1.0';
 	const GUIDE_PAGE_SLUG  = 'tsubakuro-mcp-guide';
+	const CONFIG_OPTION    = 'tsubakuro_mcp_adapter_config';
+	const LEGACY_OPTION    = 'tsubakuro_mcp_enabled';
 
 	/**
 	 * Register WordPress hooks.
@@ -66,6 +69,10 @@ class Tsubakuro_MCP {
 	 * @return WP_REST_Response|array
 	 */
 	public static function handle_get() {
+		if ( ! self::is_endpoint_enabled() ) {
+			return self::jsonrpc_response( self::error_response( null, -32004, 'MCP endpoint is disabled by configuration.' ), 503 );
+		}
+
 		if ( ! self::check_permission() ) {
 			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
 		}
@@ -94,7 +101,7 @@ class Tsubakuro_MCP {
 	 */
 	public static function get_manifest() {
 		return array(
-			'protocolVersion' => self::PROTOCOL_VERSION,
+			'protocolVersion' => self::get_protocol_version(),
 			'transport'       => 'streamable-http',
 			'endpoint'        => rest_url( Tsubakuro_REST_API::NAMESPACE . self::ROUTE ),
 			'serverInfo'      => self::get_server_info(),
@@ -109,6 +116,10 @@ class Tsubakuro_MCP {
 	 * @return WP_REST_Response|array
 	 */
 	public static function handle_jsonrpc( $request ) {
+		if ( ! self::is_endpoint_enabled() ) {
+			return self::jsonrpc_response( self::error_response( null, -32004, 'MCP endpoint is disabled by configuration.' ), 503 );
+		}
+
 		if ( ! self::check_permission() ) {
 			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
 		}
@@ -162,7 +173,7 @@ class Tsubakuro_MCP {
 				return self::success_response(
 					$id,
 					array(
-						'protocolVersion' => self::PROTOCOL_VERSION,
+						'protocolVersion' => self::get_protocol_version(),
 						'capabilities'    => self::get_capabilities(),
 						'serverInfo'      => self::get_server_info(),
 					)
@@ -225,6 +236,10 @@ class Tsubakuro_MCP {
 
 		$name      = sanitize_key( $params['name'] );
 		$arguments = self::get_tool_arguments( $params );
+
+		if ( ! self::is_tool_enabled( $name ) ) {
+			return self::error_response( $id, -32602, 'Tool is disabled by configuration: ' . sanitize_text_field( $params['name'] ) );
+		}
 
 		switch ( $name ) {
 			case 'tsubakuro_list_tasks':
@@ -518,6 +533,12 @@ class Tsubakuro_MCP {
 	 * @return array
 	 */
 	private static function get_capabilities() {
+		$config = self::get_mcp_config();
+
+		if ( ! empty( $config['capabilities'] ) && is_array( $config['capabilities'] ) ) {
+			return $config['capabilities'];
+		}
+
 		return array(
 			'tools'     => (object) array(),
 			'resources' => (object) array(),
@@ -530,9 +551,11 @@ class Tsubakuro_MCP {
 	 * @return array
 	 */
 	private static function get_server_info() {
+		$config = self::get_mcp_config();
+
 		return array(
-			'name'    => self::SERVER_NAME,
-			'version' => '0.1.0',
+			'name'    => (string) ( $config['server_name'] ?? self::SERVER_NAME ),
+			'version' => (string) ( $config['server_version'] ?? self::SERVER_VERSION ),
 		);
 	}
 
@@ -542,6 +565,25 @@ class Tsubakuro_MCP {
 	 * @return array
 	 */
 	private static function get_tools() {
+		$all_tools      = self::get_all_tools();
+		$enabled_tools  = array_fill_keys( self::get_enabled_tool_names(), true );
+		$filtered_tools = array();
+
+		foreach ( $all_tools as $tool ) {
+			if ( ! empty( $enabled_tools[ $tool['name'] ] ) ) {
+				$filtered_tools[] = $tool;
+			}
+		}
+
+		return $filtered_tools;
+	}
+
+	/**
+	 * Return all built-in MCP tools.
+	 *
+	 * @return array
+	 */
+	private static function get_all_tools() {
 		return array(
 			array(
 				'name'        => 'tsubakuro_list_tasks',
@@ -683,6 +725,110 @@ class Tsubakuro_MCP {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Return enabled MCP tool names from configuration.
+	 *
+	 * @return array
+	 */
+	private static function get_enabled_tool_names() {
+		$tools = self::get_mcp_config()['tools'] ?? array();
+		$names = array();
+
+		if ( is_array( $tools ) ) {
+			foreach ( $tools as $tool ) {
+				$name = sanitize_key( (string) $tool );
+				if ( '' !== $name ) {
+					$names[] = $name;
+				}
+			}
+		}
+
+		if ( empty( $names ) ) {
+			return array_column( self::get_all_tools(), 'name' );
+		}
+
+		return array_values( array_unique( $names ) );
+	}
+
+	/**
+	 * Return whether a tool name is enabled by configuration.
+	 *
+	 * @param string $tool_name Tool name.
+	 * @return bool
+	 */
+	private static function is_tool_enabled( $tool_name ) {
+		return in_array( sanitize_key( $tool_name ), self::get_enabled_tool_names(), true );
+	}
+
+	/**
+	 * Return protocol version from MCP adapter compatible configuration.
+	 *
+	 * @return string
+	 */
+	private static function get_protocol_version() {
+		$config = self::get_mcp_config();
+
+		return (string) ( $config['protocol_version'] ?? self::PROTOCOL_VERSION );
+	}
+
+	/**
+	 * Return whether the MCP endpoint is enabled.
+	 *
+	 * @return bool
+	 */
+	private static function is_endpoint_enabled() {
+		$config = self::get_mcp_config();
+
+		return ! isset( $config['enabled'] ) || false !== $config['enabled'];
+	}
+
+	/**
+	 * Return MCP adapter compatible configuration.
+	 *
+	 * @return array
+	 */
+	private static function get_mcp_config() {
+		$default_tools = array_column( self::get_all_tools(), 'name' );
+		$defaults      = array(
+			'enabled'                => true,
+			'server_id'              => 'tsubakuro-default-server',
+			'server_route_namespace' => Tsubakuro_REST_API::NAMESPACE,
+			'server_route'           => ltrim( self::ROUTE, '/' ),
+			'server_name'            => self::SERVER_NAME,
+			'server_description'     => 'Tsubakuro MCP server',
+			'server_version'         => self::SERVER_VERSION,
+			'protocol_version'       => self::PROTOCOL_VERSION,
+			'capabilities'           => array(
+				'tools'     => (object) array(),
+				'resources' => (object) array(),
+			),
+			'tools'                  => $default_tools,
+			'auth'                   => array(
+				'basic'  => true,
+				'bearer' => false,
+				'cookie' => false,
+			),
+		);
+
+		$stored = get_option( self::CONFIG_OPTION, array() );
+		if ( ! is_array( $stored ) ) {
+			$stored = array();
+		}
+
+		$legacy_enabled = get_option( self::LEGACY_OPTION, null );
+		if ( null !== $legacy_enabled && ! isset( $stored['enabled'] ) ) {
+			$stored['enabled'] = (bool) $legacy_enabled;
+		}
+
+		$config = array_replace_recursive( $defaults, $stored );
+
+		if ( array_key_exists( 'tools', $stored ) && is_array( $stored['tools'] ) ) {
+			$config['tools'] = $stored['tools'];
+		}
+
+		return $config;
 	}
 
 	/**
@@ -883,17 +1029,43 @@ class Tsubakuro_MCP {
 	 * @return bool
 	 */
 	public static function check_permission() {
+		$config        = self::get_mcp_config();
+		$auth_settings = is_array( $config['auth'] ?? null ) ? $config['auth'] : array();
 		$authorization = self::get_authorization_header();
 
 		if ( '' === $authorization ) {
-			return false;
+			$cookie_enabled = ! empty( $auth_settings['cookie'] );
+
+			return $cookie_enabled && is_user_logged_in() && current_user_can( 'edit_posts' );
 		}
 
-		if ( preg_match( '/^Basic\s+\S+$/i', $authorization ) ) {
+		if ( ! empty( $auth_settings['basic'] ) && preg_match( '/^Basic\s+\S+$/i', $authorization ) ) {
 			return current_user_can( 'edit_posts' );
 		}
 
+		if ( ! empty( $auth_settings['bearer'] ) && preg_match( '/^Bearer\s+(\S+)$/i', $authorization, $matches ) ) {
+			return self::is_valid_bearer_token( $matches[1] );
+		}
+
 		return false;
+	}
+
+	/**
+	 * Validate configured bearer token.
+	 *
+	 * @param string $token Incoming bearer token.
+	 * @return bool
+	 */
+	private static function is_valid_bearer_token( $token ) {
+		$config       = self::get_mcp_config();
+		$auth_config  = is_array( $config['auth'] ?? null ) ? $config['auth'] : array();
+		$token_values = $auth_config['bearer_tokens'] ?? array();
+
+		if ( ! is_array( $token_values ) ) {
+			return false;
+		}
+
+		return in_array( (string) $token, array_map( 'strval', $token_values ), true );
 	}
 
 	/**
