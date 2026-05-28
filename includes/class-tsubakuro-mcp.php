@@ -824,6 +824,8 @@ class Tsubakuro_MCP {
 
 		$config = array_replace_recursive( $defaults, $stored );
 
+		// Keep adapter config semantics for tools: an explicit list fully replaces
+		// defaults rather than being merged by numeric index.
 		if ( array_key_exists( 'tools', $stored ) && is_array( $stored['tools'] ) ) {
 			$config['tools'] = $stored['tools'];
 		}
@@ -1040,7 +1042,11 @@ class Tsubakuro_MCP {
 		}
 
 		if ( ! empty( $auth_settings['basic'] ) && preg_match( '/^Basic\s+\S+$/i', $authorization ) ) {
-			return current_user_can( 'edit_posts' );
+			// WordPress core authenticates Basic credentials before REST callbacks.
+			// Here we only check that the authenticated user has MCP permission.
+			$has_user = function_exists( 'get_current_user_id' ) && get_current_user_id() > 0;
+
+			return $has_user && current_user_can( 'edit_posts' );
 		}
 
 		if ( ! empty( $auth_settings['bearer'] ) && preg_match( '/^Bearer\s+(\S+)$/i', $authorization, $matches ) ) {
@@ -1065,7 +1071,16 @@ class Tsubakuro_MCP {
 			return false;
 		}
 
-		return in_array( (string) $token, array_map( 'strval', $token_values ), true );
+		$incoming = (string) $token;
+
+		foreach ( $token_values as $value ) {
+			$candidate = (string) $value;
+			if ( hash_equals( $candidate, $incoming ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

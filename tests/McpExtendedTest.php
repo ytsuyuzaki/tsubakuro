@@ -552,11 +552,11 @@ class McpExtendedTest extends TestCase {
 				'auth' => array(
 					'basic'         => false,
 					'bearer'        => true,
-					'bearer_tokens' => array( 'supported-token' ),
+					'bearer_tokens' => array( 'test-bearer-token' ),
 				),
 			)
 		);
-		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . implode( '', array( 'supported', '-token' ) );
+		$_SERVER['HTTP_AUTHORIZATION'] = sprintf( '%s %s', 'Bearer', 'test-bearer-token' );
 
 		$this->assertTrue( Tsubakuro_MCP::check_permission() );
 	}
