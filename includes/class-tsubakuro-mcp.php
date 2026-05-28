@@ -144,7 +144,7 @@ class Tsubakuro_MCP {
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @param mixed           $body    Decoded request body.
-	 * @return array|null
+	 * @return array|null Error response array, or null when validation passes.
 	 */
 	private static function validate_protocol_version_header( $request, $body ) {
 		$method = is_array( $body ) ? (string) ( $body['method'] ?? '' ) : '';
@@ -174,7 +174,7 @@ class Tsubakuro_MCP {
 	 * Get MCP-Protocol-Version header from request/server variables.
 	 *
 	 * @param WP_REST_Request $request REST request object.
-	 * @return string
+	 * @return string Header value, or empty string when missing.
 	 */
 	private static function get_mcp_protocol_version_header( $request ) {
 		if ( is_object( $request ) && method_exists( $request, 'get_header' ) ) {
@@ -286,7 +286,8 @@ class Tsubakuro_MCP {
 	 * Return a map from MCP tool names to their handler methods.
 	 *
 	 * This map is consumed by handle_tool_call() to dispatch each tools/call
-	 * request into the corresponding WordPress-side execution logic.
+	 * request into the corresponding WordPress-side execution logic. Tool names
+	 * not listed in this map are rejected as unknown tools.
 	 *
 	 * @return array<string, callable>
 	 */
