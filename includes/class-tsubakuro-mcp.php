@@ -284,7 +284,7 @@ class Tsubakuro_MCP {
 	/**
 	 * Return a map from MCP tool name to tool handler method.
 	 *
-	 * @return array<string, array{string, string}>
+	 * @return array<string, callable>
 	 */
 	private static function get_tool_handlers() {
 		return array(

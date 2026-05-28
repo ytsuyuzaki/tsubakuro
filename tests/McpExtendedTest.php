@@ -130,7 +130,7 @@ class McpExtendedTest extends TestCase {
 		$this->assertArrayNotHasKey( 'resources', $result['result']['capabilities'] );
 	}
 
-	public function test_initialized_request_returns_method_not_found(): void {
+	public function test_initialized_with_id_returns_method_not_found(): void {
 		$reflection = new ReflectionClass( 'Tsubakuro_MCP' );
 		$method     = $reflection->getMethod( 'dispatch' );
 		$method->setAccessible( true );
