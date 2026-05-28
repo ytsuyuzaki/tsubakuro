@@ -718,7 +718,7 @@ class Tsubakuro_Admin {
 			array(
 				'post_type'      => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 				'post_status'    => 'publish',
-				'posts_per_page' => 200,
+				'posts_per_page' => 100,
 				'orderby'        => 'date',
 				'order'          => 'ASC',
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- required to filter comments by task.
