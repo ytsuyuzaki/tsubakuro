@@ -1,6 +1,7 @@
 {
   "plugins": [
-    "."
+    ".",
+    "./wp-env-plugins/mcp-adapter/mcp-adapter"
   ],
   "config": {
     "WP_DEBUG": true,
