@@ -147,7 +147,8 @@ class Tsubakuro_MCP {
 	 * @return array|null
 	 */
 	private static function validate_protocol_version_header( $request, $body ) {
-		if ( ! is_array( $body ) || ( $body['method'] ?? '' ) === 'initialize' ) {
+		$method = is_array( $body ) ? (string) ( $body['method'] ?? '' ) : '';
+		if ( ! is_array( $body ) || 'initialize' === $method ) {
 			return null;
 		}
 
@@ -282,7 +283,10 @@ class Tsubakuro_MCP {
 	}
 
 	/**
-	 * Return a map from MCP tool name to tool handler method.
+	 * Return a map from MCP tool names to their handler methods.
+	 *
+	 * This map is consumed by handle_tool_call() to dispatch each tools/call
+	 * request into the corresponding WordPress-side execution logic.
 	 *
 	 * @return array<string, callable>
 	 */

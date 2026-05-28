@@ -130,7 +130,7 @@ class McpExtendedTest extends TestCase {
 		$this->assertArrayNotHasKey( 'resources', $result['result']['capabilities'] );
 	}
 
-	public function test_initialized_with_id_returns_method_not_found(): void {
+	public function test_initialized_request_with_id_returns_method_not_found(): void {
 		$reflection = new ReflectionClass( 'Tsubakuro_MCP' );
 		$method     = $reflection->getMethod( 'dispatch' );
 		$method->setAccessible( true );
@@ -425,6 +425,31 @@ class McpExtendedTest extends TestCase {
 
 		$this->assertSame( -32600, $result['error']['code'] );
 		$this->assertStringContainsString( 'Unsupported protocol version', $result['error']['message'] );
+	}
+
+	public function test_initialize_accepts_unsupported_protocol_header_value(): void {
+		$_SERVER['HTTP_AUTHORIZATION']       = 'Basic ' . base64_encode( 'admin:password' );
+		$_SERVER['HTTP_MCP_PROTOCOL_VERSION'] = '2024-11-05';
+		$req                                 = new WP_REST_Request(
+			array(),
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 18,
+				'method'  => 'initialize',
+				'params'  => array(
+					'protocolVersion' => '2024-11-05',
+					'capabilities'    => array(),
+					'clientInfo'      => array(
+						'name'    => 'curl-test',
+						'version' => '0.1.0',
+					),
+				),
+			)
+		);
+		$result                              = Tsubakuro_MCP::handle_jsonrpc( $req );
+
+		$this->assertArrayHasKey( 'result', $result );
+		$this->assertSame( '2025-11-25', $result['result']['protocolVersion'] );
 	}
 
 	public function test_check_permission_returns_true_for_basic_auth_when_user_can_edit(): void {
