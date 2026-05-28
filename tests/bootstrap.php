@@ -156,6 +156,10 @@ class WP_Query {
 						return false;
 					}
 
+					if ( isset( $args['post_parent'] ) && (int) $args['post_parent'] !== (int) ( $post->post_parent ?? 0 ) ) {
+						return false;
+					}
+
 					foreach ( $args['meta_query'] ?? array() as $meta_filter ) {
 						$values = $GLOBALS['tsubakuro_test']['post_meta'][ $post->ID ][ $meta_filter['key'] ] ?? array();
 						if ( ! in_array( $meta_filter['value'], $values, false ) ) {

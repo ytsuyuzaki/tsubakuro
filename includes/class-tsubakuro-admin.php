@@ -686,8 +686,6 @@ class Tsubakuro_Admin {
 			return false;
 		}
 
-		update_post_meta( $comment_id, '_tsubakuro_task_id', (int) $task_id );
-
 		return (int) $comment_id;
 	}
 
@@ -718,18 +716,10 @@ class Tsubakuro_Admin {
 			array(
 				'post_type'      => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 				'post_status'    => 'publish',
+				'post_parent'    => (int) $task_id,
 				'posts_per_page' => 100,
 				'orderby'        => 'date',
 				'order'          => 'ASC',
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- required to filter comments by task.
-				'meta_query'     => array(
-					array(
-						'key'     => '_tsubakuro_task_id',
-						'value'   => (int) $task_id,
-						'compare' => '=',
-						'type'    => 'NUMERIC',
-					),
-				),
 			)
 		);
 		$comment_objects = $query->posts;
@@ -751,7 +741,7 @@ class Tsubakuro_Admin {
 	private static function format_comment( $comment ) {
 		$user_id = (int) $comment->post_author;
 		$user    = get_user_by( 'id', $user_id );
-		$task_id = (int) get_post_meta( $comment->ID, '_tsubakuro_task_id', true );
+		$task_id = (int) $comment->post_parent;
 
 		return array(
 			'id'         => (int) $comment->ID,

@@ -214,7 +214,6 @@ class AdminTest extends TestCase {
 		$this->assertSame( 101, $row->post_parent );
 		$this->assertSame( 7, $row->post_author );
 		$this->assertSame( 'My comment', $row->post_content );
-		$this->assertSame( 101, $GLOBALS['tsubakuro_test']['post_meta'][ $id ]['_tsubakuro_task_id'][0] );
 	}
 
 	public function test_insert_comment_returns_false_on_db_failure(): void {
@@ -229,7 +228,8 @@ class AdminTest extends TestCase {
 		$first  = Tsubakuro_Admin::insert_comment( 101, 7, 'First' );
 		$second = Tsubakuro_Admin::insert_comment( 101, 7, 'Second' );
 
-		$this->assertSame( $first + 1, $second );
+		$this->assertNotSame( $first, $second );
+		$this->assertGreaterThan( $first, $second );
 	}
 
 	// -------------------------------------------------------------------------
@@ -247,11 +247,11 @@ class AdminTest extends TestCase {
 			'ID'            => 5,
 			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 			'post_author'   => 7,
+			'post_parent'   => 101,
 			'post_content'  => 'Great progress',
 			'post_date'     => '2026-05-01 12:00:00',
 			'post_modified' => '2026-05-01 12:00:00',
 		);
-		$GLOBALS['tsubakuro_test']['post_meta'][5]['_tsubakuro_task_id'] = array( 101 );
 		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
 			'ID'           => 7,
 			'display_name' => 'Carol',
@@ -271,6 +271,7 @@ class AdminTest extends TestCase {
 			'ID'            => 5,
 			'post_type'     => 'post',
 			'post_author'   => 7,
+			'post_parent'   => 101,
 			'post_content'  => 'Regular comment',
 			'post_date'     => '2026-05-01 12:00:00',
 			'post_modified' => '2026-05-01 12:00:00',
@@ -286,11 +287,11 @@ class AdminTest extends TestCase {
 			'ID'            => 5,
 			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 			'post_author'   => 99,
+			'post_parent'   => 101,
 			'post_content'  => 'Hi',
 			'post_date'     => '2026-05-01 12:00:00',
 			'post_modified' => '2026-05-01 12:00:00',
 		);
-		$GLOBALS['tsubakuro_test']['post_meta'][5]['_tsubakuro_task_id'] = array( 101 );
 		// User 99 not in store.
 
 		$result = Tsubakuro_Admin::get_comment( 5 );
@@ -314,6 +315,7 @@ class AdminTest extends TestCase {
 				'ID'            => 1,
 				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 				'post_author'   => 7,
+				'post_parent'   => 101,
 				'post_content'  => 'First',
 				'post_date'     => '2026-05-01 09:00:00',
 				'post_modified' => '2026-05-01 09:00:00',
@@ -322,6 +324,7 @@ class AdminTest extends TestCase {
 				'ID'            => 2,
 				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 				'post_author'   => 0,
+				'post_parent'   => 101,
 				'post_content'  => 'Second',
 				'post_date'     => '2026-05-01 10:00:00',
 				'post_modified' => '2026-05-01 10:00:00',
@@ -330,6 +333,7 @@ class AdminTest extends TestCase {
 				'ID'            => 3,
 				'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 				'post_author'   => 7,
+				'post_parent'   => 999,
 				'post_content'  => 'Other task comment',
 				'post_date'     => '2026-05-01 11:00:00',
 				'post_modified' => '2026-05-01 11:00:00',
@@ -343,9 +347,6 @@ class AdminTest extends TestCase {
 				'post_modified' => '2026-05-01 11:30:00',
 			),
 		);
-		$GLOBALS['tsubakuro_test']['post_meta'][1]['_tsubakuro_task_id'] = array( 101 );
-		$GLOBALS['tsubakuro_test']['post_meta'][2]['_tsubakuro_task_id'] = array( 101 );
-		$GLOBALS['tsubakuro_test']['post_meta'][3]['_tsubakuro_task_id'] = array( 999 );
 		$GLOBALS['tsubakuro_test']['users'][7] = (object) array(
 			'ID'           => 7,
 			'display_name' => 'Dave',

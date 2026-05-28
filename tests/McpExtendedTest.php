@@ -245,11 +245,11 @@ class McpExtendedTest extends TestCase {
 			'ID'            => 201,
 			'post_type'     => Tsubakuro_Post_Types::COMMENT_POST_TYPE,
 			'post_author'   => 0,
+			'post_parent'   => 101,
 			'post_content'  => 'Note',
 			'post_date'     => '2026-05-01 10:00:00',
 			'post_modified' => '2026-05-01 10:00:00',
 		);
-		$GLOBALS['tsubakuro_test']['post_meta'][201]['_tsubakuro_task_id'] = array( 101 );
 
 		$result = $this->dispatch(
 			array(
