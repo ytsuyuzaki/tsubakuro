@@ -750,7 +750,7 @@ class Tsubakuro_Admin
 	{
 		$users = get_users(
 			array(
-				'who'    => 'authors',
+				'capability' => 'edit_posts',
 				'fields' => array('ID', 'display_name'),
 			)
 		);

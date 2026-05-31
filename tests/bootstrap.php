@@ -276,6 +276,7 @@ function tsubakuro_test_reset()
 		'died'               => null,
 		'options'            => array(),
 		'transients'         => array(),
+		'last_get_users_args' => array(),
 		'abilities'          => array(),
 		'pwd_counter'        => 0,
 	);
@@ -464,8 +465,9 @@ function get_comments($args = array())
 	return array_values($comments);
 }
 
-function get_users()
+function get_users($args = array())
 {
+	$GLOBALS['tsubakuro_test']['last_get_users_args'] = $args;
 	return array_values($GLOBALS['tsubakuro_test']['users']);
 }
 

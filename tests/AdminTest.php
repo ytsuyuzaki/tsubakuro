@@ -209,6 +209,15 @@ class AdminTest extends TestCase
 		$this->assertContains('Bob', $names);
 	}
 
+	public function test_get_users_list_queries_editors_with_capability_argument(): void
+	{
+		Tsubakuro_Admin::get_users_list();
+
+		$args = $GLOBALS['tsubakuro_test']['last_get_users_args'];
+		$this->assertSame('edit_posts', $args['capability']);
+		$this->assertArrayNotHasKey('who', $args);
+	}
+
 	// -------------------------------------------------------------------------
 	// insert_comment()
 	// -------------------------------------------------------------------------
