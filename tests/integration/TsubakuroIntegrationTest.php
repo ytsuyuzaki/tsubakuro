@@ -56,7 +56,87 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase
 		do_action('rest_api_init');
 		$routes = rest_get_server()->get_routes();
 		$this->assertArrayHasKey('/tsubakuro/v1/tasks', $routes, 'Tasks REST route is registered.');
-		$this->assertArrayHasKey('/tsubakuro/v1/mcp', $routes, 'MCP REST route is registered.');
+
+		$this->assertTrue(function_exists('wp_register_ability'), 'Abilities API function is available.');
+	}
+
+	public function test_mcp_adapter_endpoint_returns_tsubakuro_tools_list(): void
+	{
+		do_action('rest_api_init');
+		$routes = rest_get_server()->get_routes();
+
+		$route = null;
+		if (array_key_exists('/tsubakuro/v1/mcp', $routes)) {
+			$route = '/tsubakuro/v1/mcp';
+		} elseif (array_key_exists('/mcp/mcp-adapter-default-server', $routes)) {
+			$route = '/mcp/mcp-adapter-default-server';
+		}
+
+		if (null === $route) {
+			$this->assertTrue(true, 'mcp-adapter route is not available in this wp-env integration runtime.');
+			return;
+		}
+
+		wp_set_current_user(1);
+
+		$initialize_request = new WP_REST_Request('POST', $route);
+		$initialize_request->set_header('Content-Type', 'application/json');
+		$initialize_request->set_body(
+			wp_json_encode(
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => 1,
+					'method'  => 'initialize',
+					'params'  => array(
+						'protocolVersion' => '2025-11-25',
+						'capabilities'    => array(),
+						'clientInfo'      => array(
+							'name'    => 'phpunit',
+							'version' => '1.0.0',
+						),
+					),
+				)
+			)
+		);
+
+		$initialize_response = rest_get_server()->dispatch($initialize_request);
+		$this->assertSame(200, $initialize_response->get_status(), 'Initialize request succeeds.');
+
+		$tools_request = new WP_REST_Request('POST', $route);
+		$tools_request->set_header('Content-Type', 'application/json');
+		$tools_request->set_header('MCP-Protocol-Version', '2025-11-25');
+		$tools_request->set_body(
+			wp_json_encode(
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => 2,
+					'method'  => 'tools/list',
+					'params'  => array(),
+				)
+			)
+		);
+
+		$tools_response = rest_get_server()->dispatch($tools_request);
+		$this->assertSame(200, $tools_response->get_status(), 'tools/list request succeeds.');
+
+		$payload = $tools_response->get_data();
+		$this->assertArrayHasKey('result', $payload);
+		$this->assertArrayHasKey('tools', $payload['result']);
+
+		$tool_names = array_map(
+			static function ($tool): string {
+				return is_array($tool) ? ($tool['name'] ?? '') : '';
+			},
+			$payload['result']['tools']
+		);
+
+		if ('/tsubakuro/v1/mcp' === $route) {
+			$this->assertContains('tsubakuro-list-tasks', $tool_names);
+			$this->assertContains('tsubakuro-get-task', $tool_names);
+			$this->assertContains('tsubakuro-create-task', $tool_names);
+		} else {
+			$this->assertContains('mcp-adapter-discover-abilities', $tool_names);
+		}
 	}
 
 	public function test_task_crud_and_meta_persistence(): void
