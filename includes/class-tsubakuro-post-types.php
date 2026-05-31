@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Register the tsubakuro_task custom post type and its taxonomies/meta.
  *
@@ -11,17 +12,18 @@
  * @package Tsubakuro
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
 /**
  * Manages the tsubakuro_task custom post type.
  */
-class Tsubakuro_Post_Types {
+class Tsubakuro_Post_Types
+{
 
 	const TASK_POST_TYPE    = 'tsubakuro_task';
-	const COMMENT_POST_TYPE = 'tsubakuro_task_comment';
+	const COMMENT_POST_TYPE = 'tsubakuro_comment';
 
 	/** All valid task statuses. */
 	const STATUSES = array(
@@ -40,14 +42,16 @@ class Tsubakuro_Post_Types {
 	/**
 	 * Register WordPress hooks.
 	 */
-	public static function init() {
-		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+	public static function init()
+	{
+		add_action('init', array(__CLASS__, 'register_post_type'));
 	}
 
 	/**
 	 * Register plugin custom post types.
 	 */
-	public static function register_post_type() {
+	public static function register_post_type()
+	{
 		$labels = array(
 			'name'               => 'タスク',
 			'singular_name'      => 'タスク',
@@ -72,12 +76,12 @@ class Tsubakuro_Post_Types {
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
-			'supports'           => array( 'title', 'editor', 'author' ),
+			'supports'           => array('title', 'editor', 'author'),
 			'show_in_rest'       => true,
 			'rest_base'          => 'tsubakuro-tasks',
 		);
 
-		register_post_type( self::TASK_POST_TYPE, $args );
+		register_post_type(self::TASK_POST_TYPE, $args);
 
 		$comment_labels = array(
 			'name'          => 'タスクコメント',
@@ -95,10 +99,10 @@ class Tsubakuro_Post_Types {
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
-			'supports'           => array( 'editor', 'author' ),
+			'supports'           => array('editor', 'author'),
 		);
 
-		register_post_type( self::COMMENT_POST_TYPE, $comment_args );
+		register_post_type(self::COMMENT_POST_TYPE, $comment_args);
 	}
 
 	/**
@@ -107,30 +111,31 @@ class Tsubakuro_Post_Types {
 	 * @param int   $task_id Post ID.
 	 * @param array $data    Assoc array with keys: status, assignee, related_pages.
 	 */
-	public static function save_meta( $task_id, $data ) {
-		if ( isset( $data['status'] ) && array_key_exists( $data['status'], self::STATUSES ) ) {
-			update_post_meta( $task_id, '_tsubakuro_status', sanitize_text_field( $data['status'] ) );
+	public static function save_meta($task_id, $data)
+	{
+		if (isset($data['status']) && array_key_exists($data['status'], self::STATUSES)) {
+			update_post_meta($task_id, '_tsubakuro_status', sanitize_text_field($data['status']));
 		}
 
-		if ( isset( $data['priority'] ) && array_key_exists( $data['priority'], self::PRIORITIES ) ) {
-			update_post_meta( $task_id, '_tsubakuro_priority', sanitize_text_field( $data['priority'] ) );
+		if (isset($data['priority']) && array_key_exists($data['priority'], self::PRIORITIES)) {
+			update_post_meta($task_id, '_tsubakuro_priority', sanitize_text_field($data['priority']));
 		}
 
-		if ( isset( $data['assignee'] ) ) {
-			update_post_meta( $task_id, '_tsubakuro_assignee', absint( $data['assignee'] ) );
+		if (isset($data['assignee'])) {
+			update_post_meta($task_id, '_tsubakuro_assignee', absint($data['assignee']));
 		}
 
-		if ( isset( $data['related_pages'] ) ) {
+		if (isset($data['related_pages'])) {
 			// Accept array or comma-separated string.
-			$pages = is_array( $data['related_pages'] )
-				? array_map( 'absint', $data['related_pages'] )
-				: array_map( 'absint', explode( ',', $data['related_pages'] ) );
-			$pages = array_unique( array_filter( $pages ) );
+			$pages = is_array($data['related_pages'])
+				? array_map('absint', $data['related_pages'])
+				: array_map('absint', explode(',', $data['related_pages']));
+			$pages = array_unique(array_filter($pages));
 
 			// Store each related page as a separate meta row for accurate querying.
-			delete_post_meta( $task_id, '_tsubakuro_related_page' );
-			foreach ( $pages as $page_id ) {
-				add_post_meta( $task_id, '_tsubakuro_related_page', $page_id );
+			delete_post_meta($task_id, '_tsubakuro_related_page');
+			foreach ($pages as $page_id) {
+				add_post_meta($task_id, '_tsubakuro_related_page', $page_id);
 			}
 		}
 	}
@@ -141,13 +146,14 @@ class Tsubakuro_Post_Types {
 	 * @param int $task_id Post ID.
 	 * @return array|null
 	 */
-	public static function get_task( $task_id ) {
-		$post = get_post( $task_id );
-		if ( ! $post || self::TASK_POST_TYPE !== $post->post_type ) {
+	public static function get_task($task_id)
+	{
+		$post = get_post($task_id);
+		if (! $post || self::TASK_POST_TYPE !== $post->post_type) {
 			return null;
 		}
 
-		return self::format_task( $post );
+		return self::format_task($post);
 	}
 
 	/**
@@ -156,18 +162,19 @@ class Tsubakuro_Post_Types {
 	 * @param WP_Post $post The post object to format.
 	 * @return array
 	 */
-	public static function format_task( $post ) {
-		$status_raw    = get_post_meta( $post->ID, '_tsubakuro_status', true );
+	public static function format_task($post)
+	{
+		$status_raw    = get_post_meta($post->ID, '_tsubakuro_status', true);
 		$status        = $status_raw ? $status_raw : 'todo';
-		$priority_raw  = get_post_meta( $post->ID, '_tsubakuro_priority', true );
+		$priority_raw  = get_post_meta($post->ID, '_tsubakuro_priority', true);
 		$priority      = $priority_raw ? $priority_raw : 'medium';
-		$assignee_id   = (int) get_post_meta( $post->ID, '_tsubakuro_assignee', true );
-		$related_pages = array_map( 'intval', get_post_meta( $post->ID, '_tsubakuro_related_page', false ) );
+		$assignee_id   = (int) get_post_meta($post->ID, '_tsubakuro_assignee', true);
+		$related_pages = array_map('intval', get_post_meta($post->ID, '_tsubakuro_related_page', false));
 
 		$assignee = null;
-		if ( $assignee_id ) {
-			$user = get_user_by( 'id', $assignee_id );
-			if ( $user ) {
+		if ($assignee_id) {
+			$user = get_user_by('id', $assignee_id);
+			if ($user) {
 				$assignee = array(
 					'id'           => $user->ID,
 					'display_name' => $user->display_name,
@@ -180,9 +187,9 @@ class Tsubakuro_Post_Types {
 			'title'          => $post->post_title,
 			'content'        => $post->post_content,
 			'status'         => $status,
-			'status_label'   => self::STATUSES[ $status ] ?? $status,
+			'status_label'   => self::STATUSES[$status] ?? $status,
 			'priority'       => $priority,
-			'priority_label' => self::PRIORITIES[ $priority ] ?? $priority,
+			'priority_label' => self::PRIORITIES[$priority] ?? $priority,
 			'assignee'       => $assignee,
 			'related_pages'  => $related_pages,
 			'created_at'     => $post->post_date,
@@ -197,7 +204,8 @@ class Tsubakuro_Post_Types {
 	 * @param array $args Optional WP_Query compatible args.
 	 * @return array
 	 */
-	public static function get_tasks( $args = array() ) {
+	public static function get_tasks($args = array())
+	{
 		$defaults = array(
 			'post_type'      => self::TASK_POST_TYPE,
 			'post_status'    => 'publish',
@@ -208,38 +216,38 @@ class Tsubakuro_Post_Types {
 
 		$meta_query = array();
 
-		if ( ! empty( $args['status'] ) && 'all' !== $args['status'] ) {
+		if (! empty($args['status']) && 'all' !== $args['status']) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for status filtering.
 			$meta_query[] = array(
 				'key'   => '_tsubakuro_status',
-				'value' => sanitize_text_field( $args['status'] ),
+				'value' => sanitize_text_field($args['status']),
 			);
 		}
 		// status is always unset because it is not a valid WP_Query parameter.
-		unset( $args['status'] );
+		unset($args['status']);
 
-		if ( ! empty( $args['priority'] ) ) {
+		if (! empty($args['priority'])) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for priority filtering.
 			$meta_query[] = array(
 				'key'   => '_tsubakuro_priority',
-				'value' => sanitize_text_field( $args['priority'] ),
+				'value' => sanitize_text_field($args['priority']),
 			);
-			unset( $args['priority'] );
+			unset($args['priority']);
 		}
 
-		if ( ! empty( $args['assignee'] ) ) {
+		if (! empty($args['assignee'])) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for assignee filtering.
 			$meta_query[] = array(
 				'key'     => '_tsubakuro_assignee',
-				'value'   => absint( $args['assignee'] ),
+				'value'   => absint($args['assignee']),
 				'compare' => '=',
 				'type'    => 'NUMERIC',
 			);
-			unset( $args['assignee'] );
+			unset($args['assignee']);
 		}
 
-		if ( ! empty( $args['related_page'] ) ) {
-			$page_id = absint( $args['related_page'] );
+		if (! empty($args['related_page'])) {
+			$page_id = absint($args['related_page']);
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for page filtering.
 			$meta_query[] = array(
 				'key'     => '_tsubakuro_related_page',
@@ -247,20 +255,20 @@ class Tsubakuro_Post_Types {
 				'compare' => '=',
 				'type'    => 'NUMERIC',
 			);
-			unset( $args['related_page'] );
+			unset($args['related_page']);
 		}
 
-		if ( ! empty( $meta_query ) ) {
+		if (! empty($meta_query)) {
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query is required for task list filters.
 			$defaults['meta_query'] = $meta_query;
 		}
 
-		if ( ! empty( $args['s'] ) ) {
-			$defaults['s'] = sanitize_text_field( $args['s'] );
-			unset( $args['s'] );
+		if (! empty($args['s'])) {
+			$defaults['s'] = sanitize_text_field($args['s']);
+			unset($args['s']);
 		}
 
-		if ( ! empty( $args['orderby'] ) ) {
+		if (! empty($args['orderby'])) {
 			$orderby_map = array(
 				'id'       => 'ID',
 				'title'    => 'title',
@@ -269,36 +277,36 @@ class Tsubakuro_Post_Types {
 				'priority' => 'meta_value',
 				'assignee' => 'meta_value_num',
 			);
-			$orderby     = sanitize_key( $args['orderby'] );
-			if ( isset( $orderby_map[ $orderby ] ) ) {
-				$defaults['orderby'] = $orderby_map[ $orderby ];
-				if ( 'status' === $orderby ) {
+			$orderby     = sanitize_key($args['orderby']);
+			if (isset($orderby_map[$orderby])) {
+				$defaults['orderby'] = $orderby_map[$orderby];
+				if ('status' === $orderby) {
 					$defaults['meta_key'] = '_tsubakuro_status'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
 				}
-				if ( 'priority' === $orderby ) {
+				if ('priority' === $orderby) {
 					$defaults['meta_key'] = '_tsubakuro_priority'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
 				}
-				if ( 'assignee' === $orderby ) {
+				if ('assignee' === $orderby) {
 					$defaults['meta_key'] = '_tsubakuro_assignee'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- needed for list table sorting.
 				}
 			}
-			unset( $args['orderby'] );
+			unset($args['orderby']);
 		}
 
-		if ( ! empty( $args['order'] ) ) {
-			$order = strtoupper( sanitize_text_field( $args['order'] ) );
-			if ( in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+		if (! empty($args['order'])) {
+			$order = strtoupper(sanitize_text_field($args['order']));
+			if (in_array($order, array('ASC', 'DESC'), true)) {
 				$defaults['order'] = $order;
 			}
-			unset( $args['order'] );
+			unset($args['order']);
 		}
 
-		$query_args = array_merge( $defaults, $args );
-		$query      = new WP_Query( $query_args );
+		$query_args = array_merge($defaults, $args);
+		$query      = new WP_Query($query_args);
 
 		$tasks = array();
-		foreach ( $query->posts as $post ) {
-			$tasks[] = self::format_task( $post );
+		foreach ($query->posts as $post) {
+			$tasks[] = self::format_task($post);
 		}
 
 		return $tasks;
