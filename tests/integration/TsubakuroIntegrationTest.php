@@ -65,12 +65,9 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase
 		do_action('rest_api_init');
 		$routes = rest_get_server()->get_routes();
 
-		$route = null;
-		if (array_key_exists('/tsubakuro/v1/mcp', $routes)) {
-			$route = '/tsubakuro/v1/mcp';
-		} elseif (array_key_exists('/mcp/mcp-adapter-default-server', $routes)) {
-			$route = '/mcp/mcp-adapter-default-server';
-		}
+		$route = array_key_exists('/mcp/mcp-adapter-default-server', $routes)
+			? '/mcp/mcp-adapter-default-server'
+			: null;
 
 		if (null === $route) {
 			$this->assertTrue(true, 'mcp-adapter route is not available in this wp-env integration runtime.');
@@ -136,13 +133,7 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase
 			$payload['result']['tools']
 		);
 
-		if ('/tsubakuro/v1/mcp' === $route) {
-			$this->assertContains('tsubakuro-list-tasks', $tool_names);
-			$this->assertContains('tsubakuro-get-task', $tool_names);
-			$this->assertContains('tsubakuro-create-task', $tool_names);
-		} else {
-			$this->assertContains('mcp-adapter-discover-abilities', $tool_names);
-		}
+		$this->assertContains('mcp-adapter-discover-abilities', $tool_names);
 	}
 
 	public function test_task_crud_and_meta_persistence(): void

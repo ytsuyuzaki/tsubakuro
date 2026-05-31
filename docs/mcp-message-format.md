@@ -14,7 +14,7 @@ expected request and response shapes:
 ## Current Implementation Notes
 
 - Adapter reference: `WordPress/mcp-adapter@530a541318c13d9039cb15cbd3d77507643218ab`
-- The endpoint is `/wp-json/tsubakuro/v1/mcp`.
+- The endpoint is `/wp-json/mcp/mcp-adapter-default-server`.
 - The implementation target is MCP protocol version `2025-11-25`.
 - Client-to-server JSON-RPC messages are sent with `POST`.
 - Streamable HTTP clients should send `Accept: application/json, text/event-stream`.

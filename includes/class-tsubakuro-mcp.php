@@ -3,9 +3,6 @@
 /**
  * MCP (Model Context Protocol) endpoint.
  *
- * Implements JSON-RPC 2.0 over WordPress REST API at:
- *   /wp-json/tsubakuro/v1/mcp
- *
  * @package Tsubakuro
  */
 
