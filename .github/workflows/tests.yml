@@ -21,7 +21,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: "8.2"
           tools: composer
 
       - name: Install Composer dependencies
@@ -30,26 +30,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Lint CSS
-        run: npm run lint:css
-
-      - name: Lint JS
-        run: npm run lint:js
-
-      - name: Lint Markdown docs
-        run: npm run lint:md:docs
-
-      - name: Lint package.json
-        run: npm run lint:pkg-json
-
-      - name: Lint PHP
-        run: npm run lint:php
+      - name: Lint
+        run: npm run lint
 
   php:
     name: PHP and WordPress
@@ -62,7 +50,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: "8.2"
           tools: composer
 
       - name: Install Composer dependencies
@@ -71,7 +59,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Install npm dependencies
@@ -98,7 +86,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Install npm dependencies
