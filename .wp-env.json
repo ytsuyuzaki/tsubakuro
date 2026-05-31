@@ -1,9 +1,14 @@
 {
+  "$schema": "https://schemas.wp.org/trunk/wp-env.json",
   "plugins": [
+    "WordPress/mcp-adapter",
     "."
   ],
   "config": {
     "WP_DEBUG": true,
     "SCRIPT_DEBUG": true
+  },
+  "lifecycleScripts": {
+    "afterStart": "wp-env run cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader && wp-env run tests-cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader"
   }
 }
