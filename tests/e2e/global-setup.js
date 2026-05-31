@@ -6,18 +6,18 @@ import { execSync } from 'node:child_process';
  * @param {import('@playwright/test').FullConfig} config
  * @return {Promise<void>}
  */
-async function globalSetup(config) {
-	const { storageState, baseURL } = config.projects[0].use;
+async function globalSetup( config ) {
+	const { storageState, baseURL } = config.projects[ 0 ].use;
 	const storageStatePath =
 		typeof storageState === 'string' ? storageState : undefined;
 
-	const requestContext = await request.newContext({
+	const requestContext = await request.newContext( {
 		baseURL,
-	});
+	} );
 
-	const requestUtils = new RequestUtils(requestContext, {
+	const requestUtils = new RequestUtils( requestContext, {
 		storageStatePath,
-	});
+	} );
 
 	// Authenticate and save the storageState to disk.
 	await requestUtils.setupRest();
@@ -29,10 +29,10 @@ async function globalSetup(config) {
 	);
 
 	// Ensure plugins required by E2E scenarios are active in the test site.
-	for (const pluginSlug of ['mcp-adapter', 'tsubakuro']) {
+	for ( const pluginSlug of [ 'mcp-adapter', 'tsubakuro' ] ) {
 		try {
-			await requestUtils.activatePlugin(pluginSlug);
-		} catch (error) {
+			await requestUtils.activatePlugin( pluginSlug );
+		} catch {
 			// Keep setup resilient when plugin API or plugin availability differs.
 		}
 	}
@@ -46,21 +46,21 @@ async function globalSetup(config) {
 		'twentytwentysix',
 	];
 
-	for (const themeSlug of themeCandidates) {
+	for ( const themeSlug of themeCandidates ) {
 		try {
-			await requestUtils.activateTheme(themeSlug);
+			await requestUtils.activateTheme( themeSlug );
 			break;
-		} catch (error) {
+		} catch {
 			// Ignore missing themes; CI images can differ by bundled default themes.
 		}
 	}
 
 	// Reset the test environment before running the tests.
-	await Promise.all([
+	await Promise.all( [
 		requestUtils.deleteAllPosts(),
 		requestUtils.deleteAllBlocks(),
 		requestUtils.resetPreferences(),
-	]);
+	] );
 
 	await requestContext.dispose();
 }
