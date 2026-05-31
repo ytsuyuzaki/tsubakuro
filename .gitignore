@@ -5,3 +5,4 @@ dist/
 wp-env-plugins/
 npm-debug.log*
 .phpunit.result.cache
+artifacts/
