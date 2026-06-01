@@ -1,26 +1,36 @@
-import { request } from '@playwright/test';
-import { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
+import { chromium } from '@playwright/test';
 import { execSync } from 'node:child_process';
 
 /**
  * @param {import('@playwright/test').FullConfig} config
  * @return {Promise<void>}
  */
-async function globalSetup( config ) {
-	const { storageState, baseURL } = config.projects[ 0 ].use;
+async function globalSetup(config) {
+	const { storageState, baseURL } = config.projects[0].use;
 	const storageStatePath =
 		typeof storageState === 'string' ? storageState : undefined;
-
-	const requestContext = await request.newContext( {
+	const browser = await chromium.launch();
+	const context = await browser.newContext({
 		baseURL,
-	} );
+	});
+	const page = await context.newPage();
 
-	const requestUtils = new RequestUtils( requestContext, {
-		storageStatePath,
-	} );
+	// Log in using the default wp-env admin account and persist auth state.
+	await page.goto('/wp-login.php');
+	await page.fill('#user_login', process.env.WP_ADMIN_USERNAME || 'admin');
+	await page.fill(
+		'#user_pass',
+		process.env.WP_ADMIN_PASSWORD || 'password'
+	);
+	await page.click('#wp-submit');
+	await page.waitForURL('**/wp-admin/**');
 
-	// Authenticate and save the storageState to disk.
-	await requestUtils.setupRest();
+	if (storageStatePath) {
+		await context.storageState({ path: storageStatePath });
+	}
+
+	await context.close();
+	await browser.close();
 
 	// Ensure plugin state is deterministic even when wp-env server is reused.
 	execSync(
@@ -29,40 +39,11 @@ async function globalSetup( config ) {
 	);
 
 	// Ensure plugins required by E2E scenarios are active in the test site.
-	for ( const pluginSlug of [ 'mcp-adapter', 'tsubakuro' ] ) {
-		try {
-			await requestUtils.activatePlugin( pluginSlug );
-		} catch {
-			// Keep setup resilient when plugin API or plugin availability differs.
-		}
-	}
-
-	const themeCandidates = [
-		'twentytwentyone',
-		'twentytwentytwo',
-		'twentytwentythree',
-		'twentytwentyfour',
-		'twentytwentyfive',
-		'twentytwentysix',
-	];
-
-	for ( const themeSlug of themeCandidates ) {
-		try {
-			await requestUtils.activateTheme( themeSlug );
-			break;
-		} catch {
-			// Ignore missing themes; CI images can differ by bundled default themes.
-		}
-	}
-
-	// Reset the test environment before running the tests.
-	await Promise.all( [
-		requestUtils.deleteAllPosts(),
-		requestUtils.deleteAllBlocks(),
-		requestUtils.resetPreferences(),
-	] );
-
-	await requestContext.dispose();
+	// Try to activate a default theme if available; keep setup resilient in CI.
+	execSync(
+		"npx wp-env run tests-cli sh -c 'for t in twentytwentyone twentytwentytwo twentytwentythree twentytwentyfour twentytwentyfive twentytwentysix; do wp theme activate $t >/dev/null 2>&1 && break || true; done'",
+		{ stdio: 'ignore' }
+	);
 }
 
 export default globalSetup;
