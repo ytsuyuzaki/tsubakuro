@@ -30,7 +30,7 @@
     "lint:pkg-json": "wp-scripts lint-pkg-json",
     "lint:php": "vendor/bin/phpcs",
     "lint:php:fix": "vendor/bin/phpcbf",
-    "wp-env:test": "wp-env run tests-cli --env-cwd='wp-content/plugins/tsubakuro/' sh -c 'wp plugin activate mcp-adapter >/dev/null 2>&1 || true; vendor/bin/phpunit && vendor/bin/phpunit -c phpunit-integration.xml.dist'",
+    "wp-env:test": "wp-env run tests-cli --env-cwd='wp-content/plugins/tsubakuro/' vendor/bin/phpunit",
     "wp-env:start": "wp-env start",
     "wp-env:stop": "wp-env stop",
     "wp-env:destroy": "wp-env destroy",

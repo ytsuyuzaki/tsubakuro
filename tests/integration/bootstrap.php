@@ -11,7 +11,7 @@ require_once dirname(__DIR__, 2) . '/vendor/yoast/wp-test-utils/src/WPIntegratio
 $_tests_dir = WPIntegration\get_path_to_wp_test_dir();
 
 if (false === $_tests_dir) {
-	echo PHP_EOL, 'ERROR: WordPress test bootstrap not found. Run integration tests via `npm run wp-env:test`, or set WP_TESTS_DIR/WP_DEVELOP_DIR.', PHP_EOL;
+	echo PHP_EOL, 'ERROR: WordPress test bootstrap not found. Run tests via `npm run wp-env:test`, or set WP_TESTS_DIR/WP_DEVELOP_DIR.', PHP_EOL;
 	exit(1);
 }
 

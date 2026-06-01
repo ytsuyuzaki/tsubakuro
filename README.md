@@ -114,7 +114,7 @@ npm run build:zip
 ```
 
 - `composer test`: 軽量ユニットテストを実行します。
-- `npm run wp-env:test`: `wp-env` 上でプラグインを有効化し、WordPress統合スモークテストを実行します。
+- `npm run wp-env:test`: `wp-env` の `tests-cli` で `vendor/bin/phpunit`（integration 設定）を実行します。
 - `npm run build:zip`: `dist/tsubakuro.zip` を作成します。
 
 ## Distribution

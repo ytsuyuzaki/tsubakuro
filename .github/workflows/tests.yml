@@ -65,10 +65,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Run unit tests
+        run: composer test
+
       - name: Start wp-env
         run: npm run wp-env:start
 
-      - name: Run PHPUnit tests
+      - name: Run integration tests
         run: npm run wp-env:test
 
       - name: Stop wp-env

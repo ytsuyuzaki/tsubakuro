@@ -9,6 +9,6 @@
     "SCRIPT_DEBUG": true
   },
   "lifecycleScripts": {
-    "afterStart": "wp-env run cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader && wp-env run tests-cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader"
+    "afterStart": "wp-env run cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader && wp-env run tests-cli composer install --working-dir=wp-content/plugins/mcp-adapter/ --no-dev --optimize-autoloader && wp-env run tests-cli sh -c 'wp plugin activate mcp-adapter tsubakuro >/dev/null 2>&1 || true'"
   }
 }
