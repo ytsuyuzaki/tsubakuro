@@ -9,7 +9,7 @@
 
 ## MCP 実装の参照先
 
-- MCP エンドポイントや JSON-RPC メッセージ形式を変更する場合は、`docs/mcp-message-format.md` を参照してください。
+- MCP エンドポイントや JSON-RPC メッセージ形式を変更する場合は、`mcp-adapter` プラグインの接続方式に準拠してください。
 
 ## テストコードの作成方針
 
