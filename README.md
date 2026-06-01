@@ -82,17 +82,6 @@ curl -X POST https://your-site.test/wp-json/mcp/mcp-adapter-default-server \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
 
-### 接続テストスクリプト
-
-このリポジトリには mcp-adapter 接続確認用のスクリプトを同梱しています。
-
-```sh
-WP_API_URL="http://your-site.test/wp-json/mcp/mcp-adapter-default-server" \
-WP_API_USERNAME="your-username" \
-WP_API_PASSWORD="your-application-password" \
-npm run mcp:connection:test
-```
-
 ### Codex CLI
 
 `~/.codex/config.toml` に追加します。

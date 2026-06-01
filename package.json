@@ -34,7 +34,6 @@
     "wp-env:start": "wp-env start",
     "wp-env:stop": "wp-env stop",
     "wp-env:destroy": "wp-env destroy",
-    "mcp:connection:test": "node scripts/test-mcp-adapter-connection.mjs",
     "test:e2e": "wp-scripts test-playwright",
     "build:zip": "wp-scripts plugin-zip && mkdir -p dist && mv tsubakuro.zip dist/"
   },
