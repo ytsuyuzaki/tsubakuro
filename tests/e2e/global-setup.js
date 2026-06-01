@@ -5,28 +5,28 @@ import { execSync } from 'node:child_process';
  * @param {import('@playwright/test').FullConfig} config
  * @return {Promise<void>}
  */
-async function globalSetup(config) {
-	const { storageState, baseURL } = config.projects[0].use;
+async function globalSetup( config ) {
+	const { storageState, baseURL } = config.projects[ 0 ].use;
 	const storageStatePath =
 		typeof storageState === 'string' ? storageState : undefined;
 	const browser = await chromium.launch();
-	const context = await browser.newContext({
+	const context = await browser.newContext( {
 		baseURL,
-	});
+	} );
 	const page = await context.newPage();
 
 	// Log in using the default wp-env admin account and persist auth state.
-	await page.goto('/wp-login.php');
-	await page.fill('#user_login', process.env.WP_ADMIN_USERNAME || 'admin');
+	await page.goto( '/wp-login.php' );
+	await page.fill( '#user_login', process.env.WP_ADMIN_USERNAME || 'admin' );
 	await page.fill(
 		'#user_pass',
 		process.env.WP_ADMIN_PASSWORD || 'password'
 	);
-	await page.click('#wp-submit');
-	await page.waitForURL('**/wp-admin/**');
+	await page.click( '#wp-submit' );
+	await page.waitForURL( '**/wp-admin/**' );
 
-	if (storageStatePath) {
-		await context.storageState({ path: storageStatePath });
+	if ( storageStatePath ) {
+		await context.storageState( { path: storageStatePath } );
 	}
 
 	await context.close();
