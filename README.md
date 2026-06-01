@@ -108,13 +108,11 @@ claude mcp add --transport http tsubakuro \
 
 ```sh
 npm install
-composer test
-npm run wp-env:test
+npm run test
 npm run build:zip
 ```
 
-- `composer test`: 軽量ユニットテストを実行します。
-- `npm run wp-env:test`: `wp-env` の `tests-cli` で `vendor/bin/phpunit`（integration 設定）を実行します。
+- `npm run test`: ユニットテスト（`composer test`）と integration テスト（`npm run wp-env:test`）を連続実行します。
 - `npm run build:zip`: `dist/tsubakuro.zip` を作成します。
 
 ## Distribution
