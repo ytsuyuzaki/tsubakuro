@@ -1,8 +1,8 @@
-const defaultConfig = require('@wordpress/scripts/config/eslint.config.cjs');
+const defaultConfig = require( '@wordpress/scripts/config/eslint.config.cjs' );
 
 module.exports = [
 	{
-		ignores: ['.github/**', 'dist/**'],
+		ignores: [ '.github/**', 'dist/**' ],
 	},
 	...defaultConfig,
 ];
