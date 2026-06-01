@@ -4,68 +4,68 @@
 
 /* Wrap */
 .tsubakuro-admin-wrap {
-	max-width: 1200px;
+  max-width: 1200px;
 }
 
 /* Filter tabs */
 .tsubakuro-filter-tabs {
-	clear: both;
-	display: block;
-	float: none;
-	margin: 12px 0 16px;
+  clear: both;
+  display: block;
+  float: none;
+  margin: 12px 0 16px;
 }
 
 /* Status badges */
 .tsubakuro-status {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 3px;
-	font-size: 12px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .tsubakuro-status--todo {
-	background: #e5e5e5;
-	color: #555;
+  background: #e5e5e5;
+  color: #555;
 }
 
 .tsubakuro-status--in_progress {
-	background: #fff3cd;
-	color: #856404;
+  background: #fff3cd;
+  color: #856404;
 }
 
 .tsubakuro-status--completed {
-	background: #d1f5d3;
-	color: #1d6b24;
+  background: #d1f5d3;
+  color: #1d6b24;
 }
 
 /* Task table */
 .tsubakuro-table-scroll {
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tsubakuro-task-table {
-	min-width: 600px;
+  min-width: 600px;
 }
 
 .tsubakuro-task-table .column-id {
-	width: 60px;
+  width: 60px;
 }
 
 .tsubakuro-task-table .column-title {
-	min-width: 200px;
+  min-width: 200px;
 }
 
 /* Optional columns: hidden by default, shown when user enables them. */
 .tsubakuro-optional-col {
-	display: none;
+  display: none;
 }
 
 .tsubakuro-optional-col.tsubakuro-col-visible {
-	display: table-cell;
+  display: table-cell;
 }
 
 /* =========================================================================
@@ -73,127 +73,127 @@
    ========================================================================= */
 
 .tsubakuro-form-card {
-	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 20px 24px;
-	margin-top: 16px;
-	max-width: 800px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px 24px;
+  margin-top: 16px;
+  max-width: 800px;
 }
 
 /* Form rows */
 .tsubakuro-form-row {
-	margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .tsubakuro-form-row label {
-	display: block;
-	font-weight: 600;
-	margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
 .tsubakuro-form-row .required {
-	color: #c0392b;
+  color: #c0392b;
 }
 
 .tsubakuro-form-row--half {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .tsubakuro-form-footer {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-	padding-top: 8px;
-	border-top: 1px solid #eee;
-	margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+  margin-top: 8px;
 }
 
 /* Screen options toggle (task list page) */
 .tsubakuro-screen-options {
-	float: right;
-	margin: 8px 0 12px;
-	position: relative;
+  float: right;
+  margin: 8px 0 12px;
+  position: relative;
 }
 
 .tsubakuro-screen-options-panel {
-	position: absolute;
-	right: 0;
-	top: calc(100% + 4px);
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 4px;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-	padding: 12px 16px;
-	z-index: 10;
-	min-width: 160px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  padding: 12px 16px;
+  z-index: 10;
+  min-width: 160px;
 }
 
 .tsubakuro-screen-options-panel fieldset {
-	border: none;
-	margin: 0;
-	padding: 0;
+  border: none;
+  margin: 0;
+  padding: 0;
 }
 
 .tsubakuro-screen-options-panel legend {
-	font-weight: 600;
-	margin-bottom: 8px;
-	font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 13px;
 }
 
 .tsubakuro-screen-options-panel label {
-	display: block;
-	margin-bottom: 6px;
-	font-size: 13px;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
 }
 
 .tsubakuro-content-header label {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .tsubakuro-screen-options-panel label:last-child {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* Comments */
 #tsubakuro-comment-list {
-	max-height: 320px;
-	overflow-y: auto;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 8px;
-	margin-bottom: 10px;
-	background: #fafafa;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
 }
 
 .tsubakuro-comment-item {
-	padding: 8px 0;
-	border-bottom: 1px solid #eee;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
 }
 
 .tsubakuro-comment-item:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .tsubakuro-comment-meta {
-	font-size: 12px;
-	color: #888;
-	margin-bottom: 4px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
 }
 
 .tsubakuro-comment-meta strong {
-	color: #444;
+  color: #444;
 }
 
 .tsubakuro-comment-body {
-	font-size: 14px;
-	white-space: pre-wrap;
+  font-size: 14px;
+  white-space: pre-wrap;
 }
 
 #tsubakuro-add-comment-btn {
-	margin-top: 6px;
+  margin-top: 6px;
 }
 
 /* =========================================================================
@@ -201,61 +201,61 @@
    ========================================================================= */
 
 .tsubakuro-content-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .tsubakuro-content-tabs {
-	display: flex;
-	gap: 0;
-	border: 1px solid #ddd;
-	border-radius: 3px;
-	overflow: hidden;
+  display: flex;
+  gap: 0;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .tsubakuro-content-tab {
-	background: #f6f7f7;
-	border: none;
-	cursor: pointer;
-	font-size: 12px;
-	padding: 3px 12px;
-	line-height: 1.5;
-	color: #50575e;
+  background: #f6f7f7;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 12px;
+  line-height: 1.5;
+  color: #50575e;
 }
 
 .tsubakuro-content-tab + .tsubakuro-content-tab {
-	border-left: 1px solid #ddd;
+  border-left: 1px solid #ddd;
 }
 
 .tsubakuro-content-tab:hover {
-	background: #e9eaec;
+  background: #e9eaec;
 }
 
 .tsubakuro-content-tab.is-active {
-	background: #2271b1;
-	color: #fff;
+  background: #2271b1;
+  color: #fff;
 }
 
 .tsubakuro-content-preview {
-	width: 100%;
-	box-sizing: border-box;
-	min-height: 80px;
-	padding: 8px 10px;
-	border: 1px solid #ddd;
-	border-radius: 3px;
-	background: #fafafa;
-	font-size: 14px;
-	line-height: 1.7;
-	white-space: pre-wrap;
-	word-break: break-word;
-	color: #1d2327;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #fafafa;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #1d2327;
 }
 
 .tsubakuro-content-preview.is-empty {
-	color: #aaa;
-	font-style: italic;
+  color: #aaa;
+  font-style: italic;
 }
 
 /* =========================================================================
@@ -263,224 +263,79 @@
    ========================================================================= */
 
 .tsubakuro-related-tags {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-bottom: 8px;
-	min-height: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  min-height: 24px;
 }
 
 .tsubakuro-related-tag {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	background: #e8f0fe;
-	border: 1px solid #b3c9f7;
-	border-radius: 3px;
-	padding: 3px 8px;
-	font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e8f0fe;
+  border: 1px solid #b3c9f7;
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 13px;
 }
 
 .tsubakuro-related-tag a {
-	color: #1a56cc;
-	text-decoration: none;
+  color: #1a56cc;
+  text-decoration: none;
 }
 
 .tsubakuro-related-tag a:hover {
-	text-decoration: underline;
+  text-decoration: underline;
 }
 
 .tsubakuro-related-remove {
-	background: none;
-	border: none;
-	color: #888;
-	cursor: pointer;
-	font-size: 12px;
-	line-height: 1;
-	padding: 0 0 0 4px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 0 0 4px;
 }
 
 .tsubakuro-related-remove:hover {
-	color: #c0392b;
+  color: #c0392b;
 }
 
 .tsubakuro-related-search {
-	position: relative;
+  position: relative;
 }
 
 .tsubakuro-related-results {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	right: 0;
-	background: #fff;
-	border: 1px solid #ddd;
-	border-top: none;
-	border-radius: 0 0 4px 4px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	max-height: 220px;
-	overflow-y: auto;
-	z-index: 100;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
 }
 
 .tsubakuro-related-result-item {
-	padding: 8px 12px;
-	cursor: pointer;
-	font-size: 13px;
-	border-bottom: 1px solid #f0f0f0;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .tsubakuro-related-result-item:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 .tsubakuro-related-result-item:hover {
-	background: #f0f6ff;
-}
-
-/* =========================================================================
-   Settings page
-   ========================================================================= */
-
-.tsubakuro-settings-card {
-	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 20px 24px;
-	margin-top: 20px;
-	max-width: 800px;
-}
-
-.tsubakuro-settings-card h2 {
-	margin-top: 0;
-	padding-bottom: 10px;
-	border-bottom: 1px solid #eee;
-}
-
-.tsubakuro-url-row {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-}
-
-.tsubakuro-url-row input {
-	flex: 1;
-}
-
-.tsubakuro-steps {
-	padding-left: 20px;
-}
-
-.tsubakuro-steps li {
-	margin-bottom: 8px;
-}
-
-.tsubakuro-code-block-wrap {
-	position: relative;
-	margin: 10px 0;
-}
-
-.tsubakuro-code-block-wrap .tsubakuro-copy-btn {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-}
-
-/* =========================================================================
-   MCP Guide page
-   ========================================================================= */
-
-.tsubakuro-guide-intro {
-	font-size: 14px;
-	margin-bottom: 16px;
-}
-
-.tsubakuro-guide-card {
-	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 20px 24px;
-	margin-top: 20px;
-	max-width: 900px;
-}
-
-.tsubakuro-guide-card h2 {
-	margin-top: 0;
-	padding-bottom: 10px;
-	border-bottom: 1px solid #eee;
-}
-
-.tsubakuro-guide-table {
-	margin: 12px 0;
-	font-size: 13px;
-}
-
-.tsubakuro-guide-table th {
-	background: #f8f8f8;
-	font-weight: 600;
-}
-
-.tsubakuro-guide-table td,
-.tsubakuro-guide-table th {
-	padding: 8px 12px;
-	vertical-align: top;
-}
-
-.tsubakuro-guide-list {
-	padding-left: 20px;
-	margin: 8px 0;
-}
-
-.tsubakuro-guide-list li {
-	margin-bottom: 6px;
-}
-
-.tsubakuro-guide-tool {
-	margin-top: 24px;
-	padding-top: 20px;
-	border-top: 1px solid #eee;
-}
-
-.tsubakuro-guide-tool:first-child {
-	margin-top: 16px;
-	padding-top: 0;
-	border-top: none;
-}
-
-.tsubakuro-guide-tool h3 {
-	margin: 0 0 8px;
-	font-size: 14px;
-}
-
-.tsubakuro-guide-flows {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-	gap: 16px;
-	margin-top: 16px;
-}
-
-.tsubakuro-guide-flow {
-	background: #f9f9f9;
-	border: 1px solid #e5e5e5;
-	border-radius: 4px;
-	padding: 14px 16px;
-}
-
-.tsubakuro-guide-flow h3 {
-	margin: 0 0 10px;
-	font-size: 13px;
-	font-weight: 600;
-}
-
-.tsubakuro-flow-steps {
-	margin: 0;
-	padding-left: 18px;
-	font-size: 13px;
-}
-
-.tsubakuro-flow-steps li {
-	margin-bottom: 6px;
-	line-height: 1.5;
+  background: #f0f6ff;
 }
 
 /* =========================================================================
@@ -488,78 +343,77 @@
    ========================================================================= */
 
 .tsubakuro-about-wrap {
-	max-width: 1120px;
+  max-width: 1120px;
 }
 
 .tsubakuro-about-lead {
-	max-width: 820px;
-	font-size: 15px;
+  max-width: 820px;
+  font-size: 15px;
 }
 
 .tsubakuro-about-grid {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) 300px;
-	gap: 20px;
-	align-items: start;
-	margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
 }
 
 .tsubakuro-about-section {
-	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 20px 24px;
-	margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
 }
 
 .tsubakuro-about-section h2,
 .tsubakuro-about-section h3 {
-	margin-top: 0;
+  margin-top: 0;
 }
 
 .tsubakuro-about-story-list {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .tsubakuro-about-story-item {
-	border-left: 3px solid #2271b1;
-	background: #f6f7f7;
-	padding: 12px 14px;
+  border-left: 3px solid #2271b1;
+  background: #f6f7f7;
+  padding: 12px 14px;
 }
 
 .tsubakuro-about-story-item h3 {
-	margin-bottom: 6px;
-	font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 14px;
 }
 
 .tsubakuro-about-story-item p {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .tsubakuro-about-value-list,
 .tsubakuro-about-link-list {
-	margin-bottom: 0;
-	padding-left: 18px;
+  margin-bottom: 0;
+  padding-left: 18px;
 }
 
 .tsubakuro-about-value-list li,
 .tsubakuro-about-link-list li {
-	margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .tsubakuro-about-link-list span {
-	display: block;
-	color: #646970;
-	font-size: 12px;
-	margin-top: 2px;
+  display: block;
+  color: #646970;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 @media (max-width: 900px) {
-
-	.tsubakuro-about-grid,
-	.tsubakuro-about-story-list {
-		grid-template-columns: 1fr;
-	}
+  .tsubakuro-about-grid,
+  .tsubakuro-about-story-list {
+    grid-template-columns: 1fr;
+  }
 }
