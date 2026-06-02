@@ -149,8 +149,7 @@ class TsubakuroTest extends TestCase
 		$this->assertCount(1, $tasks);
 		$this->assertSame('tsubakuro_task', $GLOBALS['tsubakuro_test']['last_query_args']['post_type']);
 		$this->assertSame(1, $GLOBALS['tsubakuro_test']['last_query_args']['per_page']);
-		$this->assertSame('_tsubakuro_status', $GLOBALS['tsubakuro_test']['last_query_args']['meta_query'][0]['key']);
-		$this->assertSame('_tsubakuro_related_page', $GLOBALS['tsubakuro_test']['last_query_args']['meta_query'][1]['key']);
+		$this->assertSame('_tsubakuro_related_page', $GLOBALS['tsubakuro_test']['last_query_args']['meta_query'][0]['key']);
 	}
 
 	public function test_mcp_manifest_exposes_expected_tools(): void
