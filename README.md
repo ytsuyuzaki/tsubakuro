@@ -31,6 +31,7 @@ OpenAI の [Symphony](https://github.com/openai/symphony) が示すマルチエ�
 
 ```sh
 npm install
+npx playwright install-deps
 npm run test
 npm run build:zip
 ```

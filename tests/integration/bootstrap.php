@@ -29,21 +29,4 @@ tests_add_filter('muplugins_loaded', '_manually_load_tsubakuro_plugin');
 
 WPIntegration\bootstrap_it();
 
-$adapter_plugin_file = dirname(__DIR__, 3) . '/mcp-adapter/mcp-adapter.php';
-if (file_exists($adapter_plugin_file)) {
-	require_once $adapter_plugin_file;
-
-	if (class_exists('Tsubakuro_MCP')) {
-		add_action('wp_abilities_api_init', array('Tsubakuro_MCP', 'register_abilities'));
-		add_action('mcp_adapter_init', array('Tsubakuro_MCP', 'register_mcp_server'));
-	}
-
-	do_action('wp_abilities_api_init');
-
-	if (class_exists('\\WP\\MCP\\Core\\McpAdapter')) {
-		$adapter = \WP\MCP\Core\McpAdapter::instance();
-		$adapter->init();
-	}
-}
-
 Tsubakuro_Activator::activate();
