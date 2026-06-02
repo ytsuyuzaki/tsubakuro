@@ -40,6 +40,7 @@ class TsubakuroTest extends TestCase
 		$this->assertArrayHasKey('init', $GLOBALS['tsubakuro_test']['actions']);
 		$this->assertArrayHasKey('admin_menu', $GLOBALS['tsubakuro_test']['actions']);
 		$this->assertArrayHasKey('rest_api_init', $GLOBALS['tsubakuro_test']['actions']);
+		$this->assertArrayHasKey('wp_abilities_api_categories_init', $GLOBALS['tsubakuro_test']['actions']);
 		$this->assertArrayHasKey('wp_abilities_api_init', $GLOBALS['tsubakuro_test']['actions']);
 		$this->assertArrayHasKey('mcp_adapter_init', $GLOBALS['tsubakuro_test']['actions']);
 		$this->assertArrayHasKey('wp_enqueue_scripts', $GLOBALS['tsubakuro_test']['actions']);
