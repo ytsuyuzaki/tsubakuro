@@ -422,14 +422,14 @@
 
 /* Subtasks section */
 .tsubakuro-subtasks-card {
-margin-top: 20px;
+	margin-top: 20px;
 }
 
 .tsubakuro-subtasks-add-link {
-font-size: 13px;
+	font-size: 13px;
 }
 
 .tsubakuro-subtasks-empty {
-color: #888;
-font-size: 13px;
+	color: #888;
+	font-size: 13px;
 }

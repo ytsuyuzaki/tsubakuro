@@ -146,7 +146,7 @@ class Tsubakuro_Admin {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- task_id and parent_id are display params, not form data.
-		$task_id              = absint( $_GET['task_id'] ?? 0 );
+		$task_id = absint( $_GET['task_id'] ?? 0 );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- parent_id is a display param, not form data.
 		$default_parent_id    = absint( $_GET['parent_id'] ?? 0 );
 		$task                 = null;
@@ -615,14 +615,14 @@ class Tsubakuro_Admin {
 			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
 		}
 
-		$keyword  = sanitize_text_field( wp_unslash( $_GET['keyword'] ?? '' ) );
-		$tasks    = Tsubakuro_Post_Types::get_tasks(
+		$keyword = sanitize_text_field( wp_unslash( $_GET['keyword'] ?? '' ) );
+		$tasks   = Tsubakuro_Post_Types::get_tasks(
 			array(
 				's'              => $keyword,
 				'posts_per_page' => 10,
 			)
 		);
-		$results  = array();
+		$results = array();
 		foreach ( $tasks as $task ) {
 			$results[] = array(
 				'id'    => $task['id'],
