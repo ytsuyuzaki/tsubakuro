@@ -475,4 +475,91 @@ class AdminTest extends TestCase
 
 		$this->assertArrayNotHasKey('type__not_in', $query->query_vars);
 	}
+
+	// -------------------------------------------------------------------------
+	// Related tasks meta box
+	// -------------------------------------------------------------------------
+
+	private function make_task_for_meta_box(int $id, string $title, int $page_id): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][$id] = (object) array(
+			'ID'            => $id,
+			'post_type'     => Tsubakuro_Post_Types::TASK_POST_TYPE,
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-01-01 00:00:00',
+			'post_modified' => '2026-01-01 00:00:00',
+			'post_author'   => 1,
+			'post_parent'   => 0,
+			'post_status'   => 'publish',
+		);
+		$GLOBALS['tsubakuro_test']['post_meta'][$id] = array(
+			'_tsubakuro_status'       => array('todo'),
+			'_tsubakuro_related_page' => array($page_id),
+		);
+	}
+
+	public function test_add_related_tasks_meta_boxes_registers_for_public_post_types_when_admin(): void
+	{
+		// manage_options is true by default in test setup.
+		Tsubakuro_Admin::add_related_tasks_meta_boxes();
+
+		$ids = array_column($GLOBALS['tsubakuro_test']['meta_boxes'], 'id');
+		$this->assertContains('tsubakuro-related-tasks', $ids);
+
+		// Default public_post_types stub returns ['post', 'page'].
+		$screens = array_column($GLOBALS['tsubakuro_test']['meta_boxes'], 'screen');
+		$this->assertContains('post', $screens);
+		$this->assertContains('page', $screens);
+	}
+
+	public function test_add_related_tasks_meta_boxes_does_nothing_without_manage_options(): void
+	{
+		$GLOBALS['tsubakuro_test']['can']['manage_options'] = false;
+
+		Tsubakuro_Admin::add_related_tasks_meta_boxes();
+
+		$this->assertEmpty($GLOBALS['tsubakuro_test']['meta_boxes']);
+	}
+
+	public function test_add_related_tasks_meta_boxes_excludes_task_post_type(): void
+	{
+		$GLOBALS['tsubakuro_test']['public_post_types'] = array('post', 'page', Tsubakuro_Post_Types::TASK_POST_TYPE);
+
+		Tsubakuro_Admin::add_related_tasks_meta_boxes();
+
+		$screens = array_column($GLOBALS['tsubakuro_test']['meta_boxes'], 'screen');
+		$this->assertNotContains(Tsubakuro_Post_Types::TASK_POST_TYPE, $screens);
+	}
+
+	public function test_render_related_tasks_meta_box_outputs_task_link(): void
+	{
+		$this->make_task_for_meta_box(201, 'Meta box task', 99);
+
+		$post     = (object) array('ID' => 99);
+		ob_start();
+		Tsubakuro_Admin::render_related_tasks_meta_box($post);
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString('Meta box task', $output);
+		$this->assertStringContainsString('task_id=201', $output);
+	}
+
+	public function test_render_related_tasks_meta_box_shows_empty_message_when_no_tasks(): void
+	{
+		$post     = (object) array('ID' => 999);
+		ob_start();
+		Tsubakuro_Admin::render_related_tasks_meta_box($post);
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString('このページに関連するタスクはありません', $output);
+	}
+
+	public function test_init_registers_add_meta_boxes_hook(): void
+	{
+		tsubakuro_test_reset();
+		Tsubakuro_Admin::init();
+
+		$this->assertArrayHasKey('add_meta_boxes', $GLOBALS['tsubakuro_test']['actions']);
+	}
 }

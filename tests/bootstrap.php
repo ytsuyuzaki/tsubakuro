@@ -282,6 +282,7 @@ function tsubakuro_test_reset()
 		'pwd_counter'        => 0,
 		'cron_events'        => array(),
 		'sent_mails'         => array(),
+		'meta_boxes'         => array(),
 	);
 	$wpdb = new MockWpdb();
 }
@@ -704,6 +705,11 @@ function is_user_logged_in()
 {
 	return ! empty($GLOBALS['tsubakuro_test']['is_logged_in']);
 }
+function add_meta_box($id, $title, $callback, $screen = null, $context = 'advanced', $priority = 'default', $callback_args = null)
+{
+	$GLOBALS['tsubakuro_test']['meta_boxes'][] = compact('id', 'title', 'callback', 'screen', 'context', 'priority');
+}
+
 function get_post_types($args = array(), $output = 'names')
 {
 	return $GLOBALS['tsubakuro_test']['public_post_types'] ?? array('post', 'page');

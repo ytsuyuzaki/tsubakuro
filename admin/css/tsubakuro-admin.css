@@ -433,3 +433,33 @@
 	color: #888;
 	font-size: 13px;
 }
+
+/* ==========================================================================
+   Related tasks meta box (post/page edit screen)
+   ========================================================================== */
+
+.tsubakuro-meta-box-task-list {
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+}
+
+.tsubakuro-meta-box-task-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 6px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid #f0f0f0;
+	font-size: 13px;
+}
+
+.tsubakuro-meta-box-task-item:last-child {
+	border-bottom: none;
+}
+
+.tsubakuro-meta-box-actions {
+	display: flex;
+	gap: 6px;
+	margin: 8px 0 0;
+}

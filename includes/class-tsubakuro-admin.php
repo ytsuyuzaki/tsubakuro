@@ -32,6 +32,7 @@ class Tsubakuro_Admin {
 		add_action( 'wp_ajax_tsubakuro_search_posts', array( __CLASS__, 'ajax_search_posts' ) );
 		add_action( 'wp_ajax_tsubakuro_search_tasks', array( __CLASS__, 'ajax_search_tasks' ) );
 		add_action( 'pre_get_comments', array( __CLASS__, 'exclude_task_comments_from_list' ) );
+		add_action( 'add_meta_boxes', array( __CLASS__, 'add_related_tasks_meta_boxes' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -756,6 +757,52 @@ class Tsubakuro_Admin {
 			'comment'    => $comment->post_content,
 			'created_at' => $comment->post_date,
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Meta boxes
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Register a "関連タスク" meta box for all public post types (admin-only).
+	 */
+	public static function add_related_tasks_meta_boxes() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$post_types = array_values(
+			array_diff(
+				get_post_types( array( 'public' => true ), 'names' ),
+				array( Tsubakuro_Post_Types::TASK_POST_TYPE, Tsubakuro_Post_Types::COMMENT_POST_TYPE )
+			)
+		);
+
+		foreach ( $post_types as $post_type ) {
+			add_meta_box(
+				'tsubakuro-related-tasks',
+				__( '関連タスク (Tsubakuro)', 'tsubakuro' ),
+				array( __CLASS__, 'render_related_tasks_meta_box' ),
+				$post_type,
+				'side',
+				'default'
+			);
+		}
+	}
+
+	/**
+	 * Render the "関連タスク" meta box content.
+	 *
+	 * @param WP_Post $post The current post being edited.
+	 */
+	public static function render_related_tasks_meta_box( $post ) {
+		$tasks = Tsubakuro_Post_Types::get_tasks(
+			array(
+				'related_page' => $post->ID,
+				'status'       => 'all',
+			)
+		);
+		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/related-tasks-meta-box.php';
 	}
 
 	// -------------------------------------------------------------------------

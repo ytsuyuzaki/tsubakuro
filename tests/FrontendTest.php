@@ -88,6 +88,7 @@ class FrontendTest extends TestCase {
 
 	public function test_add_admin_bar_button_adds_node_when_user_can_edit(): void {
 		$GLOBALS['tsubakuro_test']['is_logged_in'] = true;
+		// manage_options is true by default, so 4 nodes are added (including page-tasks).
 
 		$bar = new class() {
 			public $nodes = array();
@@ -96,9 +97,44 @@ class FrontendTest extends TestCase {
 
 		Tsubakuro_Frontend::add_admin_bar_button( $bar );
 
+		$ids = array_column( $bar->nodes, 'id' );
+		$this->assertContains( 'tsubakuro-panel-toggle', $ids );
+		$this->assertContains( 'tsubakuro-list', $ids );
+		$this->assertContains( 'tsubakuro-new', $ids );
+	}
+
+	public function test_add_admin_bar_button_adds_page_tasks_node_for_manage_options_with_page(): void {
+		$GLOBALS['tsubakuro_test']['is_logged_in']         = true;
+		// manage_options is true by default.
+
+		$bar = new class() {
+			public $nodes = array();
+			public function add_node( $args ) { $this->nodes[] = $args; }
+		};
+
+		// get_queried_object_id() returns 55 in test stubs.
+		Tsubakuro_Frontend::add_admin_bar_button( $bar );
+
+		$ids = array_column( $bar->nodes, 'id' );
+		$this->assertContains( 'tsubakuro-page-tasks', $ids );
+
+		$page_tasks_node = $bar->nodes[ array_search( 'tsubakuro-page-tasks', $ids, true ) ];
+		$this->assertStringContainsString( 'related_page=55', $page_tasks_node['href'] );
+	}
+
+	public function test_add_admin_bar_button_does_not_add_page_tasks_node_without_manage_options(): void {
+		$GLOBALS['tsubakuro_test']['is_logged_in']           = true;
+		$GLOBALS['tsubakuro_test']['can']['manage_options']  = false;
+
+		$bar = new class() {
+			public $nodes = array();
+			public function add_node( $args ) { $this->nodes[] = $args; }
+		};
+
+		Tsubakuro_Frontend::add_admin_bar_button( $bar );
+
+		$ids = array_column( $bar->nodes, 'id' );
+		$this->assertNotContains( 'tsubakuro-page-tasks', $ids );
 		$this->assertCount( 3, $bar->nodes );
-		$this->assertSame( 'tsubakuro-panel-toggle', $bar->nodes[0]['id'] );
-		$this->assertSame( 'tsubakuro-list', $bar->nodes[1]['id'] );
-		$this->assertSame( 'tsubakuro-new', $bar->nodes[2]['id'] );
 	}
 }
