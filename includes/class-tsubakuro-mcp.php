@@ -312,6 +312,10 @@ class Tsubakuro_MCP {
 			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
 		}
 
+		if ( isset( $arguments['parent_id'] ) ) {
+			$args['parent_id'] = absint( $arguments['parent_id'] );
+		}
+
 		foreach ( array( 's', 'orderby', 'order' ) as $key ) {
 			if ( ! empty( $arguments[ $key ] ) ) {
 				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
@@ -367,6 +371,7 @@ class Tsubakuro_MCP {
 				'post_title'   => sanitize_text_field( $arguments['title'] ),
 				'post_content' => wp_kses_post( $arguments['content'] ?? '' ),
 				'post_status'  => 'publish',
+				'post_parent'  => absint( $arguments['parent_id'] ?? 0 ),
 			),
 			true
 		);
@@ -414,6 +419,10 @@ class Tsubakuro_MCP {
 
 		if ( isset( $arguments['content'] ) ) {
 			$update['post_content'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( isset( $arguments['parent_id'] ) ) {
+			$update['post_parent'] = absint( $arguments['parent_id'] );
 		}
 
 		wp_update_post( $update );
@@ -504,6 +513,7 @@ class Tsubakuro_MCP {
 				'priority'     => array( 'type' => 'string' ),
 				'assignee'     => array( 'type' => 'integer' ),
 				'related_page' => array( 'type' => 'integer' ),
+				'parent_id'    => array( 'type' => 'integer' ),
 				'per_page'     => array( 'type' => 'integer' ),
 				's'            => array( 'type' => 'string' ),
 				'orderby'      => array( 'type' => 'string' ),
@@ -546,6 +556,7 @@ class Tsubakuro_MCP {
 					'type'  => 'array',
 					'items' => array( 'type' => 'integer' ),
 				),
+				'parent_id'     => array( 'type' => 'integer' ),
 			),
 		);
 	}
@@ -570,6 +581,7 @@ class Tsubakuro_MCP {
 					'type'  => 'array',
 					'items' => array( 'type' => 'integer' ),
 				),
+				'parent_id'     => array( 'type' => 'integer' ),
 			),
 		);
 	}
@@ -894,6 +906,10 @@ class Tsubakuro_MCP {
 			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
 		}
 
+		if ( isset( $arguments['parent_id'] ) ) {
+			$args['parent_id'] = absint( $arguments['parent_id'] );
+		}
+
 		foreach ( array( 's', 'orderby', 'order' ) as $key ) {
 			if ( ! empty( $arguments[ $key ] ) ) {
 				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
@@ -926,6 +942,7 @@ class Tsubakuro_MCP {
 		}
 
 		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
+		$task['children'] = Tsubakuro_Post_Types::get_tasks( array( 'parent_id' => $task['id'] ) );
 
 		return self::tool_success_response(
 			$id,
@@ -953,6 +970,7 @@ class Tsubakuro_MCP {
 				'post_title'   => sanitize_text_field( $arguments['title'] ),
 				'post_content' => wp_kses_post( $arguments['content'] ?? '' ),
 				'post_status'  => 'publish',
+				'post_parent'  => absint( $arguments['parent_id'] ?? 0 ),
 			),
 			true
 		);
@@ -1002,6 +1020,10 @@ class Tsubakuro_MCP {
 
 		if ( isset( $arguments['content'] ) ) {
 			$update['post_content'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( isset( $arguments['parent_id'] ) ) {
+			$update['post_parent'] = absint( $arguments['parent_id'] );
 		}
 
 		wp_update_post( $update );

@@ -378,4 +378,59 @@ class PostTypesTest extends TestCase
 		$this->assertSame('meta_value', $args['orderby']);
 		$this->assertSame('_tsubakuro_priority', $args['meta_key']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Parent / child task support
+	// -------------------------------------------------------------------------
+
+	public function test_format_task_includes_parent_id_zero_for_root_task(): void
+	{
+		$task = Tsubakuro_Post_Types::format_task($this->make_post(10, 'Root', 'Content'));
+
+		$this->assertArrayHasKey('parent_id', $task);
+		$this->assertSame(0, $task['parent_id']);
+	}
+
+	public function test_format_task_returns_correct_parent_id_when_set(): void
+	{
+		$post = $this->make_post(20, 'Child', 'Content');
+		$post->post_parent = 10;
+
+		$task = Tsubakuro_Post_Types::format_task($post);
+
+		$this->assertSame(10, $task['parent_id']);
+	}
+
+	public function test_get_tasks_with_parent_id_filter_sets_post_parent_in_query(): void
+	{
+		$parent = $this->make_post(5, 'Parent', 'Body');
+		$child  = $this->make_post(6, 'Child', 'Body');
+		$child->post_parent = 5;
+		$GLOBALS['tsubakuro_test']['posts'][5] = $parent;
+		$GLOBALS['tsubakuro_test']['posts'][6] = $child;
+
+		$tasks = Tsubakuro_Post_Types::get_tasks(array('parent_id' => 5));
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame(5, $args['post_parent']);
+		$this->assertCount(1, $tasks);
+		$this->assertSame(6, $tasks[0]['id']);
+	}
+
+	public function test_get_tasks_with_parent_id_zero_returns_root_tasks_only(): void
+	{
+		$root  = $this->make_post(1, 'Root', 'Body');
+		$child = $this->make_post(2, 'Child', 'Body');
+		$child->post_parent = 1;
+		$GLOBALS['tsubakuro_test']['posts'][1] = $root;
+		$GLOBALS['tsubakuro_test']['posts'][2] = $child;
+
+		$tasks = Tsubakuro_Post_Types::get_tasks(array('parent_id' => 0));
+
+		$args = $GLOBALS['tsubakuro_test']['last_query_args'];
+		$this->assertSame(0, $args['post_parent']);
+		// WP_Query stub only matches posts whose post_parent equals the filter value.
+		$this->assertCount(1, $tasks);
+		$this->assertSame(1, $tasks[0]['id']);
+	}
 }

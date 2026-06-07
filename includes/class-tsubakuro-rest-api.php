@@ -12,6 +12,7 @@
  *   DELETE /tasks/{id}
  *   GET    /tasks/{id}/comments
  *   POST   /tasks/{id}/comments
+ *   GET    /tasks/{id}/subtasks
  *
  * @package Tsubakuro
  */
@@ -52,6 +53,7 @@ class Tsubakuro_REST_API {
 						'status'       => array( 'type' => 'string' ),
 						'priority'     => array( 'type' => 'string' ),
 						'related_page' => array( 'type' => 'integer' ),
+						'parent_id'    => array( 'type' => 'integer' ),
 						'per_page'     => array(
 							'type'    => 'integer',
 							'default' => 50,
@@ -90,6 +92,10 @@ class Tsubakuro_REST_API {
 							'type'    => 'array',
 							'items'   => array( 'type' => 'integer' ),
 							'default' => array(),
+						),
+						'parent_id'     => array(
+							'type'    => 'integer',
+							'default' => 0,
 						),
 					),
 				),
@@ -133,6 +139,7 @@ class Tsubakuro_REST_API {
 							'type'  => 'array',
 							'items' => array( 'type' => 'integer' ),
 						),
+						'parent_id'     => array( 'type' => 'integer' ),
 					),
 				),
 				array(
@@ -183,6 +190,25 @@ class Tsubakuro_REST_API {
 				),
 			)
 		);
+
+		// Task subtasks.
+		register_rest_route(
+			self::NAMESPACE,
+			'/tasks/(?P<id>\d+)/subtasks',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_subtasks' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+					),
+				),
+			)
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -214,6 +240,10 @@ class Tsubakuro_REST_API {
 			$args['posts_per_page'] = $request->get_param( 'per_page' );
 		}
 
+		if ( null !== $request->get_param( 'parent_id' ) ) {
+			$args['parent_id'] = $request->get_param( 'parent_id' );
+		}
+
 		return rest_ensure_response( Tsubakuro_Post_Types::get_tasks( $args ) );
 	}
 
@@ -230,6 +260,7 @@ class Tsubakuro_REST_API {
 				'post_title'   => $request->get_param( 'title' ),
 				'post_content' => wp_kses_post( $request->get_param( 'content' ) ),
 				'post_status'  => 'publish',
+				'post_parent'  => absint( $request->get_param( 'parent_id' ) ),
 			),
 			true
 		);
@@ -270,6 +301,7 @@ class Tsubakuro_REST_API {
 		}
 
 		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
+		$task['children'] = Tsubakuro_Post_Types::get_tasks( array( 'parent_id' => $task['id'] ) );
 
 		return rest_ensure_response( $task );
 	}
@@ -296,6 +328,10 @@ class Tsubakuro_REST_API {
 
 		if ( null !== $request->get_param( 'content' ) ) {
 			$update['post_content'] = wp_kses_post( $request->get_param( 'content' ) );
+		}
+
+		if ( null !== $request->get_param( 'parent_id' ) ) {
+			$update['post_parent'] = absint( $request->get_param( 'parent_id' ) );
 		}
 
 		wp_update_post( $update );
@@ -379,6 +415,23 @@ class Tsubakuro_REST_API {
 		}
 
 		return rest_ensure_response( Tsubakuro_Admin::get_comment( $comment_id ) );
+	}
+
+	/**
+	 * GET /tasks/{id}/subtasks – Return all direct child tasks.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_subtasks( $request ) {
+		$task_id = (int) $request['id'];
+		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+
+		if ( ! $task ) {
+			return new WP_Error( 'not_found', 'タスクが見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Post_Types::get_tasks( array( 'parent_id' => $task_id ) ) );
 	}
 
 	// -------------------------------------------------------------------------

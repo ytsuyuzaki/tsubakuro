@@ -532,4 +532,95 @@ class McpExtendedTest extends TestCase
 
 		$this->assertFalse(Tsubakuro_MCP::check_permission());
 	}
+
+	// -------------------------------------------------------------------------
+	// Parent / child task support
+	// -------------------------------------------------------------------------
+
+	public function test_tools_call_create_task_with_parent_id(): void
+	{
+		$parent = $this->make_post(50, 'Parent Task');
+		$child  = $this->make_post(123, 'Child Task');
+		$child->post_parent = 50;
+		$GLOBALS['tsubakuro_test']['posts'][50]  = $parent;
+		$GLOBALS['tsubakuro_test']['posts'][123] = $child;
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 50,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_task',
+					'arguments' => array(
+						'title'     => 'Child Task',
+						'parent_id' => 50,
+					),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey('result', $result);
+		$task = $result['result']['structuredContent']['task'];
+		$this->assertSame(123, $task['id']);
+		$this->assertSame(50, $task['parent_id']);
+	}
+
+	public function test_tools_call_list_tasks_with_parent_id_filter(): void
+	{
+		$child1 = $this->make_post(11, 'Child 1');
+		$child2 = $this->make_post(12, 'Child 2');
+		$child1->post_parent = 10;
+		$child2->post_parent = 10;
+		$GLOBALS['tsubakuro_test']['posts'][11] = $child1;
+		$GLOBALS['tsubakuro_test']['posts'][12] = $child2;
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 51,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_list_tasks',
+					'arguments' => array(
+						'parent_id' => 10,
+					),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey('result', $result);
+		$tasks = $result['result']['structuredContent']['tasks'];
+		$this->assertCount(2, $tasks);
+		$this->assertSame(array(11, 12), array_column($tasks, 'id'));
+	}
+
+	public function test_tools_call_update_task_with_parent_id(): void
+	{
+		$parent = $this->make_post(20, 'Parent');
+		$child  = $this->make_post(30, 'Child');
+		$child->post_parent = 20;
+		$GLOBALS['tsubakuro_test']['posts'][20] = $parent;
+		$GLOBALS['tsubakuro_test']['posts'][30] = $child;
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 52,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_update_task',
+					'arguments' => array(
+						'id'        => 30,
+						'parent_id' => 20,
+					),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey('result', $result);
+		$task = $result['result']['structuredContent']['task'];
+		$this->assertSame(30, $task['id']);
+		$this->assertSame(20, $task['parent_id']);
+	}
 }
