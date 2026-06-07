@@ -3,8 +3,11 @@
  * Admin – Task form page template (new / edit).
  *
  * Variables available:
- *   $task     – array of task data (or null for new task)
- *   $comments – array of comments (edit mode only)
+ *   $task                 – array of task data (or null for new task)
+ *   $comments             – array of comments (edit mode only)
+ *   $parent_task          – array of parent task data (or null)
+ *   $child_tasks          – array of child task data (edit mode only)
+ *   $default_parent_id    – pre-selected parent_id for new task (int)
  *
  * @package Tsubakuro
  */
@@ -126,6 +129,37 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 			</div>
 
 			<div class="tsubakuro-form-row">
+				<label for="tsubakuro-parent-task-id">
+					<?php esc_html_e( '親タスク', 'tsubakuro' ); ?>
+				</label>
+				<?php
+				$current_parent_id = $is_edit ? ( $task['parent_id'] ?? 0 ) : ( $default_parent_id ?? 0 );
+				?>
+				<input type="hidden" id="tsubakuro-parent-task-id" name="parent_id"
+					value="<?php echo esc_attr( $current_parent_id ); ?>">
+
+				<div id="tsubakuro-parent-task-display" class="tsubakuro-related-tags">
+					<?php if ( $parent_task ) : ?>
+					<span class="tsubakuro-related-tag" data-id="<?php echo esc_attr( $parent_task['id'] ); ?>">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&task_id=' . $parent_task['id'] ) ); ?>">
+							<?php echo esc_html( '#' . $parent_task['id'] . ' ' . $parent_task['title'] ); ?>
+						</a>
+						<button type="button" class="tsubakuro-related-remove" id="tsubakuro-parent-task-remove"
+							aria-label="<?php esc_attr_e( '削除', 'tsubakuro' ); ?>">&#x2715;</button>
+					</span>
+					<?php endif; ?>
+				</div>
+
+				<div class="tsubakuro-related-search">
+					<input type="text" id="tsubakuro-parent-task-search-input" class="widefat"
+						placeholder="<?php esc_attr_e( 'タスクタイトルで検索して親タスクに設定...', 'tsubakuro' ); ?>"
+						autocomplete="off"
+						<?php echo $parent_task ? 'style="display:none;"' : ''; ?>>
+					<div id="tsubakuro-parent-task-results" class="tsubakuro-related-results" hidden></div>
+				</div>
+			</div>
+
+			<div class="tsubakuro-form-row">
 				<label><?php esc_html_e( '関連ページ', 'tsubakuro' ); ?></label>
 				<input type="hidden" id="tsubakuro-task-related" name="related_pages"
 					value="<?php echo esc_attr( implode( ', ', $task['related_pages'] ?? array() ) ); ?>">
@@ -194,6 +228,59 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 				<?php esc_html_e( 'コメント追加', 'tsubakuro' ); ?>
 			</button>
 		</div>
+	</div>
+
+	<!-- Sub tasks -->
+	<div class="tsubakuro-form-card tsubakuro-subtasks-card">
+		<h2>
+			<?php esc_html_e( 'サブタスク', 'tsubakuro' ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&parent_id=' . $task['id'] ) ); ?>" class="page-title-action tsubakuro-subtasks-add-link">
+				<?php esc_html_e( '+ サブタスクを追加', 'tsubakuro' ); ?>
+			</a>
+		</h2>
+
+		<?php if ( empty( $child_tasks ) ) : ?>
+		<p class="tsubakuro-subtasks-empty"><?php esc_html_e( 'サブタスクはありません。', 'tsubakuro' ); ?></p>
+		<?php else : ?>
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'ID', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( 'タイトル', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( 'ステータス', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( '優先度', 'tsubakuro' ); ?></th>
+					<th><?php esc_html_e( '操作', 'tsubakuro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $child_tasks as $child ) : ?>
+				<tr>
+					<td><?php echo esc_html( $child['id'] ); ?></td>
+					<td>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&task_id=' . $child['id'] ) ); ?>">
+							<?php echo esc_html( $child['title'] ); ?>
+						</a>
+					</td>
+					<td>
+						<span class="tsubakuro-status tsubakuro-status--<?php echo esc_attr( $child['status'] ); ?>">
+							<?php echo esc_html( $child['status_label'] ); ?>
+						</span>
+					</td>
+					<td>
+						<span class="tsubakuro-priority tsubakuro-priority--<?php echo esc_attr( $child['priority'] ); ?>">
+							<?php echo esc_html( $child['priority_label'] ); ?>
+						</span>
+					</td>
+					<td>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&task_id=' . $child['id'] ) ); ?>" class="button button-small">
+							<?php esc_html_e( '詳細', 'tsubakuro' ); ?>
+						</a>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php endif; ?>
 	</div>
 	<?php endif; ?>
 </div><!-- .wrap -->

@@ -418,3 +418,18 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+
+/* Subtasks section */
+.tsubakuro-subtasks-card {
+margin-top: 20px;
+}
+
+.tsubakuro-subtasks-add-link {
+font-size: 13px;
+}
+
+.tsubakuro-subtasks-empty {
+color: #888;
+font-size: 13px;
+}

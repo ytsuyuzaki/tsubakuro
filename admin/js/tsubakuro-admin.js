@@ -172,6 +172,86 @@
 	}
 
 	// =========================================================================
+	// Parent task search (task form page)
+	// =========================================================================
+	function setParentTask( id, title ) {
+		$( '#tsubakuro-parent-task-id' ).val( id );
+
+		// Build tag display.
+		const adminBase = tsubakuroAdmin.ajaxUrl.replace(
+			'admin-ajax.php',
+			''
+		);
+		const editUrl =
+			adminBase + 'admin.php?page=tsubakuro-task-form&task_id=' + id;
+		const $tag = $( '<span class="tsubakuro-related-tag">' ).attr(
+			'data-id',
+			id
+		);
+		const $link = $( '<a>' )
+			.attr( 'href', editUrl )
+			.text( '#' + id + ' ' + title );
+		const $btn = $(
+			'<button type="button" class="tsubakuro-related-remove" id="tsubakuro-parent-task-remove">'
+		)
+			.html( '&#x2715;' )
+			.attr( 'aria-label', '削除' );
+		$tag.append( $link ).append( $btn );
+
+		const $display = $( '#tsubakuro-parent-task-display' );
+		$display.empty().append( $tag );
+		$( '#tsubakuro-parent-task-search-input' ).val( '' ).hide();
+		$( '#tsubakuro-parent-task-results' ).prop( 'hidden', true ).empty();
+	}
+
+	function clearParentTask() {
+		$( '#tsubakuro-parent-task-id' ).val( '' );
+		$( '#tsubakuro-parent-task-display' ).empty();
+		$( '#tsubakuro-parent-task-search-input' ).show();
+	}
+
+	let parentSearchTimeout = null;
+	function searchParentTasks( keyword ) {
+		clearTimeout( parentSearchTimeout );
+		const $results = $( '#tsubakuro-parent-task-results' );
+
+		if ( ! keyword.trim() ) {
+			$results.prop( 'hidden', true ).empty();
+			return;
+		}
+
+		parentSearchTimeout = setTimeout( function () {
+			$.get(
+				tsubakuroAdmin.ajaxUrl,
+				{
+					action: 'tsubakuro_search_tasks',
+					nonce: tsubakuroAdmin.nonce,
+					keyword,
+				},
+				function ( response ) {
+					$results.empty();
+					if ( response.success && response.data.length ) {
+						response.data.forEach( function ( task ) {
+							const $item = $(
+								'<div class="tsubakuro-related-result-item">'
+							)
+								.text( '#' + task.id + ' ' + task.title )
+								.attr( 'data-id', task.id )
+								.attr( 'data-title', task.title );
+							$results.append( $item );
+						} );
+						$results.prop( 'hidden', false );
+					} else {
+						$results.prop( 'hidden', true );
+					}
+				}
+			).fail( function () {
+				$results.prop( 'hidden', true );
+			} );
+		}, 300 );
+	}
+
+	// =========================================================================
 	// Comments (task form page)
 	// =========================================================================
 	function renderComment( $container, c ) {
@@ -402,8 +482,38 @@
 				! $( e.target ).closest( '.tsubakuro-related-search' ).length
 			) {
 				$( '#tsubakuro-related-results' ).prop( 'hidden', true );
+				$( '#tsubakuro-parent-task-results' ).prop( 'hidden', true );
 			}
 		} );
+
+		// Parent task: search as you type.
+		$( document ).on(
+			'input',
+			'#tsubakuro-parent-task-search-input',
+			function () {
+				searchParentTasks( $.trim( $( this ).val() ) );
+			}
+		);
+
+		// Parent task: select a result.
+		$( document ).on(
+			'click',
+			'#tsubakuro-parent-task-results .tsubakuro-related-result-item',
+			function () {
+				const id = parseInt( $( this ).data( 'id' ), 10 );
+				const title = String( $( this ).data( 'title' ) );
+				setParentTask( id, title );
+			}
+		);
+
+		// Parent task: remove.
+		$( document ).on(
+			'click',
+			'#tsubakuro-parent-task-remove',
+			function () {
+				clearParentTask();
+			}
+		);
 
 		// Content preview / edit toggle.
 		if ( $( '#tsubakuro-content-preview' ).length ) {

@@ -30,6 +30,7 @@ class Tsubakuro_Admin {
 		add_action( 'wp_ajax_tsubakuro_add_comment', array( __CLASS__, 'ajax_add_comment' ) );
 		add_action( 'wp_ajax_tsubakuro_get_comments', array( __CLASS__, 'ajax_get_comments' ) );
 		add_action( 'wp_ajax_tsubakuro_search_posts', array( __CLASS__, 'ajax_search_posts' ) );
+		add_action( 'wp_ajax_tsubakuro_search_tasks', array( __CLASS__, 'ajax_search_tasks' ) );
 		add_action( 'pre_get_comments', array( __CLASS__, 'exclude_task_comments_from_list' ) );
 	}
 
@@ -144,11 +145,15 @@ class Tsubakuro_Admin {
 			wp_die( '権限がありません。' );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- task_id is a display param, not form data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- task_id and parent_id are display params, not form data.
 		$task_id              = absint( $_GET['task_id'] ?? 0 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- parent_id is a display param, not form data.
+		$default_parent_id    = absint( $_GET['parent_id'] ?? 0 );
 		$task                 = null;
 		$comments             = array();
 		$related_page_objects = array();
+		$parent_task          = null;
+		$child_tasks          = array();
 
 		if ( $task_id ) {
 			$task = Tsubakuro_Post_Types::get_task( $task_id );
@@ -164,7 +169,13 @@ class Tsubakuro_Admin {
 						);
 					}
 				}
+				if ( $task['parent_id'] ) {
+					$parent_task = Tsubakuro_Post_Types::get_task( $task['parent_id'] );
+				}
+				$child_tasks = Tsubakuro_Post_Types::get_tasks( array( 'parent_id' => $task_id ) );
 			}
+		} elseif ( $default_parent_id ) {
+			$parent_task = Tsubakuro_Post_Types::get_task( $default_parent_id );
 		}
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';
@@ -393,9 +404,10 @@ class Tsubakuro_Admin {
 			wp_die( '権限がありません。' );
 		}
 
-		$task_id = absint( $_POST['task_id'] ?? 0 );
-		$title   = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
-		$content = wp_kses_post( wp_unslash( $_POST['content'] ?? '' ) );
+		$task_id   = absint( $_POST['task_id'] ?? 0 );
+		$title     = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+		$content   = wp_kses_post( wp_unslash( $_POST['content'] ?? '' ) );
+		$parent_id = absint( $_POST['parent_id'] ?? 0 );
 
 		if ( ! $title ) {
 			$back = admin_url( 'admin.php?page=tsubakuro-task-form' );
@@ -412,6 +424,7 @@ class Tsubakuro_Admin {
 					'ID'           => $task_id,
 					'post_title'   => $title,
 					'post_content' => $content,
+					'post_parent'  => $parent_id,
 				)
 			);
 			Tsubakuro_Post_Types::save_meta( $task_id, $_POST );
@@ -422,6 +435,7 @@ class Tsubakuro_Admin {
 					'post_title'   => $title,
 					'post_content' => $content,
 					'post_status'  => 'publish',
+					'post_parent'  => $parent_id,
 				),
 				true
 			);
@@ -585,6 +599,34 @@ class Tsubakuro_Admin {
 				'id'    => $post->ID,
 				'title' => $post->post_title,
 				'url'   => (string) get_permalink( $post->ID ),
+			);
+		}
+
+		wp_send_json_success( $results );
+	}
+
+	/**
+	 * AJAX handler: search tasks by keyword (used for parent task selector).
+	 */
+	public static function ajax_search_tasks() {
+		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
+		}
+
+		$keyword  = sanitize_text_field( wp_unslash( $_GET['keyword'] ?? '' ) );
+		$tasks    = Tsubakuro_Post_Types::get_tasks(
+			array(
+				's'              => $keyword,
+				'posts_per_page' => 10,
+			)
+		);
+		$results  = array();
+		foreach ( $tasks as $task ) {
+			$results[] = array(
+				'id'    => $task['id'],
+				'title' => $task['title'],
 			);
 		}
 

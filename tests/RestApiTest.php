@@ -319,4 +319,88 @@ class RestApiTest extends TestCase
 		$this->assertSame('My comment', $result['comment']);
 		$this->assertSame('Alice', $result['user_name']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Parent / child task support
+	// -------------------------------------------------------------------------
+
+	public function test_create_task_passes_parent_id_as_post_parent(): void
+	{
+		$parent = $this->make_post(50, 'Parent Task', '');
+		$GLOBALS['tsubakuro_test']['posts'][50]  = $parent;
+		$child = $this->make_post(123, 'Child Task', '');
+		$child->post_parent = 50;
+		$GLOBALS['tsubakuro_test']['posts'][123] = $child;
+
+		$req = new WP_REST_Request(
+			array(
+				'title'     => 'Child Task',
+				'content'   => '',
+				'parent_id' => 50,
+			)
+		);
+		$result = Tsubakuro_REST_API::create_task($req);
+
+		$this->assertFalse(is_wp_error($result));
+		$this->assertSame(123, $result['id']);
+		$this->assertSame(50, $result['parent_id']);
+	}
+
+	public function test_get_task_handler_includes_children_field(): void
+	{
+		$parent = $this->make_post(10, 'Parent', 'Body');
+		$child  = $this->make_post(11, 'Child', 'Body');
+		$child->post_parent = 10;
+		$GLOBALS['tsubakuro_test']['posts'][10] = $parent;
+		$GLOBALS['tsubakuro_test']['posts'][11] = $child;
+
+		$req    = new WP_REST_Request(array('id' => 10));
+		$result = Tsubakuro_REST_API::get_task($req);
+
+		$this->assertArrayHasKey('children', $result);
+		$this->assertCount(1, $result['children']);
+		$this->assertSame(11, $result['children'][0]['id']);
+	}
+
+	public function test_get_subtasks_returns_wp_error_when_parent_not_found(): void
+	{
+		$req    = new WP_REST_Request(array('id' => 999));
+		$result = Tsubakuro_REST_API::get_subtasks($req);
+
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertSame('not_found', $result->get_error_code());
+	}
+
+	public function test_get_subtasks_returns_child_tasks(): void
+	{
+		$parent = $this->make_post(20, 'Parent', 'Body');
+		$child1 = $this->make_post(21, 'Child 1', 'Body');
+		$child2 = $this->make_post(22, 'Child 2', 'Body');
+		$child1->post_parent = 20;
+		$child2->post_parent = 20;
+		$GLOBALS['tsubakuro_test']['posts'][20] = $parent;
+		$GLOBALS['tsubakuro_test']['posts'][21] = $child1;
+		$GLOBALS['tsubakuro_test']['posts'][22] = $child2;
+
+		$req    = new WP_REST_Request(array('id' => 20));
+		$result = Tsubakuro_REST_API::get_subtasks($req);
+
+		$this->assertCount(2, $result);
+		$this->assertSame(array(21, 22), array_column($result, 'id'));
+	}
+
+	public function test_get_tasks_handler_filters_by_parent_id(): void
+	{
+		$root  = $this->make_post(1, 'Root', 'Body');
+		$child = $this->make_post(2, 'Child', 'Body');
+		$child->post_parent = 1;
+		$GLOBALS['tsubakuro_test']['posts'][1] = $root;
+		$GLOBALS['tsubakuro_test']['posts'][2] = $child;
+
+		$req    = new WP_REST_Request(array('parent_id' => 1));
+		$result = Tsubakuro_REST_API::get_tasks($req);
+
+		$this->assertCount(1, $result);
+		$this->assertSame(2, $result[0]['id']);
+	}
 }

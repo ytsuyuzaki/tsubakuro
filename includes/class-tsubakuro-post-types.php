@@ -8,6 +8,9 @@
  *   _tsubakuro_assignee      – WordPress user ID
  *   _tsubakuro_related_pages – comma-separated post/page IDs
  *
+ * Task parent/child (nested tasks):
+ *   parent_id is stored as the WordPress post_parent field (0 = root task).
+ *
  * @package Tsubakuro
  */
 
@@ -187,6 +190,7 @@ class Tsubakuro_Post_Types {
 			'priority_label' => self::PRIORITIES[ $priority ] ?? $priority,
 			'assignee'       => $assignee,
 			'related_pages'  => $related_pages,
+			'parent_id'      => (int) ( $post->post_parent ?? 0 ),
 			'created_at'     => $post->post_date,
 			'updated_at'     => $post->post_modified,
 			'author_id'      => (int) $post->post_author,
@@ -265,6 +269,11 @@ class Tsubakuro_Post_Types {
 		if ( ! empty( $args['s'] ) ) {
 			$defaults['s'] = sanitize_text_field( $args['s'] );
 			unset( $args['s'] );
+		}
+
+		if ( isset( $args['parent_id'] ) ) {
+			$defaults['post_parent'] = absint( $args['parent_id'] );
+			unset( $args['parent_id'] );
 		}
 
 		if ( ! empty( $args['orderby'] ) ) {
