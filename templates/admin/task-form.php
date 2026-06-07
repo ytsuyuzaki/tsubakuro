@@ -231,16 +231,16 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 	</div>
 
 	<!-- Sub tasks -->
-	<div class="tsubakuro-form-card" style="margin-top:20px;">
+	<div class="tsubakuro-form-card tsubakuro-subtasks-card">
 		<h2>
 			<?php esc_html_e( 'サブタスク', 'tsubakuro' ); ?>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&parent_id=' . $task['id'] ) ); ?>" class="page-title-action" style="font-size:13px;">
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form&parent_id=' . $task['id'] ) ); ?>" class="page-title-action tsubakuro-subtasks-add-link">
 				<?php esc_html_e( '+ サブタスクを追加', 'tsubakuro' ); ?>
 			</a>
 		</h2>
 
 		<?php if ( empty( $child_tasks ) ) : ?>
-		<p style="color:#888;font-size:13px;"><?php esc_html_e( 'サブタスクはありません。', 'tsubakuro' ); ?></p>
+		<p class="tsubakuro-subtasks-empty"><?php esc_html_e( 'サブタスクはありません。', 'tsubakuro' ); ?></p>
 		<?php else : ?>
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
