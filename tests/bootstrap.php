@@ -7,6 +7,7 @@
 
 define('ABSPATH', dirname(__DIR__) . '/tests/wordpress/');
 define('ARRAY_A', 'ARRAY_A');
+define('MINUTE_IN_SECONDS', 60);
 
 /**
  * Minimal $wpdb mock used by code paths that still need database-like helpers.
@@ -279,6 +280,8 @@ function tsubakuro_test_reset()
 		'last_get_users_args' => array(),
 		'abilities'          => array(),
 		'pwd_counter'        => 0,
+		'cron_events'        => array(),
+		'sent_mails'         => array(),
 	);
 	$wpdb = new MockWpdb();
 }
@@ -608,6 +611,48 @@ function status_header($code) {}
 function wp_die($message = '')
 {
 	$GLOBALS['tsubakuro_test']['died'] = $message;
+}
+function wp_next_scheduled($hook)
+{
+	foreach ($GLOBALS['tsubakuro_test']['cron_events'] as $event) {
+		if (($event['hook'] ?? '') === $hook) {
+			return $event['timestamp'] ?? time();
+		}
+	}
+
+	return false;
+}
+function wp_schedule_event($timestamp, $recurrence, $hook, $args = array())
+{
+	$GLOBALS['tsubakuro_test']['cron_events'][] = array(
+		'timestamp'  => (int) $timestamp,
+		'recurrence' => (string) $recurrence,
+		'hook'       => (string) $hook,
+		'args'       => (array) $args,
+	);
+
+	return true;
+}
+function wp_clear_scheduled_hook($hook)
+{
+	$GLOBALS['tsubakuro_test']['cron_events'] = array_values(
+		array_filter(
+			$GLOBALS['tsubakuro_test']['cron_events'],
+			static function ($event) use ($hook) {
+				return ($event['hook'] ?? '') !== $hook;
+			}
+		)
+	);
+}
+function wp_mail($to, $subject, $message, $headers = '', $attachments = array())
+{
+	$GLOBALS['tsubakuro_test']['sent_mails'][] = array(
+		'to'      => $to,
+		'subject' => $subject,
+		'message' => $message,
+	);
+
+	return true;
 }
 function current_time()
 {

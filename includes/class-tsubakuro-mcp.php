@@ -1,18 +1,20 @@
 <?php
+
 /**
  * MCP (Model Context Protocol) endpoint.
  *
  * @package Tsubakuro
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
 /**
  * Streamable HTTP compatible MCP endpoint.
  */
-class Tsubakuro_MCP {
+class Tsubakuro_MCP
+{
 
 	const ROUTE            = '/mcp';
 	const SERVER_ID        = 'tsubakuro-server';
@@ -23,17 +25,19 @@ class Tsubakuro_MCP {
 	/**
 	 * Register WordPress hooks.
 	 */
-	public static function init() {
-		add_action( 'wp_abilities_api_categories_init', array( __CLASS__, 'register_ability_category' ) );
-		add_action( 'wp_abilities_api_init', array( __CLASS__, 'register_abilities' ) );
-		add_action( 'mcp_adapter_init', array( __CLASS__, 'register_mcp_server' ) );
+	public static function init()
+	{
+		add_action('wp_abilities_api_categories_init', array(__CLASS__, 'register_ability_category'));
+		add_action('wp_abilities_api_init', array(__CLASS__, 'register_abilities'));
+		add_action('mcp_adapter_init', array(__CLASS__, 'register_mcp_server'));
 	}
 
 	/**
 	 * Register the ability category used by this plugin.
 	 */
-	public static function register_ability_category() {
-		if ( ! function_exists( 'wp_register_ability_category' ) ) {
+	public static function register_ability_category()
+	{
+		if (! function_exists('wp_register_ability_category')) {
 			return;
 		}
 
@@ -49,19 +53,20 @@ class Tsubakuro_MCP {
 	/**
 	 * Register Tsubakuro abilities exposed by mcp-adapter.
 	 */
-	public static function register_abilities() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
+	public static function register_abilities()
+	{
+		if (! function_exists('wp_register_ability')) {
 			return;
 		}
 
 		self::register_ability_category();
 
-		foreach ( self::get_ability_definitions() as $ability_name => $definition ) {
-			if ( self::ability_exists( $ability_name ) ) {
+		foreach (self::get_ability_definitions() as $ability_name => $definition) {
+			if (self::ability_exists($ability_name)) {
 				continue;
 			}
 
-			wp_register_ability( $ability_name, $definition );
+			wp_register_ability($ability_name, $definition);
 		}
 	}
 
@@ -70,20 +75,21 @@ class Tsubakuro_MCP {
 	 *
 	 * @param mixed $adapter MCP adapter instance passed by mcp_adapter_init.
 	 */
-	public static function register_mcp_server( $adapter ) {
-		if ( ! is_object( $adapter ) || ! method_exists( $adapter, 'create_server' ) ) {
+	public static function register_mcp_server($adapter)
+	{
+		if (! is_object($adapter) || ! method_exists($adapter, 'create_server')) {
 			return;
 		}
 
 		self::register_ability_category();
 		self::register_abilities();
 
-		$tools               = array_keys( self::get_ability_definitions() );
+		$tools               = array_keys(self::get_ability_definitions());
 		$error_handler_class = null;
 
-		$transport_classes = array( '\\WP\\MCP\\Transport\\HttpTransport' );
+		$transport_classes = array('\\WP\\MCP\\Transport\\HttpTransport');
 
-		self::invoke_adapter_create_server( $adapter, $tools, $transport_classes, $error_handler_class );
+		self::invoke_adapter_create_server($adapter, $tools, $transport_classes, $error_handler_class);
 	}
 
 	/**
@@ -94,10 +100,11 @@ class Tsubakuro_MCP {
 	 * @param array       $transport_classes   Transport class names.
 	 * @param string|null $error_handler_class Error handler class or null.
 	 */
-	private static function invoke_adapter_create_server( $adapter, $tools, $transport_classes, $error_handler_class ) {
+	private static function invoke_adapter_create_server($adapter, $tools, $transport_classes, $error_handler_class)
+	{
 		$server_id   = self::SERVER_ID;
 		$namespace   = Tsubakuro_REST_API::NAMESPACE;
-		$route       = ltrim( self::ROUTE, '/' );
+		$route       = ltrim(self::ROUTE, '/');
 		$server_name = 'Tsubakuro MCP Server';
 		$description = 'Tsubakuro task management tools via MCP adapter';
 		$server_ver  = TSUBAKURO_VERSION;
@@ -145,16 +152,16 @@ class Tsubakuro_MCP {
 			),
 		);
 
-		foreach ( $signatures as $args ) {
+		foreach ($signatures as $args) {
 			try {
-				$result = call_user_func_array( array( $adapter, 'create_server' ), $args );
+				$result = call_user_func_array(array($adapter, 'create_server'), $args);
 
-				if ( function_exists( 'is_wp_error' ) && is_wp_error( $result ) ) {
+				if (function_exists('is_wp_error') && is_wp_error($result)) {
 					continue;
 				}
 
 				return;
-			} catch ( Throwable $e ) {
+			} catch (Throwable $e) {
 				continue;
 			}
 		}
@@ -165,61 +172,62 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_ability_definitions() {
+	private static function get_ability_definitions()
+	{
 		return array(
 			'tsubakuro/list-tasks'  => array(
 				'label'               => 'Tsubakuro: List Tasks',
 				'description'         => 'タスク一覧を取得します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_list_tasks_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_list_tasks_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
-				'meta'                => self::build_ability_meta( true, false, true ),
+				'execute_callback'    => array(__CLASS__, 'execute_list_tasks_ability'),
+				'permission_callback' => array(__CLASS__, 'can_use_mcp_tools'),
+				'meta'                => self::build_ability_meta(true, false, true),
 			),
 			'tsubakuro/get-task'    => array(
 				'label'               => 'Tsubakuro: Get Task',
 				'description'         => '指定 ID のタスク詳細を取得します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_single_id_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_get_task_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
-				'meta'                => self::build_ability_meta( true, false, true ),
+				'execute_callback'    => array(__CLASS__, 'execute_get_task_ability'),
+				'permission_callback' => array(__CLASS__, 'can_use_mcp_tools'),
+				'meta'                => self::build_ability_meta(true, false, true),
 			),
 			'tsubakuro/create-task' => array(
 				'label'               => 'Tsubakuro: Create Task',
 				'description'         => '新しいタスクを作成します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_create_task_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_create_task_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
-				'meta'                => self::build_ability_meta( false, false, false ),
+				'execute_callback'    => array(__CLASS__, 'execute_create_task_ability'),
+				'permission_callback' => array(__CLASS__, 'can_use_mcp_tools'),
+				'meta'                => self::build_ability_meta(false, false, false),
 			),
 			'tsubakuro/update-task' => array(
 				'label'               => 'Tsubakuro: Update Task',
 				'description'         => '既存タスクを更新します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_update_task_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_update_task_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
-				'meta'                => self::build_ability_meta( false, false, false ),
+				'execute_callback'    => array(__CLASS__, 'execute_update_task_ability'),
+				'permission_callback' => array(__CLASS__, 'can_use_mcp_tools'),
+				'meta'                => self::build_ability_meta(false, false, false),
 			),
 			'tsubakuro/delete-task' => array(
 				'label'               => 'Tsubakuro: Delete Task',
 				'description'         => '指定したタスクを削除します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_single_id_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_delete_task_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_delete_mcp_tasks' ),
-				'meta'                => self::build_ability_meta( false, true, true ),
+				'execute_callback'    => array(__CLASS__, 'execute_delete_task_ability'),
+				'permission_callback' => array(__CLASS__, 'can_delete_mcp_tasks'),
+				'meta'                => self::build_ability_meta(false, true, true),
 			),
 			'tsubakuro/add-comment' => array(
 				'label'               => 'Tsubakuro: Add Comment',
 				'description'         => '指定したタスクにコメントを追加します。',
 				'category'            => self::ABILITY_CATEGORY,
 				'input_schema'        => self::get_add_comment_input_schema(),
-				'execute_callback'    => array( __CLASS__, 'execute_add_comment_ability' ),
-				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
-				'meta'                => self::build_ability_meta( false, false, false ),
+				'execute_callback'    => array(__CLASS__, 'execute_add_comment_ability'),
+				'permission_callback' => array(__CLASS__, 'can_use_mcp_tools'),
+				'meta'                => self::build_ability_meta(false, false, false),
 			),
 		);
 	}
@@ -232,7 +240,8 @@ class Tsubakuro_MCP {
 	 * @param bool $idempotent  Whether the tool is idempotent.
 	 * @return array
 	 */
-	private static function build_ability_meta( $is_readonly, $destructive, $idempotent ) {
+	private static function build_ability_meta($is_readonly, $destructive, $idempotent)
+	{
 		return array(
 			'mcp'         => array(
 				'public' => true,
@@ -252,13 +261,14 @@ class Tsubakuro_MCP {
 	 * @param string $ability_name Ability name.
 	 * @return bool
 	 */
-	private static function ability_exists( $ability_name ) {
-		if ( function_exists( 'wp_has_ability' ) ) {
-			return (bool) wp_has_ability( $ability_name );
+	private static function ability_exists($ability_name)
+	{
+		if (function_exists('wp_has_ability')) {
+			return (bool) wp_has_ability($ability_name);
 		}
 
-		if ( function_exists( 'wp_get_ability' ) ) {
-			return null !== wp_get_ability( $ability_name );
+		if (function_exists('wp_get_ability')) {
+			return null !== wp_get_ability($ability_name);
 		}
 
 		return false;
@@ -269,8 +279,9 @@ class Tsubakuro_MCP {
 	 *
 	 * @return bool
 	 */
-	public static function can_use_mcp_tools() {
-		return current_user_can( 'edit_posts' );
+	public static function can_use_mcp_tools()
+	{
+		return current_user_can('edit_posts');
 	}
 
 	/**
@@ -278,8 +289,9 @@ class Tsubakuro_MCP {
 	 *
 	 * @return bool
 	 */
-	public static function can_delete_mcp_tasks() {
-		return current_user_can( 'delete_posts' );
+	public static function can_delete_mcp_tasks()
+	{
+		return current_user_can('delete_posts');
 	}
 
 	/**
@@ -288,42 +300,43 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array
 	 */
-	public static function execute_list_tasks_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_list_tasks_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 		$args      = array();
 
-		if ( ! empty( $arguments['status'] ) ) {
-			$args['status'] = sanitize_text_field( $arguments['status'] );
+		if (! empty($arguments['status'])) {
+			$args['status'] = sanitize_text_field($arguments['status']);
 		}
 
-		if ( ! empty( $arguments['priority'] ) ) {
-			$args['priority'] = sanitize_text_field( $arguments['priority'] );
+		if (! empty($arguments['priority'])) {
+			$args['priority'] = sanitize_text_field($arguments['priority']);
 		}
 
-		if ( ! empty( $arguments['assignee'] ) ) {
-			$args['assignee'] = absint( $arguments['assignee'] );
+		if (! empty($arguments['assignee'])) {
+			$args['assignee'] = absint($arguments['assignee']);
 		}
 
-		if ( ! empty( $arguments['related_page'] ) ) {
-			$args['related_page'] = absint( $arguments['related_page'] );
+		if (! empty($arguments['related_page'])) {
+			$args['related_page'] = absint($arguments['related_page']);
 		}
 
-		if ( ! empty( $arguments['per_page'] ) ) {
-			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
+		if (! empty($arguments['per_page'])) {
+			$args['posts_per_page'] = min(100, max(1, absint($arguments['per_page'])));
 		}
 
-		if ( isset( $arguments['parent_id'] ) ) {
-			$args['parent_id'] = absint( $arguments['parent_id'] );
+		if (isset($arguments['parent_id'])) {
+			$args['parent_id'] = absint($arguments['parent_id']);
 		}
 
-		foreach ( array( 's', 'orderby', 'order' ) as $key ) {
-			if ( ! empty( $arguments[ $key ] ) ) {
-				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
+		foreach (array('s', 'orderby', 'order') as $key) {
+			if (! empty($arguments[$key])) {
+				$args[$key] = sanitize_text_field($arguments[$key]);
 			}
 		}
 
 		return array(
-			'tasks' => Tsubakuro_Post_Types::get_tasks( $args ),
+			'tasks' => Tsubakuro_Post_Types::get_tasks($args),
 		);
 	}
 
@@ -333,19 +346,20 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array|WP_Error
 	 */
-	public static function execute_get_task_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_get_task_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 
-		if ( empty( $arguments['id'] ) ) {
-			return new WP_Error( 'invalid_input', 'id is required' );
+		if (empty($arguments['id'])) {
+			return new WP_Error('invalid_input', 'id is required');
 		}
 
-		$task = Tsubakuro_Post_Types::get_task( absint( $arguments['id'] ) );
-		if ( ! $task ) {
-			return new WP_Error( 'not_found', 'Task not found' );
+		$task = Tsubakuro_Post_Types::get_task(absint($arguments['id']));
+		if (! $task) {
+			return new WP_Error('not_found', 'Task not found');
 		}
 
-		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
+		$task['comments'] = Tsubakuro_Admin::get_task_comments($task['id']);
 
 		return array(
 			'task' => $task,
@@ -358,36 +372,37 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array|WP_Error
 	 */
-	public static function execute_create_task_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_create_task_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 
-		if ( empty( $arguments['title'] ) ) {
-			return new WP_Error( 'invalid_input', 'title is required' );
+		if (empty($arguments['title'])) {
+			return new WP_Error('invalid_input', 'title is required');
 		}
 
 		$task_id = wp_insert_post(
 			array(
 				'post_type'    => Tsubakuro_Post_Types::TASK_POST_TYPE,
-				'post_title'   => sanitize_text_field( $arguments['title'] ),
-				'post_content' => wp_kses_post( $arguments['content'] ?? '' ),
+				'post_title'   => sanitize_text_field($arguments['title']),
+				'post_content' => wp_kses_post($arguments['content'] ?? ''),
 				'post_status'  => 'publish',
-				'post_parent'  => absint( $arguments['parent_id'] ?? 0 ),
+				'post_parent'  => absint($arguments['parent_id'] ?? 0),
 			),
 			true
 		);
 
-		if ( is_wp_error( $task_id ) ) {
+		if (is_wp_error($task_id)) {
 			return $task_id;
 		}
 
-		if ( empty( $arguments['status'] ) || ! is_string( $arguments['status'] ) || ! array_key_exists( $arguments['status'], Tsubakuro_Post_Types::STATUSES ) ) {
+		if (empty($arguments['status']) || ! is_string($arguments['status']) || ! array_key_exists($arguments['status'], Tsubakuro_Post_Types::STATUSES)) {
 			$arguments['status'] = 'todo';
 		}
 
-		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+		Tsubakuro_Post_Types::save_meta($task_id, $arguments);
 
 		return array(
-			'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+			'task' => Tsubakuro_Post_Types::get_task($task_id),
 		);
 	}
 
@@ -397,39 +412,40 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array|WP_Error
 	 */
-	public static function execute_update_task_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_update_task_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 
-		if ( empty( $arguments['id'] ) ) {
-			return new WP_Error( 'invalid_input', 'id is required' );
+		if (empty($arguments['id'])) {
+			return new WP_Error('invalid_input', 'id is required');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return new WP_Error( 'not_found', 'Task not found' );
+		if (! $task) {
+			return new WP_Error('not_found', 'Task not found');
 		}
 
-		$update = array( 'ID' => $task_id );
+		$update = array('ID' => $task_id);
 
-		if ( isset( $arguments['title'] ) ) {
-			$update['post_title'] = sanitize_text_field( $arguments['title'] );
+		if (isset($arguments['title'])) {
+			$update['post_title'] = sanitize_text_field($arguments['title']);
 		}
 
-		if ( isset( $arguments['content'] ) ) {
-			$update['post_content'] = wp_kses_post( $arguments['content'] );
+		if (isset($arguments['content'])) {
+			$update['post_content'] = wp_kses_post($arguments['content']);
 		}
 
-		if ( isset( $arguments['parent_id'] ) ) {
-			$update['post_parent'] = absint( $arguments['parent_id'] );
+		if (isset($arguments['parent_id'])) {
+			$update['post_parent'] = absint($arguments['parent_id']);
 		}
 
-		wp_update_post( $update );
-		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+		wp_update_post($update);
+		Tsubakuro_Post_Types::save_meta($task_id, $arguments);
 
 		return array(
-			'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+			'task' => Tsubakuro_Post_Types::get_task($task_id),
 		);
 	}
 
@@ -439,25 +455,26 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array|WP_Error
 	 */
-	public static function execute_delete_task_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_delete_task_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 
-		if ( empty( $arguments['id'] ) ) {
-			return new WP_Error( 'invalid_input', 'id is required' );
+		if (empty($arguments['id'])) {
+			return new WP_Error('invalid_input', 'id is required');
 		}
 
-		if ( ! current_user_can( 'delete_posts' ) ) {
-			return new WP_Error( 'forbidden', 'Permission denied' );
+		if (! current_user_can('delete_posts')) {
+			return new WP_Error('forbidden', 'Permission denied');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return new WP_Error( 'not_found', 'Task not found' );
+		if (! $task) {
+			return new WP_Error('not_found', 'Task not found');
 		}
 
-		wp_delete_post( $task_id, true );
+		wp_delete_post($task_id, true);
 
 		return array(
 			'deleted' => true,
@@ -471,32 +488,33 @@ class Tsubakuro_MCP {
 	 * @param mixed $input Ability input.
 	 * @return array|WP_Error
 	 */
-	public static function execute_add_comment_ability( $input = array() ) {
-		$arguments = is_array( $input ) ? $input : array();
+	public static function execute_add_comment_ability($input = array())
+	{
+		$arguments = is_array($input) ? $input : array();
 
-		if ( empty( $arguments['id'] ) || empty( $arguments['comment'] ) ) {
-			return new WP_Error( 'invalid_input', 'id and comment are required' );
+		if (empty($arguments['id']) || empty($arguments['comment'])) {
+			return new WP_Error('invalid_input', 'id and comment are required');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return new WP_Error( 'not_found', 'Task not found' );
+		if (! $task) {
+			return new WP_Error('not_found', 'Task not found');
 		}
 
 		$comment_id = Tsubakuro_Admin::insert_comment(
 			$task_id,
 			get_current_user_id(),
-			sanitize_textarea_field( $arguments['comment'] )
+			sanitize_textarea_field($arguments['comment'])
 		);
 
-		if ( false === $comment_id ) {
-			return new WP_Error( 'insert_failed', 'Failed to insert comment' );
+		if (false === $comment_id) {
+			return new WP_Error('insert_failed', 'Failed to insert comment');
 		}
 
 		return array(
-			'comment' => Tsubakuro_Admin::get_comment( $comment_id ),
+			'comment' => Tsubakuro_Admin::get_comment($comment_id),
 		);
 	}
 
@@ -505,19 +523,20 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_list_tasks_input_schema() {
+	private static function get_list_tasks_input_schema()
+	{
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'status'       => array( 'type' => 'string' ),
-				'priority'     => array( 'type' => 'string' ),
-				'assignee'     => array( 'type' => 'integer' ),
-				'related_page' => array( 'type' => 'integer' ),
-				'parent_id'    => array( 'type' => 'integer' ),
-				'per_page'     => array( 'type' => 'integer' ),
-				's'            => array( 'type' => 'string' ),
-				'orderby'      => array( 'type' => 'string' ),
-				'order'        => array( 'type' => 'string' ),
+				'status'       => array('type' => 'string'),
+				'priority'     => array('type' => 'string'),
+				'assignee'     => array('type' => 'integer'),
+				'related_page' => array('type' => 'integer'),
+				'parent_id'    => array('type' => 'integer'),
+				'per_page'     => array('type' => 'integer'),
+				's'            => array('type' => 'string'),
+				'orderby'      => array('type' => 'string'),
+				'order'        => array('type' => 'string'),
 			),
 		);
 	}
@@ -527,12 +546,13 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_single_id_input_schema() {
+	private static function get_single_id_input_schema()
+	{
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'id' ),
+			'required'   => array('id'),
 			'properties' => array(
-				'id' => array( 'type' => 'integer' ),
+				'id' => array('type' => 'integer'),
 			),
 		);
 	}
@@ -542,21 +562,24 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_create_task_input_schema() {
+	private static function get_create_task_input_schema()
+	{
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'title' ),
+			'required'   => array('title'),
 			'properties' => array(
-				'title'         => array( 'type' => 'string' ),
-				'content'       => array( 'type' => 'string' ),
-				'status'        => array( 'type' => 'string' ),
-				'priority'      => array( 'type' => 'string' ),
-				'assignee'      => array( 'type' => 'integer' ),
-				'related_pages' => array(
+				'title'           => array('type' => 'string'),
+				'content'         => array('type' => 'string'),
+				'status'          => array('type' => 'string'),
+				'priority'        => array('type' => 'string'),
+				'assignee'        => array('type' => 'integer'),
+				'related_pages'   => array(
 					'type'  => 'array',
-					'items' => array( 'type' => 'integer' ),
+					'items' => array('type' => 'integer'),
 				),
-				'parent_id'     => array( 'type' => 'integer' ),
+				'start_remind_at' => array('type' => 'string'),
+				'due_remind_at'   => array('type' => 'string'),
+				'parent_id'       => array('type' => 'integer'),
 			),
 		);
 	}
@@ -566,22 +589,25 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_update_task_input_schema() {
+	private static function get_update_task_input_schema()
+	{
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'id' ),
+			'required'   => array('id'),
 			'properties' => array(
-				'id'            => array( 'type' => 'integer' ),
-				'title'         => array( 'type' => 'string' ),
-				'content'       => array( 'type' => 'string' ),
-				'status'        => array( 'type' => 'string' ),
-				'priority'      => array( 'type' => 'string' ),
-				'assignee'      => array( 'type' => 'integer' ),
-				'related_pages' => array(
+				'id'              => array('type' => 'integer'),
+				'title'           => array('type' => 'string'),
+				'content'         => array('type' => 'string'),
+				'status'          => array('type' => 'string'),
+				'priority'        => array('type' => 'string'),
+				'assignee'        => array('type' => 'integer'),
+				'related_pages'   => array(
 					'type'  => 'array',
-					'items' => array( 'type' => 'integer' ),
+					'items' => array('type' => 'integer'),
 				),
-				'parent_id'     => array( 'type' => 'integer' ),
+				'start_remind_at' => array('type' => 'string'),
+				'due_remind_at'   => array('type' => 'string'),
+				'parent_id'       => array('type' => 'integer'),
 			),
 		);
 	}
@@ -591,13 +617,14 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_add_comment_input_schema() {
+	private static function get_add_comment_input_schema()
+	{
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'id', 'comment' ),
+			'required'   => array('id', 'comment'),
 			'properties' => array(
-				'id'      => array( 'type' => 'integer' ),
-				'comment' => array( 'type' => 'string' ),
+				'id'      => array('type' => 'integer'),
+				'comment' => array('type' => 'string'),
 			),
 		);
 	}
@@ -605,24 +632,25 @@ class Tsubakuro_MCP {
 	/**
 	 * Register the MCP REST route.
 	 */
-	public static function register_routes() {
+	public static function register_routes()
+	{
 		register_rest_route(
 			Tsubakuro_REST_API::NAMESPACE,
 			self::ROUTE,
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( __CLASS__, 'handle_get' ),
+					'callback'            => array(__CLASS__, 'handle_get'),
 					'permission_callback' => '__return_true',
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( __CLASS__, 'handle_jsonrpc' ),
+					'callback'            => array(__CLASS__, 'handle_jsonrpc'),
 					'permission_callback' => '__return_true',
 				),
 				array(
 					'methods'             => 'OPTIONS',
-					'callback'            => array( __CLASS__, 'handle_options' ),
+					'callback'            => array(__CLASS__, 'handle_options'),
 					'permission_callback' => '__return_true',
 				),
 			)
@@ -638,12 +666,13 @@ class Tsubakuro_MCP {
 	 *
 	 * @return WP_REST_Response|array
 	 */
-	public static function handle_get() {
-		if ( ! self::check_permission() ) {
-			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
+	public static function handle_get()
+	{
+		if (! self::check_permission()) {
+			return self::jsonrpc_response(self::error_response(null, -32001, 'Unauthorized'), 401);
 		}
 
-		return self::jsonrpc_response( self::error_response( null, -32000, 'SSE stream is not available for this MCP endpoint. Use POST with JSON-RPC 2.0.' ), 405 );
+		return self::jsonrpc_response(self::error_response(null, -32000, 'SSE stream is not available for this MCP endpoint. Use POST with JSON-RPC 2.0.'), 405);
 	}
 
 	/**
@@ -651,7 +680,8 @@ class Tsubakuro_MCP {
 	 *
 	 * @return WP_REST_Response|array
 	 */
-	public static function handle_options() {
+	public static function handle_options()
+	{
 		return self::json_response(
 			array(
 				'ok' => true,
@@ -665,11 +695,12 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	public static function get_manifest() {
+	public static function get_manifest()
+	{
 		return array(
 			'protocolVersion' => self::PROTOCOL_VERSION,
 			'transport'       => 'streamable-http',
-			'endpoint'        => rest_url( Tsubakuro_REST_API::NAMESPACE . self::ROUTE ),
+			'endpoint'        => rest_url(Tsubakuro_REST_API::NAMESPACE . self::ROUTE),
 			'serverInfo'      => self::get_server_info(),
 			'capabilities'    => self::get_capabilities(),
 		);
@@ -681,36 +712,37 @@ class Tsubakuro_MCP {
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|array
 	 */
-	public static function handle_jsonrpc( $request ) {
-		if ( ! self::check_permission() ) {
-			return self::jsonrpc_response( self::error_response( null, -32001, 'Unauthorized' ), 401 );
+	public static function handle_jsonrpc($request)
+	{
+		if (! self::check_permission()) {
+			return self::jsonrpc_response(self::error_response(null, -32001, 'Unauthorized'), 401);
 		}
 
 		$body = $request->get_json_params();
 
-		if ( null === $body || '' === $body ) {
-			return self::jsonrpc_response( self::error_response( null, -32700, 'Parse error' ), 400 );
+		if (null === $body || '' === $body) {
+			return self::jsonrpc_response(self::error_response(null, -32700, 'Parse error'), 400);
 		}
 
-		if ( self::is_list( $body ) ) {
-			return self::jsonrpc_response( self::error_response( null, -32600, 'Invalid Request' ), 400 );
+		if (self::is_list($body)) {
+			return self::jsonrpc_response(self::error_response(null, -32600, 'Invalid Request'), 400);
 		}
 
-		if ( self::is_jsonrpc_response_message( $body ) ) {
+		if (self::is_jsonrpc_response_message($body)) {
 			return self::empty_response();
 		}
 
-		$protocol_validation_error = self::validate_protocol_version_header( $request, $body );
-		if ( null !== $protocol_validation_error ) {
-			return self::jsonrpc_response( $protocol_validation_error, 400 );
+		$protocol_validation_error = self::validate_protocol_version_header($request, $body);
+		if (null !== $protocol_validation_error) {
+			return self::jsonrpc_response($protocol_validation_error, 400);
 		}
 
-		$response = self::dispatch( $body );
-		if ( null === $response ) {
+		$response = self::dispatch($body);
+		if (null === $response) {
 			return self::empty_response();
 		}
 
-		return self::jsonrpc_response( $response );
+		return self::jsonrpc_response($response);
 	}
 
 	/**
@@ -720,18 +752,19 @@ class Tsubakuro_MCP {
 	 * @param mixed           $body    Decoded request body.
 	 * @return array|null Error response array, or null when validation passes.
 	 */
-	private static function validate_protocol_version_header( $request, $body ) {
-		$method = is_array( $body ) ? (string) ( $body['method'] ?? '' ) : '';
-		if ( ! is_array( $body ) || 'initialize' === $method ) {
+	private static function validate_protocol_version_header($request, $body)
+	{
+		$method = is_array($body) ? (string) ($body['method'] ?? '') : '';
+		if (! is_array($body) || 'initialize' === $method) {
 			return null;
 		}
 
-		$header_version = self::get_mcp_protocol_version_header( $request );
-		if ( '' === $header_version || self::PROTOCOL_VERSION === $header_version ) {
+		$header_version = self::get_mcp_protocol_version_header($request);
+		if ('' === $header_version || self::PROTOCOL_VERSION === $header_version) {
 			return null;
 		}
 
-		$id = self::is_valid_request_id( $body['id'] ?? null ) ? $body['id'] : null;
+		$id = self::is_valid_request_id($body['id'] ?? null) ? $body['id'] : null;
 
 		return self::error_response(
 			$id,
@@ -750,14 +783,15 @@ class Tsubakuro_MCP {
 	 * @param WP_REST_Request $request REST request object.
 	 * @return string Header value, or empty string when missing.
 	 */
-	private static function get_mcp_protocol_version_header( $request ) {
-		if ( is_object( $request ) && method_exists( $request, 'get_header' ) ) {
-			return trim( (string) $request->get_header( 'MCP-Protocol-Version' ) );
+	private static function get_mcp_protocol_version_header($request)
+	{
+		if (is_object($request) && method_exists($request, 'get_header')) {
+			return trim((string) $request->get_header('MCP-Protocol-Version'));
 		}
 
-		if ( ! empty( $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] ) ) {
+		if (! empty($_SERVER['HTTP_MCP_PROTOCOL_VERSION'])) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Value is compared against an allow-listed protocol version.
-			return trim( wp_unslash( (string) $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] ) );
+			return trim(wp_unslash((string) $_SERVER['HTTP_MCP_PROTOCOL_VERSION']));
 		}
 
 		return '';
@@ -769,23 +803,24 @@ class Tsubakuro_MCP {
 	 * @param mixed $rpc Decoded JSON-RPC call object.
 	 * @return array|null JSON-RPC response array, or null for notifications.
 	 */
-	private static function dispatch( $rpc ) {
-		if ( ! is_array( $rpc ) ) {
-			return self::error_response( null, -32600, 'Invalid Request' );
+	private static function dispatch($rpc)
+	{
+		if (! is_array($rpc)) {
+			return self::error_response(null, -32600, 'Invalid Request');
 		}
 
 		$id               = $rpc['id'] ?? null;
-		$is_notification  = ! array_key_exists( 'id', $rpc );
+		$is_notification  = ! array_key_exists('id', $rpc);
 		$method           = $rpc['method'] ?? null;
 		$params           = $rpc['params'] ?? array();
-		$invalid_id       = ! $is_notification && ! self::is_valid_request_id( $id );
-		$invalid_envelope = ( $rpc['jsonrpc'] ?? null ) !== '2.0' || ! is_string( $method ) || '' === $method || $invalid_id;
+		$invalid_id       = ! $is_notification && ! self::is_valid_request_id($id);
+		$invalid_envelope = ($rpc['jsonrpc'] ?? null) !== '2.0' || ! is_string($method) || '' === $method || $invalid_id;
 
-		if ( $invalid_envelope ) {
-			return self::error_response( $invalid_id ? null : $id, -32600, 'Invalid Request' );
+		if ($invalid_envelope) {
+			return self::error_response($invalid_id ? null : $id, -32600, 'Invalid Request');
 		}
 
-		switch ( $method ) {
+		switch ($method) {
 			case 'initialize':
 				return self::success_response(
 					$id,
@@ -797,7 +832,7 @@ class Tsubakuro_MCP {
 				);
 
 			case 'notifications/initialized':
-				return $is_notification ? null : self::success_response( $id, (object) array() );
+				return $is_notification ? null : self::success_response($id, (object) array());
 
 			case 'tools/list':
 				return self::success_response(
@@ -808,14 +843,14 @@ class Tsubakuro_MCP {
 				);
 
 			case 'tools/call':
-				return self::handle_tool_call( $id, $params );
+				return self::handle_tool_call($id, $params);
 
 			default:
-				if ( $is_notification ) {
+				if ($is_notification) {
 					return null;
 				}
 
-				return self::error_response( $id, -32601, 'Method not found: ' . $method );
+				return self::error_response($id, -32601, 'Method not found: ' . $method);
 		}
 	}
 
@@ -826,20 +861,21 @@ class Tsubakuro_MCP {
 	 * @param mixed $params Tool call parameters.
 	 * @return array
 	 */
-	private static function handle_tool_call( $id, $params ) {
-		if ( ! is_array( $params ) || empty( $params['name'] ) ) {
-			return self::error_response( $id, -32602, 'Tool name is required' );
+	private static function handle_tool_call($id, $params)
+	{
+		if (! is_array($params) || empty($params['name'])) {
+			return self::error_response($id, -32602, 'Tool name is required');
 		}
 
-		$name          = sanitize_key( $params['name'] );
-		$arguments     = self::get_tool_arguments( $params );
+		$name          = sanitize_key($params['name']);
+		$arguments     = self::get_tool_arguments($params);
 		$tool_handlers = self::get_tool_handlers();
 
-		if ( ! isset( $tool_handlers[ $name ] ) ) {
-			return self::error_response( $id, -32602, 'Unknown tool: ' . sanitize_text_field( $params['name'] ) );
+		if (! isset($tool_handlers[$name])) {
+			return self::error_response($id, -32602, 'Unknown tool: ' . sanitize_text_field($params['name']));
 		}
 
-		return call_user_func( $tool_handlers[ $name ], $id, $arguments );
+		return call_user_func($tool_handlers[$name], $id, $arguments);
 	}
 
 	/**
@@ -848,8 +884,9 @@ class Tsubakuro_MCP {
 	 * @param array $params tools/call params.
 	 * @return array
 	 */
-	private static function get_tool_arguments( $params ) {
-		if ( isset( $params['arguments'] ) && is_array( $params['arguments'] ) ) {
+	private static function get_tool_arguments($params)
+	{
+		if (isset($params['arguments']) && is_array($params['arguments'])) {
 			return $params['arguments'];
 		}
 
@@ -865,14 +902,15 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array<string, callable>
 	 */
-	private static function get_tool_handlers() {
+	private static function get_tool_handlers()
+	{
 		return array(
-			'tsubakuro_list_tasks'  => array( __CLASS__, 'tool_list_tasks' ),
-			'tsubakuro_get_task'    => array( __CLASS__, 'tool_get_task' ),
-			'tsubakuro_create_task' => array( __CLASS__, 'tool_create_task' ),
-			'tsubakuro_update_task' => array( __CLASS__, 'tool_update_task' ),
-			'tsubakuro_delete_task' => array( __CLASS__, 'tool_delete_task' ),
-			'tsubakuro_add_comment' => array( __CLASS__, 'tool_add_comment' ),
+			'tsubakuro_list_tasks'  => array(__CLASS__, 'tool_list_tasks'),
+			'tsubakuro_get_task'    => array(__CLASS__, 'tool_get_task'),
+			'tsubakuro_create_task' => array(__CLASS__, 'tool_create_task'),
+			'tsubakuro_update_task' => array(__CLASS__, 'tool_update_task'),
+			'tsubakuro_delete_task' => array(__CLASS__, 'tool_delete_task'),
+			'tsubakuro_add_comment' => array(__CLASS__, 'tool_add_comment'),
 		);
 	}
 
@@ -883,43 +921,44 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_list_tasks( $id, $arguments ) {
+	private static function tool_list_tasks($id, $arguments)
+	{
 		$args = array();
 
-		if ( ! empty( $arguments['status'] ) ) {
-			$args['status'] = sanitize_text_field( $arguments['status'] );
+		if (! empty($arguments['status'])) {
+			$args['status'] = sanitize_text_field($arguments['status']);
 		}
 
-		if ( ! empty( $arguments['priority'] ) ) {
-			$args['priority'] = sanitize_text_field( $arguments['priority'] );
+		if (! empty($arguments['priority'])) {
+			$args['priority'] = sanitize_text_field($arguments['priority']);
 		}
 
-		if ( ! empty( $arguments['assignee'] ) ) {
-			$args['assignee'] = absint( $arguments['assignee'] );
+		if (! empty($arguments['assignee'])) {
+			$args['assignee'] = absint($arguments['assignee']);
 		}
 
-		if ( ! empty( $arguments['related_page'] ) ) {
-			$args['related_page'] = absint( $arguments['related_page'] );
+		if (! empty($arguments['related_page'])) {
+			$args['related_page'] = absint($arguments['related_page']);
 		}
 
-		if ( ! empty( $arguments['per_page'] ) ) {
-			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
+		if (! empty($arguments['per_page'])) {
+			$args['posts_per_page'] = min(100, max(1, absint($arguments['per_page'])));
 		}
 
-		if ( isset( $arguments['parent_id'] ) ) {
-			$args['parent_id'] = absint( $arguments['parent_id'] );
+		if (isset($arguments['parent_id'])) {
+			$args['parent_id'] = absint($arguments['parent_id']);
 		}
 
-		foreach ( array( 's', 'orderby', 'order' ) as $key ) {
-			if ( ! empty( $arguments[ $key ] ) ) {
-				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
+		foreach (array('s', 'orderby', 'order') as $key) {
+			if (! empty($arguments[$key])) {
+				$args[$key] = sanitize_text_field($arguments[$key]);
 			}
 		}
 
 		return self::tool_success_response(
 			$id,
 			array(
-				'tasks' => Tsubakuro_Post_Types::get_tasks( $args ),
+				'tasks' => Tsubakuro_Post_Types::get_tasks($args),
 			)
 		);
 	}
@@ -931,18 +970,19 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_get_task( $id, $arguments ) {
-		if ( empty( $arguments['id'] ) ) {
-			return self::error_response( $id, -32602, 'id is required' );
+	private static function tool_get_task($id, $arguments)
+	{
+		if (empty($arguments['id'])) {
+			return self::error_response($id, -32602, 'id is required');
 		}
 
-		$task = Tsubakuro_Post_Types::get_task( absint( $arguments['id'] ) );
-		if ( ! $task ) {
-			return self::error_response( $id, 404, 'Task not found' );
+		$task = Tsubakuro_Post_Types::get_task(absint($arguments['id']));
+		if (! $task) {
+			return self::error_response($id, 404, 'Task not found');
 		}
 
-		$task['comments'] = Tsubakuro_Admin::get_task_comments( $task['id'] );
-		$task['children'] = Tsubakuro_Post_Types::get_tasks( array( 'parent_id' => $task['id'] ) );
+		$task['comments'] = Tsubakuro_Admin::get_task_comments($task['id']);
+		$task['children'] = Tsubakuro_Post_Types::get_tasks(array('parent_id' => $task['id']));
 
 		return self::tool_success_response(
 			$id,
@@ -959,36 +999,37 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_create_task( $id, $arguments ) {
-		if ( empty( $arguments['title'] ) ) {
-			return self::error_response( $id, -32602, 'title is required' );
+	private static function tool_create_task($id, $arguments)
+	{
+		if (empty($arguments['title'])) {
+			return self::error_response($id, -32602, 'title is required');
 		}
 
 		$task_id = wp_insert_post(
 			array(
 				'post_type'    => 'tsubakuro_task',
-				'post_title'   => sanitize_text_field( $arguments['title'] ),
-				'post_content' => wp_kses_post( $arguments['content'] ?? '' ),
+				'post_title'   => sanitize_text_field($arguments['title']),
+				'post_content' => wp_kses_post($arguments['content'] ?? ''),
 				'post_status'  => 'publish',
-				'post_parent'  => absint( $arguments['parent_id'] ?? 0 ),
+				'post_parent'  => absint($arguments['parent_id'] ?? 0),
 			),
 			true
 		);
 
-		if ( is_wp_error( $task_id ) ) {
-			return self::error_response( $id, 500, $task_id->get_error_message() );
+		if (is_wp_error($task_id)) {
+			return self::error_response($id, 500, $task_id->get_error_message());
 		}
 
-		if ( empty( $arguments['status'] ) || ! is_string( $arguments['status'] ) || ! array_key_exists( $arguments['status'], Tsubakuro_Post_Types::STATUSES ) ) {
+		if (empty($arguments['status']) || ! is_string($arguments['status']) || ! array_key_exists($arguments['status'], Tsubakuro_Post_Types::STATUSES)) {
 			$arguments['status'] = 'todo';
 		}
 
-		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+		Tsubakuro_Post_Types::save_meta($task_id, $arguments);
 
 		return self::tool_success_response(
 			$id,
 			array(
-				'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+				'task' => Tsubakuro_Post_Types::get_task($task_id),
 			)
 		);
 	}
@@ -1000,39 +1041,40 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_update_task( $id, $arguments ) {
-		if ( empty( $arguments['id'] ) ) {
-			return self::error_response( $id, -32602, 'id is required' );
+	private static function tool_update_task($id, $arguments)
+	{
+		if (empty($arguments['id'])) {
+			return self::error_response($id, -32602, 'id is required');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return self::error_response( $id, 404, 'Task not found' );
+		if (! $task) {
+			return self::error_response($id, 404, 'Task not found');
 		}
 
-		$update = array( 'ID' => $task_id );
+		$update = array('ID' => $task_id);
 
-		if ( isset( $arguments['title'] ) ) {
-			$update['post_title'] = sanitize_text_field( $arguments['title'] );
+		if (isset($arguments['title'])) {
+			$update['post_title'] = sanitize_text_field($arguments['title']);
 		}
 
-		if ( isset( $arguments['content'] ) ) {
-			$update['post_content'] = wp_kses_post( $arguments['content'] );
+		if (isset($arguments['content'])) {
+			$update['post_content'] = wp_kses_post($arguments['content']);
 		}
 
-		if ( isset( $arguments['parent_id'] ) ) {
-			$update['post_parent'] = absint( $arguments['parent_id'] );
+		if (isset($arguments['parent_id'])) {
+			$update['post_parent'] = absint($arguments['parent_id']);
 		}
 
-		wp_update_post( $update );
-		Tsubakuro_Post_Types::save_meta( $task_id, $arguments );
+		wp_update_post($update);
+		Tsubakuro_Post_Types::save_meta($task_id, $arguments);
 
 		return self::tool_success_response(
 			$id,
 			array(
-				'task' => Tsubakuro_Post_Types::get_task( $task_id ),
+				'task' => Tsubakuro_Post_Types::get_task($task_id),
 			)
 		);
 	}
@@ -1044,23 +1086,24 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_delete_task( $id, $arguments ) {
-		if ( empty( $arguments['id'] ) ) {
-			return self::error_response( $id, -32602, 'id is required' );
+	private static function tool_delete_task($id, $arguments)
+	{
+		if (empty($arguments['id'])) {
+			return self::error_response($id, -32602, 'id is required');
 		}
 
-		if ( ! current_user_can( 'delete_posts' ) ) {
-			return self::error_response( $id, -32003, 'Permission denied' );
+		if (! current_user_can('delete_posts')) {
+			return self::error_response($id, -32003, 'Permission denied');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return self::error_response( $id, 404, 'Task not found' );
+		if (! $task) {
+			return self::error_response($id, 404, 'Task not found');
 		}
 
-		wp_delete_post( $task_id, true );
+		wp_delete_post($task_id, true);
 
 		return self::tool_success_response(
 			$id,
@@ -1078,32 +1121,33 @@ class Tsubakuro_MCP {
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
-	private static function tool_add_comment( $id, $arguments ) {
-		if ( empty( $arguments['id'] ) || empty( $arguments['comment'] ) ) {
-			return self::error_response( $id, -32602, 'id and comment are required' );
+	private static function tool_add_comment($id, $arguments)
+	{
+		if (empty($arguments['id']) || empty($arguments['comment'])) {
+			return self::error_response($id, -32602, 'id and comment are required');
 		}
 
-		$task_id = absint( $arguments['id'] );
-		$task    = Tsubakuro_Post_Types::get_task( $task_id );
+		$task_id = absint($arguments['id']);
+		$task    = Tsubakuro_Post_Types::get_task($task_id);
 
-		if ( ! $task ) {
-			return self::error_response( $id, 404, 'Task not found' );
+		if (! $task) {
+			return self::error_response($id, 404, 'Task not found');
 		}
 
 		$comment_id = Tsubakuro_Admin::insert_comment(
 			$task_id,
 			get_current_user_id(),
-			sanitize_textarea_field( $arguments['comment'] )
+			sanitize_textarea_field($arguments['comment'])
 		);
 
-		if ( false === $comment_id ) {
-			return self::error_response( $id, 500, 'Failed to insert comment' );
+		if (false === $comment_id) {
+			return self::error_response($id, 500, 'Failed to insert comment');
 		}
 
 		return self::tool_success_response(
 			$id,
 			array(
-				'comment' => Tsubakuro_Admin::get_comment( $comment_id ),
+				'comment' => Tsubakuro_Admin::get_comment($comment_id),
 			)
 		);
 	}
@@ -1113,7 +1157,8 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_capabilities() {
+	private static function get_capabilities()
+	{
 		return array(
 			'tools' => (object) array(),
 		);
@@ -1124,7 +1169,8 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_server_info() {
+	private static function get_server_info()
+	{
 		return array(
 			'name'    => self::SERVER_NAME,
 			'version' => '0.1.0',
@@ -1136,7 +1182,8 @@ class Tsubakuro_MCP {
 	 *
 	 * @return array
 	 */
-	private static function get_tools() {
+	private static function get_tools()
+	{
 		return array(
 			array(
 				'name'        => 'tsubakuro_list_tasks',
@@ -1184,7 +1231,7 @@ class Tsubakuro_MCP {
 				'description' => '指定IDのタスク詳細をコメント込みで取得します。',
 				'inputSchema' => array(
 					'type'       => 'object',
-					'required'   => array( 'id' ),
+					'required'   => array('id'),
 					'properties' => array(
 						'id' => array(
 							'type'        => 'integer',
@@ -1198,7 +1245,7 @@ class Tsubakuro_MCP {
 				'description' => '新しいタスクを作成します。',
 				'inputSchema' => array(
 					'type'       => 'object',
-					'required'   => array( 'title' ),
+					'required'   => array('title'),
 					'properties' => array(
 						'title'         => array(
 							'type'        => 'string',
@@ -1223,7 +1270,7 @@ class Tsubakuro_MCP {
 						'related_pages' => array(
 							'type'        => 'array',
 							'description' => '関連ページ ID の配列',
-							'items'       => array( 'type' => 'integer' ),
+							'items'       => array('type' => 'integer'),
 						),
 					),
 				),
@@ -1233,17 +1280,17 @@ class Tsubakuro_MCP {
 				'description' => '既存タスクを更新します。指定したフィールドのみ変更します。',
 				'inputSchema' => array(
 					'type'       => 'object',
-					'required'   => array( 'id' ),
+					'required'   => array('id'),
 					'properties' => array(
-						'id'            => array( 'type' => 'integer' ),
-						'title'         => array( 'type' => 'string' ),
-						'content'       => array( 'type' => 'string' ),
-						'status'        => array( 'type' => 'string' ),
-						'priority'      => array( 'type' => 'string' ),
-						'assignee'      => array( 'type' => 'integer' ),
+						'id'            => array('type' => 'integer'),
+						'title'         => array('type' => 'string'),
+						'content'       => array('type' => 'string'),
+						'status'        => array('type' => 'string'),
+						'priority'      => array('type' => 'string'),
+						'assignee'      => array('type' => 'integer'),
 						'related_pages' => array(
 							'type'  => 'array',
-							'items' => array( 'type' => 'integer' ),
+							'items' => array('type' => 'integer'),
 						),
 					),
 				),
@@ -1253,9 +1300,9 @@ class Tsubakuro_MCP {
 				'description' => '指定したタスクを削除します。',
 				'inputSchema' => array(
 					'type'       => 'object',
-					'required'   => array( 'id' ),
+					'required'   => array('id'),
 					'properties' => array(
-						'id' => array( 'type' => 'integer' ),
+						'id' => array('type' => 'integer'),
 					),
 				),
 			),
@@ -1264,7 +1311,7 @@ class Tsubakuro_MCP {
 				'description' => '指定したタスクにコメントを追加します。',
 				'inputSchema' => array(
 					'type'       => 'object',
-					'required'   => array( 'id', 'comment' ),
+					'required'   => array('id', 'comment'),
 					'properties' => array(
 						'id'      => array(
 							'type'        => 'integer',
@@ -1287,7 +1334,8 @@ class Tsubakuro_MCP {
 	 * @param mixed $result Result payload.
 	 * @return array
 	 */
-	private static function success_response( $id, $result ) {
+	private static function success_response($id, $result)
+	{
 		return array(
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -1302,14 +1350,15 @@ class Tsubakuro_MCP {
 	 * @param array $data Structured tool data.
 	 * @return array
 	 */
-	private static function tool_success_response( $id, $data ) {
+	private static function tool_success_response($id, $data)
+	{
 		return self::success_response(
 			$id,
 			array(
 				'content'           => array(
 					array(
 						'type' => 'text',
-						'text' => self::encode_tool_text( $data ),
+						'text' => self::encode_tool_text($data),
 					),
 				),
 				'structuredContent' => $data,
@@ -1323,13 +1372,14 @@ class Tsubakuro_MCP {
 	 * @param mixed $data Data to encode.
 	 * @return string
 	 */
-	private static function encode_tool_text( $data ) {
-		if ( function_exists( 'wp_json_encode' ) ) {
-			return wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+	private static function encode_tool_text($data)
+	{
+		if (function_exists('wp_json_encode')) {
+			return wp_json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for the lightweight PHPUnit bootstrap where wp_json_encode() is unavailable.
-		return json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+		return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 	}
 
 	/**
@@ -1340,7 +1390,8 @@ class Tsubakuro_MCP {
 	 * @param string $message Human-readable error message.
 	 * @return array
 	 */
-	private static function error_response( $id, $code, $message ) {
+	private static function error_response($id, $code, $message)
+	{
 		return array(
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -1359,15 +1410,16 @@ class Tsubakuro_MCP {
 	 *
 	 * @return bool
 	 */
-	public static function check_permission() {
+	public static function check_permission()
+	{
 		$authorization = self::get_authorization_header();
 
-		if ( '' === $authorization ) {
+		if ('' === $authorization) {
 			return false;
 		}
 
-		if ( preg_match( '/^Basic\s+\S+$/i', $authorization ) ) {
-			return current_user_can( 'edit_posts' );
+		if (preg_match('/^Basic\s+\S+$/i', $authorization)) {
+			return current_user_can('edit_posts');
 		}
 
 		return false;
@@ -1378,22 +1430,23 @@ class Tsubakuro_MCP {
 	 *
 	 * @return string
 	 */
-	private static function get_authorization_header() {
-		if ( ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+	private static function get_authorization_header()
+	{
+		if (! empty($_SERVER['HTTP_AUTHORIZATION'])) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Authorization scheme is validated before use.
-			return trim( wp_unslash( (string) $_SERVER['HTTP_AUTHORIZATION'] ) );
+			return trim(wp_unslash((string) $_SERVER['HTTP_AUTHORIZATION']));
 		}
 
-		if ( ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+		if (! empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Authorization scheme is validated before use.
-			return trim( wp_unslash( (string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+			return trim(wp_unslash((string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
 		}
 
-		if ( function_exists( 'getallheaders' ) ) {
+		if (function_exists('getallheaders')) {
 			$headers = getallheaders();
-			foreach ( $headers as $name => $value ) {
-				if ( 'authorization' === strtolower( (string) $name ) ) {
-					return trim( wp_unslash( (string) $value ) );
+			foreach ($headers as $name => $value) {
+				if ('authorization' === strtolower((string) $name)) {
+					return trim(wp_unslash((string) $value));
 				}
 			}
 		}
@@ -1408,8 +1461,9 @@ class Tsubakuro_MCP {
 	 * @param int   $status HTTP status code.
 	 * @return WP_REST_Response|array
 	 */
-	private static function jsonrpc_response( $data, $status = 200 ) {
-		return self::json_response( $data, $status );
+	private static function jsonrpc_response($data, $status = 200)
+	{
+		return self::json_response($data, $status);
 	}
 
 	/**
@@ -1419,13 +1473,14 @@ class Tsubakuro_MCP {
 	 * @param int   $status HTTP status code.
 	 * @return WP_REST_Response|array
 	 */
-	private static function json_response( $data, $status = 200 ) {
-		if ( class_exists( 'WP_REST_Response' ) ) {
-			$response = new WP_REST_Response( $data, $status );
-			$response->header( 'Content-Type', 'application/json; charset=' . get_option( 'blog_charset', 'UTF-8' ) );
-			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
-			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, MCP-Protocol-Version' );
-			$response->header( 'Access-Control-Allow-Origin', '*' );
+	private static function json_response($data, $status = 200)
+	{
+		if (class_exists('WP_REST_Response')) {
+			$response = new WP_REST_Response($data, $status);
+			$response->header('Content-Type', 'application/json; charset=' . get_option('blog_charset', 'UTF-8'));
+			$response->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+			$response->header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, MCP-Protocol-Version');
+			$response->header('Access-Control-Allow-Origin', '*');
 			return $response;
 		}
 
@@ -1440,12 +1495,13 @@ class Tsubakuro_MCP {
 	 *
 	 * @return WP_REST_Response|string
 	 */
-	private static function empty_response() {
-		if ( class_exists( 'WP_REST_Response' ) ) {
-			$response = new WP_REST_Response( '', 202 );
-			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
-			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, MCP-Protocol-Version' );
-			$response->header( 'Access-Control-Allow-Origin', '*' );
+	private static function empty_response()
+	{
+		if (class_exists('WP_REST_Response')) {
+			$response = new WP_REST_Response('', 202);
+			$response->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+			$response->header('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, MCP-Protocol-Version');
+			$response->header('Access-Control-Allow-Origin', '*');
 			return $response;
 		}
 
@@ -1458,12 +1514,13 @@ class Tsubakuro_MCP {
 	 * @param array $value Value to check.
 	 * @return bool
 	 */
-	private static function is_list( $value ) {
-		if ( function_exists( 'array_is_list' ) ) {
-			return array_is_list( $value );
+	private static function is_list($value)
+	{
+		if (function_exists('array_is_list')) {
+			return array_is_list($value);
 		}
 
-		return array_keys( $value ) === range( 0, count( $value ) - 1 );
+		return array_keys($value) === range(0, count($value) - 1);
 	}
 
 	/**
@@ -1472,15 +1529,16 @@ class Tsubakuro_MCP {
 	 * @param mixed $value Decoded JSON value.
 	 * @return bool
 	 */
-	private static function is_jsonrpc_response_message( $value ) {
-		if ( ! is_array( $value ) || ( $value['jsonrpc'] ?? null ) !== '2.0' || ! array_key_exists( 'id', $value ) ) {
+	private static function is_jsonrpc_response_message($value)
+	{
+		if (! is_array($value) || ($value['jsonrpc'] ?? null) !== '2.0' || ! array_key_exists('id', $value)) {
 			return false;
 		}
 
-		$has_result = array_key_exists( 'result', $value );
-		$has_error  = array_key_exists( 'error', $value );
+		$has_result = array_key_exists('result', $value);
+		$has_error  = array_key_exists('error', $value);
 
-		return ! array_key_exists( 'method', $value ) && $has_result !== $has_error;
+		return ! array_key_exists('method', $value) && $has_result !== $has_error;
 	}
 
 	/**
@@ -1489,7 +1547,8 @@ class Tsubakuro_MCP {
 	 * @param mixed $id Request id.
 	 * @return bool
 	 */
-	private static function is_valid_request_id( $id ) {
-		return is_string( $id ) || is_int( $id );
+	private static function is_valid_request_id($id)
+	{
+		return is_string($id) || is_int($id);
 	}
 }

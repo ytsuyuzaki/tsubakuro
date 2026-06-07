@@ -139,6 +139,43 @@ class PostTypesTest extends TestCase
 		$this->assertEmpty($GLOBALS['tsubakuro_test']['post_meta'][101] ?? array());
 	}
 
+	public function test_save_meta_stores_reminder_datetimes(): void
+	{
+		Tsubakuro_Post_Types::save_meta(
+			101,
+			array(
+				'start_remind_at' => '2026-06-08 09:00:00',
+				'due_remind_at'   => '2026-06-09 18:00:00',
+			)
+		);
+
+		$this->assertSame(
+			array('2026-06-08 09:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_start_remind_at']
+		);
+		$this->assertSame(
+			array('2026-06-09 18:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_due_remind_at']
+		);
+	}
+
+	public function test_save_meta_clears_sent_flag_when_reminder_datetime_changes(): void
+	{
+		$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_start_remind_at']  = array('2026-06-08 09:00:00');
+		$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_start_reminded_at'] = array('2026-06-08 09:05:00');
+
+		Tsubakuro_Post_Types::save_meta(101, array('start_remind_at' => '2026-06-08 10:00:00'));
+
+		$this->assertSame(
+			array('2026-06-08 10:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_start_remind_at']
+		);
+		$this->assertArrayNotHasKey(
+			'_tsubakuro_start_reminded_at',
+			$GLOBALS['tsubakuro_test']['post_meta'][101]
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// format_task()
 	// -------------------------------------------------------------------------
@@ -220,6 +257,19 @@ class PostTypesTest extends TestCase
 		$this->assertSame('2026-01-01 00:00:00', $task['created_at']);
 		$this->assertSame('2026-02-01 00:00:00', $task['updated_at']);
 		$this->assertSame(3, $task['author_id']);
+	}
+
+	public function test_format_task_includes_reminder_fields(): void
+	{
+		$GLOBALS['tsubakuro_test']['post_meta'][10] = array(
+			'_tsubakuro_start_remind_at' => array('2026-06-10 09:00:00'),
+			'_tsubakuro_due_remind_at'   => array('2026-06-11 17:00:00'),
+		);
+
+		$task = Tsubakuro_Post_Types::format_task($this->make_post(10, 'T', 'C'));
+
+		$this->assertSame('2026-06-10 09:00:00', $task['start_remind_at']);
+		$this->assertSame('2026-06-11 17:00:00', $task['due_remind_at']);
 	}
 
 	// -------------------------------------------------------------------------

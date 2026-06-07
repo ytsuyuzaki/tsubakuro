@@ -136,6 +136,30 @@ class RestApiTest extends TestCase
 		);
 	}
 
+	public function test_create_task_saves_reminder_fields(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_post(123, 'New Task', 'body');
+
+		$req = new WP_REST_Request(
+			array(
+				'title'           => 'New Task',
+				'start_remind_at' => '2026-06-08 09:00:00',
+				'due_remind_at'   => '2026-06-09 19:00:00',
+			)
+		);
+		$result = Tsubakuro_REST_API::create_task($req);
+
+		$this->assertSame(123, $result['id']);
+		$this->assertSame(
+			array('2026-06-08 09:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_start_remind_at']
+		);
+		$this->assertSame(
+			array('2026-06-09 19:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_due_remind_at']
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// GET /tasks/{id}
 	// -------------------------------------------------------------------------
@@ -220,6 +244,29 @@ class RestApiTest extends TestCase
 		$this->assertSame(
 			array('completed'),
 			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_status']
+		);
+	}
+
+	public function test_update_task_handler_saves_reminder_fields_when_provided(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post(101, 'Task', '');
+
+		$req = new WP_REST_Request(
+			array(
+				'id'              => 101,
+				'start_remind_at' => '2026-06-08 09:00:00',
+				'due_remind_at'   => '2026-06-09 19:00:00',
+			)
+		);
+		Tsubakuro_REST_API::update_task($req);
+
+		$this->assertSame(
+			array('2026-06-08 09:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_start_remind_at']
+		);
+		$this->assertSame(
+			array('2026-06-09 19:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][101]['_tsubakuro_due_remind_at']
 		);
 	}
 

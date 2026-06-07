@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Tsubakuro Task Manager
  * Plugin URI:  https://github.com/ytsuyuzaki/tsubakuro
@@ -13,14 +14,14 @@
  * @package Tsubakuro
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
-define( 'TSUBAKURO_VERSION', '0.0.1' );
-define( 'TSUBAKURO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'TSUBAKURO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'TSUBAKURO_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define('TSUBAKURO_VERSION', '0.0.1');
+define('TSUBAKURO_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('TSUBAKURO_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('TSUBAKURO_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-activator.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-post-types.php';
@@ -28,18 +29,21 @@ require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-admin.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-rest-api.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-mcp.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-frontend.php';
+require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-reminders.php';
 
-register_activation_hook( __FILE__, array( 'Tsubakuro_Activator', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'Tsubakuro_Activator', 'deactivate' ) );
+register_activation_hook(__FILE__, array('Tsubakuro_Activator', 'activate'));
+register_deactivation_hook(__FILE__, array('Tsubakuro_Activator', 'deactivate'));
 
 /**
  * Bootstrap all plugin modules on plugins_loaded.
  */
-function tsubakuro_init() {
+function tsubakuro_init()
+{
 	Tsubakuro_Post_Types::init();
 	Tsubakuro_Admin::init();
 	Tsubakuro_REST_API::init();
 	Tsubakuro_MCP::init();
 	Tsubakuro_Frontend::init();
+	Tsubakuro_Reminders::init();
 }
-add_action( 'plugins_loaded', 'tsubakuro_init' );
+add_action('plugins_loaded', 'tsubakuro_init');

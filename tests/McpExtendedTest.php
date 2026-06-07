@@ -340,6 +340,37 @@ class McpExtendedTest extends TestCase
 		);
 	}
 
+	public function test_tools_call_create_task_stores_reminder_fields(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_post(123, 'New Task');
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 122,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_task',
+					'arguments' => array(
+						'title'           => 'New Task',
+						'start_remind_at' => '2026-06-08 09:00:00',
+						'due_remind_at'   => '2026-06-09 19:00:00',
+					),
+				),
+			)
+		);
+
+		$this->assertSame(123, $result['result']['structuredContent']['task']['id']);
+		$this->assertSame(
+			array('2026-06-08 09:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_start_remind_at']
+		);
+		$this->assertSame(
+			array('2026-06-09 19:00:00'),
+			$GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_due_remind_at']
+		);
+	}
+
 	public function test_tools_call_update_task_updates_meta_and_returns_task(): void
 	{
 		$GLOBALS['tsubakuro_test']['posts'][101] = $this->make_post(101, 'Old');
