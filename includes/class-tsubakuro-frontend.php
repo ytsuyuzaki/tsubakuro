@@ -66,6 +66,20 @@ class Tsubakuro_Frontend {
 				'href'   => '#',
 			)
 		);
+
+		if ( current_user_can( 'manage_options' ) ) {
+			$page_id = get_queried_object_id();
+			if ( $page_id ) {
+				$wp_admin_bar->add_node(
+					array(
+						'id'     => 'tsubakuro-page-tasks',
+						'parent' => 'tsubakuro-panel-toggle',
+						'title'  => esc_html__( 'このページのタスクを管理', 'tsubakuro' ),
+						'href'   => admin_url( 'admin.php?page=tsubakuro-tasks&related_page=' . $page_id ),
+					)
+				);
+			}
+		}
 	}
 
 	/**
