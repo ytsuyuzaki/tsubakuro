@@ -178,9 +178,13 @@ class Tsubakuro_Admin {
 			wp_die( '権限がありません。' );
 		}
 
-		$story_items     = self::get_about_story_items();
-		$value_points    = self::get_about_value_points();
-		$reference_links = self::get_about_reference_links();
+		$story_items               = self::get_about_story_items();
+		$value_points              = self::get_about_value_points();
+		$reference_links           = self::get_about_reference_links();
+		$reminder_goal             = self::get_reminder_feature_goal();
+		$reminder_use_cases        = self::get_reminder_feature_use_cases();
+		$reminder_direction_checks = self::get_reminder_feature_direction_checks();
+		$reminder_spec_notes       = self::get_reminder_feature_spec_notes();
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/about.php';
 	}
@@ -378,6 +382,66 @@ class Tsubakuro_Admin {
 		);
 
 		return apply_filters( 'tsubakuro_about_reference_links', $links );
+	}
+
+	/**
+	 * Return the reminder feature goal shown on the about page.
+	 *
+	 * @return string
+	 */
+	public static function get_reminder_feature_goal() {
+		$goal = '登録したタスクや改善アイデアが埋もれないように、適切なタイミングで再通知し、実行・再評価・振り返りのきっかけを作ること。';
+
+		return apply_filters( 'tsubakuro_reminder_feature_goal', $goal );
+	}
+
+	/**
+	 * Return reminder feature use cases shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_reminder_feature_use_cases() {
+		$use_cases = array(
+			'登録直後は重要だった改善アイデアを、数日後や数週間後に見直せるようにする。',
+			'開始予定日が近づいたタスクを再通知し、着手漏れを防ぐ。',
+			'完了期限が近い保守作業や定期作業を知らせて、対応の抜け漏れを減らす。',
+			'完了済みタスクを振り返るための通知を送り、実施後の効果測定やメモ更新につなげる。',
+		);
+
+		return apply_filters( 'tsubakuro_reminder_feature_use_cases', $use_cases );
+	}
+
+	/**
+	 * Return reminder direction checks shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_reminder_feature_direction_checks() {
+		$checks = array(
+			'通知そのものを主役にせず、「WordPress 内に残した文脈を見直す入口」になっているか。',
+			'タスク管理だけでなく、改善履歴や検討事項の蓄積を再活用できる設計になっているか。',
+			'AI や外部自動化に依存せず、WordPress 単体でも最低限の運用価値を出せるか。',
+			'メール通知が増えすぎてノイズにならないよう、必要な対象・頻度・停止条件を整理できているか。',
+		);
+
+		return apply_filters( 'tsubakuro_reminder_feature_direction_checks', $checks );
+	}
+
+	/**
+	 * Return reminder implementation notes shown on the about page.
+	 *
+	 * @return array
+	 */
+	public static function get_reminder_feature_spec_notes() {
+		$notes = array(
+			'リマインドはタスク単位で設定し、「開始時間」と「完了期限」の2種類を保持する。',
+			'通知判定は WordPress Cron で行い、未完了タスクのみを対象にする。',
+			'通知手段はメールを基本とし、誰に送るか（作成者・アサイン先・管理者）を仕様として詰める。',
+			'同じ通知を重複送信しないために、送信済み状態や次回通知時刻の扱いを決める。',
+			'開始前の事前通知、期限超過後の再通知、完了時の停止条件をどこまで扱うかを実装前に整理する。',
+		);
+
+		return apply_filters( 'tsubakuro_reminder_feature_spec_notes', $notes );
 	}
 
 	// -------------------------------------------------------------------------

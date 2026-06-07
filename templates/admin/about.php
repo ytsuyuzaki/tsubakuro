@@ -6,6 +6,10 @@
  *   $story_items     – swallow metaphor points.
  *   $value_points    – product positioning points.
  *   $reference_links – useful admin links.
+ *   $reminder_goal   – reminder feature goal statement.
+ *   $reminder_use_cases – reminder feature use cases.
+ *   $reminder_direction_checks – reminder feature direction checks.
+ *   $reminder_spec_notes – reminder feature implementation notes.
  *
  * @package Tsubakuro
  */
@@ -58,6 +62,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<ul class="tsubakuro-about-value-list">
 					<?php foreach ( $value_points as $point ) : ?>
 						<li><?php echo esc_html( $point ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			</section>
+
+			<section class="tsubakuro-about-section">
+				<h2><?php esc_html_e( 'リマインド機能の検討', 'tsubakuro' ); ?></h2>
+				<p><?php echo esc_html( $reminder_goal ); ?></p>
+
+				<h3><?php esc_html_e( '想定ユースケース', 'tsubakuro' ); ?></h3>
+				<ul class="tsubakuro-about-value-list">
+					<?php foreach ( $reminder_use_cases as $use_case ) : ?>
+						<li><?php echo esc_html( $use_case ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+
+				<h3><?php esc_html_e( 'ツバクロの方向性と照らす観点', 'tsubakuro' ); ?></h3>
+				<ul class="tsubakuro-about-value-list">
+					<?php foreach ( $reminder_direction_checks as $check ) : ?>
+						<li><?php echo esc_html( $check ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+
+				<h3><?php esc_html_e( '実装に進む前の仕様メモ', 'tsubakuro' ); ?></h3>
+				<ul class="tsubakuro-about-value-list">
+					<?php foreach ( $reminder_spec_notes as $note ) : ?>
+						<li><?php echo esc_html( $note ); ?></li>
 					<?php endforeach; ?>
 				</ul>
 			</section>

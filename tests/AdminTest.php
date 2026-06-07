@@ -38,9 +38,13 @@ class AdminTest extends TestCase
 
 	public function test_about_page_data_is_filterable_and_contains_reference_links(): void
 	{
-		$story_items     = Tsubakuro_Admin::get_about_story_items();
-		$value_points    = Tsubakuro_Admin::get_about_value_points();
-		$reference_links = Tsubakuro_Admin::get_about_reference_links();
+		$story_items               = Tsubakuro_Admin::get_about_story_items();
+		$value_points              = Tsubakuro_Admin::get_about_value_points();
+		$reference_links           = Tsubakuro_Admin::get_about_reference_links();
+		$reminder_goal             = Tsubakuro_Admin::get_reminder_feature_goal();
+		$reminder_use_cases        = Tsubakuro_Admin::get_reminder_feature_use_cases();
+		$reminder_direction_checks = Tsubakuro_Admin::get_reminder_feature_direction_checks();
+		$reminder_spec_notes       = Tsubakuro_Admin::get_reminder_feature_spec_notes();
 
 		$this->assertCount(5, $story_items);
 		$this->assertSame('巣作り', $story_items[0]['title']);
@@ -54,6 +58,21 @@ class AdminTest extends TestCase
 		$this->assertContains('新規タスク追加', $labels);
 		$this->assertContains('タスク管理について', $labels);
 		$this->assertContains('tsubakuro_about_reference_links', $GLOBALS['tsubakuro_test']['filters_applied']);
+
+		$this->assertStringContainsString('再通知', $reminder_goal);
+		$this->assertCount(4, $reminder_use_cases);
+		$this->assertContains('tsubakuro_reminder_feature_goal', $GLOBALS['tsubakuro_test']['filters_applied']);
+		$this->assertContains('tsubakuro_reminder_feature_use_cases', $GLOBALS['tsubakuro_test']['filters_applied']);
+
+		$this->assertCount(4, $reminder_direction_checks);
+		$this->assertStringContainsString('WordPress 内に残した文脈', $reminder_direction_checks[0]);
+		$this->assertContains('tsubakuro_reminder_feature_direction_checks', $GLOBALS['tsubakuro_test']['filters_applied']);
+
+		$this->assertCount(5, $reminder_spec_notes);
+		$this->assertStringContainsString('開始時間', $reminder_spec_notes[0]);
+		$this->assertStringContainsString('WordPress Cron', $reminder_spec_notes[1]);
+		$this->assertStringContainsString('メール', $reminder_spec_notes[2]);
+		$this->assertContains('tsubakuro_reminder_feature_spec_notes', $GLOBALS['tsubakuro_test']['filters_applied']);
 	}
 
 	public function test_render_about_outputs_about_content_and_reference_links(): void
@@ -65,6 +84,10 @@ class AdminTest extends TestCase
 		$this->assertStringContainsString('なぜツバクロなのか', $output);
 		$this->assertStringContainsString('WordPress 内の課題・依頼・改善案', $output);
 		$this->assertStringContainsString('巣作り', $output);
+		$this->assertStringContainsString('リマインド機能の検討', $output);
+		$this->assertStringContainsString('想定ユースケース', $output);
+		$this->assertStringContainsString('WordPress Cron', $output);
+		$this->assertStringContainsString('メール', $output);
 		$this->assertStringContainsString('軽やかに巡回しながら、課題を運び、積み上げていく存在', $output);
 		$this->assertStringContainsString('admin.php?page=tsubakuro-tasks', $output);
 		$this->assertStringContainsString('admin.php?page=tsubakuro-about', $output);
