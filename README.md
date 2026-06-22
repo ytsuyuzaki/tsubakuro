@@ -41,6 +41,33 @@ npm run build:zip
 
 ## Distribution
 
+### GitHub Releasesによる更新
+
+公開GitHub Releaseを更新元として、WordPress管理画面から通常のプラグイン更新を実行できます。更新チェックには同梱した
+[`plugin-update-checker`](https://github.com/YahnisElsts/plugin-update-checker) v5.7を使用します。
+
+リリース時は、次の4か所を同じ `X.Y.Z` に更新してください。
+
+- `tsubakuro.php` のプラグインヘッダー `Version`
+- `tsubakuro.php` の `TSUBAKURO_VERSION`
+- `package.json` と `package-lock.json` の `version`
+- `readme.txt` の `Stable tag`
+
+その後、lint・test・ZIP作成を実行し、対応する `vX.Y.Z` タグをpushします。
+
+```sh
+npm run lint
+npm run test
+npm run build:zip
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+タグpushによりRelease workflowが `dist/tsubakuro.zip` をGitHub Releaseへ添付します。タグと各バージョンが一致しない場合や、
+ZIPに更新処理の実行ファイルが含まれない場合、workflowはRelease作成前に失敗します。プレリリースは更新対象になりません。
+
+WordPressは定期的に更新を確認します。すぐに確認する場合は、プラグイン一覧の「更新を確認」を使用してください。
+
 `main` ブランチの `Tests` workflow が成功すると、GitHub Actionsの `Build Test ZIP` workflow が `tsubakuro-test-build` artifactとしてテスト用ZIPを作成します。
 
 `Tests` workflow は `main` へのpush、Pull Request、手動実行、毎日 18:00 UTC の定期実行で動きます。

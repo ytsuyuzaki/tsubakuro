@@ -3,7 +3,7 @@
  * Plugin Name: Tsubakuro Task Manager
  * Plugin URI:  https://github.com/ytsuyuzaki/tsubakuro
  * Description: WordPress管理画面でのタスク管理プラグイン。タスクの書き出し・コメント・ステータス管理・関連ページ・アサイン・MCP対応・フロントエンドポップアップを実現します。
- * Version:     0.0.1
+ * Version:     0.0.2
  * Author:      ytsuyuzaki
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TSUBAKURO_VERSION', '0.0.1' );
+define( 'TSUBAKURO_VERSION', '0.0.2' );
 define( 'TSUBAKURO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TSUBAKURO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TSUBAKURO_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -29,6 +29,9 @@ require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-rest-api.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-mcp.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-frontend.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-reminders.php';
+require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-updater.php';
+
+add_action( 'plugins_loaded', array( 'Tsubakuro_Updater', 'init' ), 5 );
 
 register_activation_hook( __FILE__, array( 'Tsubakuro_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Tsubakuro_Activator', 'deactivate' ) );

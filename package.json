@@ -1,6 +1,6 @@
 {
   "name": "tsubakuro",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "WordPress task management plugin",
   "license": "GPL-2.0-or-later",
@@ -9,7 +9,9 @@
     "includes",
     "admin",
     "public",
-    "templates"
+    "templates",
+    "plugin-update-checker",
+    "readme.txt"
   ],
   "devDependencies": {
     "@playwright/test": "^1.60.0",
@@ -30,7 +32,7 @@
     "lint:pkg-json": "wp-scripts lint-pkg-json",
     "lint:php": "vendor/bin/phpcs",
     "lint:php:fix": "vendor/bin/phpcbf",
-    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test": "npm run test:unit && npm run test:release && npm run test:integration && npm run test:e2e",
     "test:unit": "composer test",
     "test:integration": "npm run wp-env:test",
     "wp-env:test": "wp-env run tests-cli --env-cwd='wp-content/plugins/tsubakuro/' vendor/bin/phpunit",
@@ -38,7 +40,10 @@
     "wp-env:stop": "wp-env stop",
     "wp-env:destroy": "wp-env destroy",
     "test:e2e": "wp-scripts test-playwright",
-    "build:zip": "wp-scripts plugin-zip && mkdir -p dist && mv tsubakuro.zip dist/"
+    "test:release": "node --test scripts/release-tools.test.mjs",
+    "test:package": "node scripts/validate-package.mjs dist/tsubakuro.zip",
+    "validate:release": "node scripts/validate-release.mjs",
+    "build:zip": "npm run validate:release && wp-scripts plugin-zip && mkdir -p dist && mv tsubakuro.zip dist/ && npm run test:package"
   },
   "overrides": {
     "@wp-playground/blueprints": {

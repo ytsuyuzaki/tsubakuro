@@ -2,6 +2,44 @@
 
 use PHPUnit\Framework\TestCase;
 
+class Tsubakuro_Test_Update_Api
+{
+	public $asset_pattern;
+	public $asset_preference;
+
+	public function enableReleaseAssets($asset_pattern, $asset_preference): void
+	{
+		$this->asset_pattern    = $asset_pattern;
+		$this->asset_preference = $asset_preference;
+	}
+}
+
+class Tsubakuro_Test_Update_Checker
+{
+	public $api;
+
+	public function __construct()
+	{
+		$this->api = new Tsubakuro_Test_Update_Api();
+	}
+
+	public function getVcsApi(): Tsubakuro_Test_Update_Api
+	{
+		return $this->api;
+	}
+}
+
+class Tsubakuro_Test_Update_Factory
+{
+	public static $arguments;
+
+	public static function buildUpdateChecker(...$arguments): Tsubakuro_Test_Update_Checker
+	{
+		self::$arguments = $arguments;
+		return new Tsubakuro_Test_Update_Checker();
+	}
+}
+
 class TsubakuroTest extends TestCase
 {
 
@@ -28,9 +66,27 @@ class TsubakuroTest extends TestCase
 		$bootstrap_state = $GLOBALS['tsubakuro_test_bootstrap_state'];
 
 		$this->assertArrayHasKey('plugins_loaded', $bootstrap_state['actions']);
-		$this->assertSame('tsubakuro_init', $bootstrap_state['actions']['plugins_loaded'][0]);
+		$this->assertContains('tsubakuro_init', $bootstrap_state['actions']['plugins_loaded']);
+		$this->assertContains(array('Tsubakuro_Updater', 'init'), $bootstrap_state['actions']['plugins_loaded']);
 		$this->assertSame(array('Tsubakuro_Activator', 'activate'), $bootstrap_state['activation_hooks'][0][1]);
-		$this->assertSame('0.0.1', TSUBAKURO_VERSION);
+		$this->assertSame('0.0.2', TSUBAKURO_VERSION);
+	}
+
+	public function test_updater_uses_github_release_zip(): void
+	{
+		$checker = Tsubakuro_Updater::build_update_checker('Tsubakuro_Test_Update_Factory');
+
+		$this->assertSame(
+			array(
+				'https://github.com/ytsuyuzaki/tsubakuro/',
+				TSUBAKURO_PLUGIN_DIR . 'tsubakuro.php',
+				'tsubakuro',
+			),
+			Tsubakuro_Test_Update_Factory::$arguments
+		);
+		$this->assertSame(Tsubakuro_Updater::RELEASE_ASSET_PATTERN, $checker->api->asset_pattern);
+		$this->assertSame('/^tsubakuro\.zip$/i', $checker->api->asset_pattern);
+		$this->assertSame(Tsubakuro_Updater::REQUIRE_RELEASE_ASSETS, $checker->api->asset_preference);
 	}
 
 	public function test_init_methods_register_wordpress_hooks_and_routes(): void
