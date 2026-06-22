@@ -25,6 +25,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Validate release version
+        run: npm run validate:release -- --tag "${GITHUB_REF_NAME}"
+
       - name: Build ZIP
         run: npm run build:zip
 
