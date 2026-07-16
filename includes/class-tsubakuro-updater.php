@@ -42,19 +42,14 @@ class Tsubakuro_Updater {
 	private static $update_checker = null;
 
 	/**
-	 * Load the bundled library and register the update checker.
+	 * Register the update checker using the Composer-managed library.
+	 *
+	 * The library is loaded through `vendor/autoload.php`, so no manual
+	 * `require` of the update checker source is needed here.
 	 *
 	 * @return object|null Update checker instance, or null when unavailable.
 	 */
 	public static function init() {
-		$library_file = TSUBAKURO_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
-
-		if ( ! is_readable( $library_file ) ) {
-			return null;
-		}
-
-		require_once $library_file;
-
 		$factory_class = 'YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory';
 		if ( ! class_exists( $factory_class ) ) {
 			return null;

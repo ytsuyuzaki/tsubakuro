@@ -22,6 +22,12 @@ define( 'TSUBAKURO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TSUBAKURO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TSUBAKURO_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+$tsubakuro_autoload = TSUBAKURO_PLUGIN_DIR . 'vendor/autoload.php';
+if ( is_readable( $tsubakuro_autoload ) ) {
+	require_once $tsubakuro_autoload;
+}
+unset( $tsubakuro_autoload );
+
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-activator.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-post-types.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-admin.php';
