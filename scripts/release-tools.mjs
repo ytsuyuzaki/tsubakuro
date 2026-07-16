@@ -95,11 +95,7 @@ export function validatePackageEntries( entries ) {
 		);
 	}
 
-	for ( const excludedDirectory of [
-		'node_modules/',
-		'tests/',
-		'.git/',
-	] ) {
+	for ( const excludedDirectory of [ 'node_modules/', 'tests/', '.git/' ] ) {
 		const excludedEntry = entries.find( ( entry ) =>
 			entry.startsWith( `tsubakuro/${ excludedDirectory }` )
 		);
