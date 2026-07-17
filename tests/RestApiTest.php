@@ -450,4 +450,133 @@ class RestApiTest extends TestCase
 		$this->assertCount(1, $result);
 		$this->assertSame(2, $result[0]['id']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Evaluations
+	// -------------------------------------------------------------------------
+
+	private function make_eval_post(int $id, string $title = 'Eval'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_evaluation',
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 7,
+		);
+	}
+
+	public function test_create_evaluation_saves_meta(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_eval_post(123, 'New Eval');
+
+		$req = new WP_REST_Request(array(
+			'title'       => 'New Eval',
+			'target_post' => 55,
+			'change_item' => 'comparison',
+			'judgment'    => 'success',
+		));
+
+		$result = Tsubakuro_REST_API::create_evaluation($req);
+
+		$this->assertSame(123, $result['id']);
+		$this->assertSame(array('comparison'), $GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_eval_change_item']);
+		$this->assertSame(array('success'), $GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_eval_judgment']);
+	}
+
+	public function test_get_evaluation_returns_not_found(): void
+	{
+		$req    = new WP_REST_Request(array('id' => 999));
+		$result = Tsubakuro_REST_API::get_evaluation($req);
+
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertSame('not_found', $result->get_error_code());
+	}
+
+	public function test_get_evaluation_includes_linked_insights(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][30] = $this->make_eval_post(30, 'Linked Eval');
+		$GLOBALS['tsubakuro_test']['posts'][31] = (object) array(
+			'ID'            => 31,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => 'Insight',
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 7,
+		);
+		$GLOBALS['tsubakuro_test']['post_meta'][31] = array(
+			'_tsubakuro_insight_evaluation' => array(30),
+		);
+
+		$req    = new WP_REST_Request(array('id' => 30));
+		$result = Tsubakuro_REST_API::get_evaluation($req);
+
+		$this->assertArrayHasKey('insights', $result);
+		$this->assertCount(1, $result['insights']);
+		$this->assertSame(31, $result['insights'][0]['id']);
+	}
+
+	public function test_delete_evaluation_removes_post(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][40] = $this->make_eval_post(40);
+
+		$req    = new WP_REST_Request(array('id' => 40));
+		$result = Tsubakuro_REST_API::delete_evaluation($req);
+
+		$this->assertTrue($result['deleted']);
+		$this->assertContains(40, $GLOBALS['tsubakuro_test']['deleted_posts']);
+	}
+
+	// -------------------------------------------------------------------------
+	// Insights
+	// -------------------------------------------------------------------------
+
+	private function make_insight_post(int $id, string $title = 'Insight'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-03 11:00:00',
+			'post_author'   => 7,
+		);
+	}
+
+	public function test_create_insight_saves_meta_and_links(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_insight_post(123, 'New Insight');
+
+		$req = new WP_REST_Request(array(
+			'title'         => 'New Insight',
+			'status'        => 'effective',
+			'total_count'   => 5,
+			'success_count' => 4,
+			'evaluations'   => array(1, 2, 3),
+		));
+
+		$result = Tsubakuro_REST_API::create_insight($req);
+
+		$this->assertSame(123, $result['id']);
+		$this->assertSame(80.0, $result['success_rate']);
+		$this->assertSame(array(1, 2, 3), $GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_insight_evaluation']);
+	}
+
+	public function test_get_insights_filters_by_status(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][50] = $this->make_insight_post(50, 'A');
+		$GLOBALS['tsubakuro_test']['posts'][51] = $this->make_insight_post(51, 'B');
+		$GLOBALS['tsubakuro_test']['post_meta'][50] = array('_tsubakuro_insight_status' => array('effective'));
+		$GLOBALS['tsubakuro_test']['post_meta'][51] = array('_tsubakuro_insight_status' => array('hypothesis'));
+
+		$req    = new WP_REST_Request(array('status' => 'effective'));
+		$result = Tsubakuro_REST_API::get_insights($req);
+
+		$this->assertCount(1, $result);
+		$this->assertSame(50, $result[0]['id']);
+	}
 }
