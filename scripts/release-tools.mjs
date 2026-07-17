@@ -64,8 +64,9 @@ export function validatePackageEntries( entries ) {
 	const requiredEntries = [
 		'tsubakuro/tsubakuro.php',
 		'tsubakuro/includes/class-tsubakuro-updater.php',
-		'tsubakuro/plugin-update-checker/plugin-update-checker.php',
-		'tsubakuro/plugin-update-checker/license.txt',
+		'tsubakuro/vendor/autoload.php',
+		'tsubakuro/vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php',
+		'tsubakuro/vendor/yahnis-elsts/plugin-update-checker/license.txt',
 		'tsubakuro/readme.txt',
 	];
 	const missing = requiredEntries.filter(
@@ -85,12 +86,16 @@ export function validatePackageEntries( entries ) {
 		);
 	}
 
-	for ( const excludedDirectory of [
-		'node_modules/',
-		'vendor/',
-		'tests/',
-		'.git/',
-	] ) {
+	const bundledLibrary = entries.find( ( entry ) =>
+		entry.startsWith( 'tsubakuro/plugin-update-checker/' )
+	);
+	if ( bundledLibrary ) {
+		throw new Error(
+			`Release ZIP contains the removed bundled library: ${ bundledLibrary }`
+		);
+	}
+
+	for ( const excludedDirectory of [ 'node_modules/', 'tests/', '.git/' ] ) {
 		const excludedEntry = entries.find( ( entry ) =>
 			entry.startsWith( `tsubakuro/${ excludedDirectory }` )
 		);

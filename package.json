@@ -10,7 +10,7 @@
     "admin",
     "public",
     "templates",
-    "plugin-update-checker",
+    "vendor",
     "readme.txt"
   ],
   "devDependencies": {

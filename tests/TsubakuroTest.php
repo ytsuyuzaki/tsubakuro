@@ -89,6 +89,20 @@ class TsubakuroTest extends TestCase
 		$this->assertSame(Tsubakuro_Updater::REQUIRE_RELEASE_ASSETS, $checker->api->asset_preference);
 	}
 
+	public function test_updater_init_uses_composer_autoloaded_factory(): void
+	{
+		$this->assertTrue(
+			class_exists('YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory'),
+			'The update checker factory must be provided by Composer via vendor/autoload.php.'
+		);
+
+		$plugin_source = file_get_contents(TSUBAKURO_PLUGIN_DIR . 'tsubakuro.php');
+		$this->assertStringContainsString('vendor/autoload.php', $plugin_source);
+
+		$updater_source = file_get_contents(TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-updater.php');
+		$this->assertStringNotContainsString('plugin-update-checker/plugin-update-checker.php', $updater_source);
+	}
+
 	public function test_init_methods_register_wordpress_hooks_and_routes(): void
 	{
 		tsubakuro_init();

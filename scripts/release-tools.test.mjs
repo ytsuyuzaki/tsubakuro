@@ -28,12 +28,13 @@ test( 'release metadata versions and tag must match', () => {
 	);
 } );
 
-test( 'release ZIP contains updater runtime files under one plugin root', () => {
+test( 'release ZIP contains Composer-managed updater files under one plugin root', () => {
 	const entries = [
 		'tsubakuro/tsubakuro.php',
 		'tsubakuro/includes/class-tsubakuro-updater.php',
-		'tsubakuro/plugin-update-checker/plugin-update-checker.php',
-		'tsubakuro/plugin-update-checker/license.txt',
+		'tsubakuro/vendor/autoload.php',
+		'tsubakuro/vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php',
+		'tsubakuro/vendor/yahnis-elsts/plugin-update-checker/license.txt',
 		'tsubakuro/readme.txt',
 	];
 
@@ -45,6 +46,14 @@ test( 'release ZIP contains updater runtime files under one plugin root', () => 
 	assert.throws(
 		() => validatePackageEntries( [ ...entries, 'other/file.php' ] ),
 		/invalid root entry/
+	);
+	assert.throws(
+		() =>
+			validatePackageEntries( [
+				...entries,
+				'tsubakuro/plugin-update-checker/plugin-update-checker.php',
+			] ),
+		/removed bundled library/
 	);
 	assert.throws(
 		() =>
