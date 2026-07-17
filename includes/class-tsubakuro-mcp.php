@@ -1191,10 +1191,15 @@ class Tsubakuro_MCP {
 			return new WP_Error( 'not_found', 'Evaluation not found' );
 		}
 
-		$linked = $insight['evaluation_ids'];
-		if ( ! in_array( $eval_id, $linked, true ) ) {
-			$linked[] = $eval_id;
+		// Already linked: no-op so repeated calls stay idempotent (no extra writes).
+		if ( in_array( $eval_id, $insight['evaluation_ids'], true ) ) {
+			return array(
+				'insight' => $insight,
+			);
 		}
+
+		$linked   = $insight['evaluation_ids'];
+		$linked[] = $eval_id;
 		Tsubakuro_Insights::save_linked_evaluations( $insight_id, $linked );
 
 		return array(

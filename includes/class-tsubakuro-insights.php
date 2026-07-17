@@ -119,16 +119,37 @@ class Tsubakuro_Insights {
 			}
 		}
 
-		if ( isset( $data['status'] ) && array_key_exists( $data['status'], self::STATUSES ) ) {
-			update_post_meta( $insight_id, '_tsubakuro_insight_status', sanitize_text_field( $data['status'] ) );
-		}
-
-		if ( isset( $data['action'] ) && array_key_exists( $data['action'], self::ACTIONS ) ) {
-			update_post_meta( $insight_id, '_tsubakuro_insight_action', sanitize_text_field( $data['action'] ) );
-		}
+		self::save_enum_meta( $insight_id, '_tsubakuro_insight_status', $data, 'status', self::STATUSES );
+		self::save_enum_meta( $insight_id, '_tsubakuro_insight_action', $data, 'action', self::ACTIONS );
 
 		if ( isset( $data['evaluations'] ) ) {
 			self::save_linked_evaluations( $insight_id, $data['evaluations'] );
+		}
+	}
+
+	/**
+	 * Save an enum meta value, or delete it when the submitted value is empty.
+	 *
+	 * An empty string (e.g. the "（未選択）" option) clears the meta so a
+	 * previously set value can be unset; unknown non-empty values are ignored.
+	 *
+	 * @param int    $insight_id Insight ID.
+	 * @param string $meta_key   Full meta key.
+	 * @param array  $data       Submitted data.
+	 * @param string $field      Field key within $data.
+	 * @param array  $allowed    Allowed enum map.
+	 */
+	private static function save_enum_meta( $insight_id, $meta_key, $data, $field, $allowed ) {
+		if ( ! isset( $data[ $field ] ) ) {
+			return;
+		}
+
+		$value = sanitize_text_field( $data[ $field ] );
+
+		if ( '' === $value ) {
+			delete_post_meta( $insight_id, $meta_key );
+		} elseif ( array_key_exists( $value, $allowed ) ) {
+			update_post_meta( $insight_id, $meta_key, $value );
 		}
 	}
 

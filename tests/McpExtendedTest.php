@@ -799,6 +799,31 @@ class McpExtendedTest extends TestCase
 		$this->assertContains(71, $insight['evaluation_ids']);
 	}
 
+	public function test_tools_call_link_evaluation_is_idempotent(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][72] = $this->make_insight_post(72, 'Insight');
+		$GLOBALS['tsubakuro_test']['posts'][73] = $this->make_eval_post(73, 'Eval');
+
+		$call = array(
+			'jsonrpc' => '2.0',
+			'id'      => 64,
+			'method'  => 'tools/call',
+			'params'  => array(
+				'name'      => 'tsubakuro_link_evaluation_to_insight',
+				'arguments' => array(
+					'insight_id'    => 72,
+					'evaluation_id' => 73,
+				),
+			),
+		);
+
+		$this->dispatch($call);
+		$result = $this->dispatch($call);
+
+		$insight = $result['result']['structuredContent']['insight'];
+		$this->assertSame(array(73), $insight['evaluation_ids']);
+	}
+
 	public function test_tools_call_delete_insight_requires_permission(): void
 	{
 		$GLOBALS['tsubakuro_test']['can']['delete_posts'] = false;

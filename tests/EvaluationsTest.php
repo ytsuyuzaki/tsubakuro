@@ -124,6 +124,34 @@ class EvaluationsTest extends TestCase
 		$this->assertNotContains(1, $ids);
 	}
 
+	public function test_empty_change_item_clears_previously_set_value(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][9] = $this->make_post(9);
+		Tsubakuro_Evaluations::save_meta(9, array('change_item' => 'comparison'));
+		$this->assertSame('comparison', Tsubakuro_Evaluations::get_evaluation(9)['change_item']);
+
+		Tsubakuro_Evaluations::save_meta(9, array('change_item' => ''));
+		$this->assertSame('', Tsubakuro_Evaluations::get_evaluation(9)['change_item']);
+	}
+
+	public function test_date_only_value_is_stored_verbatim_without_timezone_shift(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][11] = $this->make_post(11);
+		Tsubakuro_Evaluations::save_meta(11, array('due_at' => '2026-05-01', 'implemented_at' => '2026-01-31'));
+
+		$eval = Tsubakuro_Evaluations::get_evaluation(11);
+		$this->assertSame('2026-05-01', $eval['due_at']);
+		$this->assertSame('2026-01-31', $eval['implemented_at']);
+	}
+
+	public function test_invalid_date_is_rejected(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][12] = $this->make_post(12);
+		Tsubakuro_Evaluations::save_meta(12, array('due_at' => '2026-13-40'));
+
+		$this->assertSame('', Tsubakuro_Evaluations::get_evaluation(12)['due_at']);
+	}
+
 	public function test_get_evaluations_filters_by_target_post(): void
 	{
 		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post(1, 'A');

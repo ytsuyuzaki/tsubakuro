@@ -122,13 +122,8 @@ class Tsubakuro_Evaluations {
 			update_post_meta( $eval_id, '_tsubakuro_eval_target_post', absint( $data['target_post'] ) );
 		}
 
-		if ( isset( $data['change_item'] ) && array_key_exists( $data['change_item'], self::CHANGE_ITEMS ) ) {
-			update_post_meta( $eval_id, '_tsubakuro_eval_change_item', sanitize_text_field( $data['change_item'] ) );
-		}
-
-		if ( isset( $data['metric'] ) && array_key_exists( $data['metric'], self::METRICS ) ) {
-			update_post_meta( $eval_id, '_tsubakuro_eval_metric', sanitize_text_field( $data['metric'] ) );
-		}
+		self::save_enum_meta( $eval_id, '_tsubakuro_eval_change_item', $data, 'change_item', self::CHANGE_ITEMS );
+		self::save_enum_meta( $eval_id, '_tsubakuro_eval_metric', $data, 'metric', self::METRICS );
 
 		$judgment_changed = false;
 		if ( isset( $data['judgment'] ) ) {
@@ -160,6 +155,32 @@ class Tsubakuro_Evaluations {
 		// so an unevaluated task can be reminded again after the verdict is removed.
 		if ( $judgment_changed ) {
 			delete_post_meta( $eval_id, '_tsubakuro_eval_reminded_at' );
+		}
+	}
+
+	/**
+	 * Save an enum meta value, or delete it when the submitted value is empty.
+	 *
+	 * An empty string (e.g. the "（未選択）" option) clears the meta so a
+	 * previously set value can be unset; unknown non-empty values are ignored.
+	 *
+	 * @param int    $eval_id  Evaluation ID.
+	 * @param string $meta_key Full meta key.
+	 * @param array  $data     Submitted data.
+	 * @param string $field    Field key within $data.
+	 * @param array  $allowed  Allowed enum map.
+	 */
+	private static function save_enum_meta( $eval_id, $meta_key, $data, $field, $allowed ) {
+		if ( ! isset( $data[ $field ] ) ) {
+			return;
+		}
+
+		$value = sanitize_text_field( $data[ $field ] );
+
+		if ( '' === $value ) {
+			delete_post_meta( $eval_id, $meta_key );
+		} elseif ( array_key_exists( $value, $allowed ) ) {
+			update_post_meta( $eval_id, $meta_key, $value );
 		}
 	}
 
@@ -198,6 +219,18 @@ class Tsubakuro_Evaluations {
 			return '';
 		}
 
+		// The canonical Y-m-d form (from the date picker / API) is stored as-is.
+		// Converting a date-only value through a timestamp would shift it across
+		// the UTC boundary on non-UTC servers, so validate and keep it verbatim.
+		if ( preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $matches ) ) {
+			if ( checkdate( (int) $matches[2], (int) $matches[3], (int) $matches[1] ) ) {
+				return $raw;
+			}
+
+			return '';
+		}
+
+		// Best-effort parse for other accepted formats.
 		$timestamp = strtotime( $raw );
 		if ( false === $timestamp ) {
 			return '';
@@ -314,7 +347,7 @@ class Tsubakuro_Evaluations {
 		}
 
 		if ( ! empty( $args['overdue'] ) ) {
-			$today = gmdate( 'Y-m-d' );
+			$today = current_time( 'Y-m-d' );
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for overdue filter.
 			$meta_query[] = array(
 				'key'     => '_tsubakuro_eval_due_at',

@@ -81,6 +81,16 @@ class InsightsTest extends TestCase
 		$this->assertSame('', $insight['action']);
 	}
 
+	public function test_empty_status_clears_previously_set_value(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][9] = $this->make_post(9);
+		Tsubakuro_Insights::save_meta(9, array('status' => 'effective'));
+		$this->assertSame('effective', Tsubakuro_Insights::get_insight(9)['status']);
+
+		Tsubakuro_Insights::save_meta(9, array('status' => ''));
+		$this->assertSame('', Tsubakuro_Insights::get_insight(9)['status']);
+	}
+
 	public function test_save_linked_evaluations_replaces_previous_set(): void
 	{
 		$GLOBALS['tsubakuro_test']['posts'][8] = $this->make_post(8);
