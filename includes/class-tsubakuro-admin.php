@@ -374,7 +374,7 @@ class Tsubakuro_Admin {
 	public static function delete_tasks( $task_ids ) {
 		$deleted = 0;
 		foreach ( self::get_selected_task_ids( array( 'task_ids' => $task_ids ) ) as $task_id ) {
-			if ( wp_delete_post( $task_id, true ) ) {
+			if ( Tsubakuro_Post_Types::get_task( $task_id ) && wp_delete_post( $task_id, true ) ) {
 				++$deleted;
 			}
 		}
@@ -485,6 +485,12 @@ class Tsubakuro_Admin {
 		}
 
 		if ( $task_id ) {
+			if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
+				$back = admin_url( 'admin.php?page=tsubakuro-task-form&task_id=' . $task_id );
+				wp_safe_redirect( add_query_arg( 'error', rawurlencode( 'タスクが見つかりません。' ), $back ) );
+				exit;
+			}
+
 			wp_update_post(
 				array(
 					'ID'           => $task_id,
@@ -587,6 +593,10 @@ class Tsubakuro_Admin {
 			wp_send_json_error( array( 'message' => 'タスクIDが必要です。' ), 400 );
 		}
 
+		if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
+			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
+		}
+
 		wp_delete_post( $task_id, true );
 		wp_send_json_success( array( 'deleted' => true ) );
 	}
@@ -608,6 +618,10 @@ class Tsubakuro_Admin {
 			wp_send_json_error( array( 'message' => 'タスクIDとコメントは必須です。' ), 400 );
 		}
 
+		if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
+			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
+		}
+
 		$result = self::insert_comment( $task_id, get_current_user_id(), $comment );
 		if ( false === $result ) {
 			wp_send_json_error( array( 'message' => 'コメントの保存に失敗しました。' ), 500 );
@@ -622,9 +636,17 @@ class Tsubakuro_Admin {
 	public static function ajax_get_comments() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
 
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
+		}
+
 		$task_id = absint( $_GET['task_id'] ?? 0 );
 		if ( ! $task_id ) {
 			wp_send_json_error( array( 'message' => 'タスクIDが必要です。' ), 400 );
+		}
+
+		if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
+			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
 		}
 
 		wp_send_json_success( self::get_task_comments( $task_id ) );

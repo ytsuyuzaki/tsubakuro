@@ -169,6 +169,12 @@ if (! class_exists('WP_Error')) {
 	}
 }
 
+if (! class_exists('Tsubakuro_Test_Json_Response')) {
+	class Tsubakuro_Test_Json_Response extends Exception
+	{
+	}
+}
+
 class WP_Query
 {
 	public $posts = array();
@@ -303,6 +309,8 @@ function tsubakuro_test_reset()
 		'cron_events'        => array(),
 		'sent_mails'         => array(),
 		'meta_boxes'         => array(),
+		'json_response'      => null,
+		'updated_posts'      => array(),
 	);
 	$menu    = array();
 	$submenu = array();
@@ -539,9 +547,24 @@ function wp_insert_post($postarr = array(), $wp_error = false)
 	return 123;
 }
 
-function wp_update_post()
+function wp_update_post($postarr = array())
 {
-	return 123;
+	$GLOBALS['tsubakuro_test']['updated_posts'][] = $postarr;
+	$post_id = (int) ($postarr['ID'] ?? 0);
+	if ($post_id && isset($GLOBALS['tsubakuro_test']['posts'][$post_id])) {
+		foreach (
+			array(
+				'post_title'   => 'post_title',
+				'post_content' => 'post_content',
+				'post_parent'  => 'post_parent',
+			) as $input_key => $post_key
+		) {
+			if (array_key_exists($input_key, $postarr)) {
+				$GLOBALS['tsubakuro_test']['posts'][$post_id]->{$post_key} = $postarr[$input_key];
+			}
+		}
+	}
+	return $post_id ?: 123;
 }
 
 function wp_delete_post()
@@ -608,8 +631,24 @@ function wp_nonce_field($action = -1, $name = '_wpnonce')
 {
 	echo '<input type="hidden" name="' . esc_attr($name) . '" value="nonce" />';
 }
-function wp_send_json_error() {}
-function wp_send_json_success() {}
+function wp_send_json_error($value = null, $status_code = null)
+{
+	$GLOBALS['tsubakuro_test']['json_response'] = array(
+		'success' => false,
+		'data'    => $value,
+		'status'  => $status_code,
+	);
+	throw new Tsubakuro_Test_Json_Response();
+}
+function wp_send_json_success($value = null, $status_code = null)
+{
+	$GLOBALS['tsubakuro_test']['json_response'] = array(
+		'success' => true,
+		'data'    => $value,
+		'status'  => $status_code,
+	);
+	throw new Tsubakuro_Test_Json_Response();
+}
 function wp_safe_redirect($location)
 {
 	$GLOBALS['tsubakuro_test']['redirected_to'] = $location;

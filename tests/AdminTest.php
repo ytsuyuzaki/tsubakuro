@@ -106,6 +106,7 @@ class AdminTest extends TestCase
 			'post_date'     => '2026-05-01 10:00:00',
 			'post_modified' => '2026-05-01 11:00:00',
 			'post_author'   => 1,
+			'post_parent'   => 0,
 		);
 	}
 
@@ -223,10 +224,108 @@ class AdminTest extends TestCase
 
 	public function test_delete_tasks_sanitizes_ids_and_returns_deleted_count(): void
 	{
+		$GLOBALS['tsubakuro_test']['posts'][10] = $this->make_task_post(10, 'Task 10');
+		$GLOBALS['tsubakuro_test']['posts'][3]  = $this->make_task_post(3, 'Task 3');
+
 		$deleted = Tsubakuro_Admin::delete_tasks(array('10', '10', '0', '-3', 'abc'));
 
 		$this->assertSame(2, $deleted);
 		$this->assertSame(array(10, 3), $GLOBALS['tsubakuro_test']['deleted_posts']);
+	}
+
+	public function test_delete_tasks_skips_non_task_posts(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][10] = $this->make_task_post(10, 'Task 10');
+		$GLOBALS['tsubakuro_test']['posts'][20] = (object) array(
+			'ID'            => 20,
+			'post_type'     => 'post',
+			'post_title'    => 'Regular post',
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+			'post_parent'   => 0,
+		);
+
+		$deleted = Tsubakuro_Admin::delete_tasks(array(10, 20, 999));
+
+		$this->assertSame(1, $deleted);
+		$this->assertSame(array(10), $GLOBALS['tsubakuro_test']['deleted_posts']);
+	}
+
+	public function test_ajax_delete_task_rejects_non_task_post(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][20] = (object) array(
+			'ID'            => 20,
+			'post_type'     => 'post',
+			'post_title'    => 'Regular post',
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+			'post_parent'   => 0,
+		);
+		$_POST = array('task_id' => '20');
+
+		try {
+			Tsubakuro_Admin::ajax_delete_task();
+			$this->fail('Expected JSON response exception.');
+		} catch (Tsubakuro_Test_Json_Response $exception) {
+			$this->assertFalse($GLOBALS['tsubakuro_test']['json_response']['success']);
+			$this->assertSame(404, $GLOBALS['tsubakuro_test']['json_response']['status']);
+			$this->assertSame(array(), $GLOBALS['tsubakuro_test']['deleted_posts']);
+		}
+	}
+
+	public function test_ajax_delete_task_deletes_valid_task(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][10] = $this->make_task_post(10, 'Task 10');
+		$_POST                                 = array('task_id' => '10');
+
+		try {
+			Tsubakuro_Admin::ajax_delete_task();
+			$this->fail('Expected JSON response exception.');
+		} catch (Tsubakuro_Test_Json_Response $exception) {
+			$this->assertTrue($GLOBALS['tsubakuro_test']['json_response']['success']);
+			$this->assertSame(array(10), $GLOBALS['tsubakuro_test']['deleted_posts']);
+		}
+	}
+
+	public function test_ajax_get_comments_requires_edit_posts_capability(): void
+	{
+		$GLOBALS['tsubakuro_test']['can']['edit_posts'] = false;
+		$_GET                                           = array('task_id' => '10');
+
+		try {
+			Tsubakuro_Admin::ajax_get_comments();
+			$this->fail('Expected JSON response exception.');
+		} catch (Tsubakuro_Test_Json_Response $exception) {
+			$this->assertFalse($GLOBALS['tsubakuro_test']['json_response']['success']);
+			$this->assertSame(403, $GLOBALS['tsubakuro_test']['json_response']['status']);
+		}
+	}
+
+	public function test_ajax_get_comments_rejects_non_task_post(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][20] = (object) array(
+			'ID'            => 20,
+			'post_type'     => 'post',
+			'post_title'    => 'Regular post',
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+			'post_parent'   => 0,
+		);
+		$_GET = array('task_id' => '20');
+
+		try {
+			Tsubakuro_Admin::ajax_get_comments();
+			$this->fail('Expected JSON response exception.');
+		} catch (Tsubakuro_Test_Json_Response $exception) {
+			$this->assertFalse($GLOBALS['tsubakuro_test']['json_response']['success']);
+			$this->assertSame(404, $GLOBALS['tsubakuro_test']['json_response']['status']);
+		}
 	}
 
 	// -------------------------------------------------------------------------

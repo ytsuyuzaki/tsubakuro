@@ -200,6 +200,17 @@ class Tsubakuro_Evaluations_Admin {
 		$meta = self::collect_evaluation_meta_from_post();
 
 		if ( $eval_id ) {
+			if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'error',
+						rawurlencode( '記事評価が見つかりません。' ),
+						admin_url( 'admin.php?page=tsubakuro-evaluation-form&evaluation_id=' . $eval_id )
+					)
+				);
+				exit;
+			}
+
 			wp_update_post(
 				array(
 					'ID'           => $eval_id,
@@ -393,6 +404,17 @@ class Tsubakuro_Evaluations_Admin {
 		$meta = self::collect_insight_meta_from_post();
 
 		if ( $insight_id ) {
+			if ( ! Tsubakuro_Insights::get_insight( $insight_id ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'error',
+						rawurlencode( '改善知見が見つかりません。' ),
+						admin_url( 'admin.php?page=tsubakuro-insight-form&insight_id=' . $insight_id )
+					)
+				);
+				exit;
+			}
+
 			wp_update_post(
 				array(
 					'ID'         => $insight_id,
