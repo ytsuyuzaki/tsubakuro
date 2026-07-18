@@ -172,4 +172,83 @@ class TsubakuroIntegrationTest extends WP_UnitTestCase
 		$this->assertSame('streamable-http', $manifest['transport'], 'MCP transport is declared.');
 		$this->assertSame('tsubakuro-wordpress-mcp', $manifest['serverInfo']['name'], 'MCP server name is declared.');
 	}
+
+	public function test_site_strategy_persists_through_options(): void
+	{
+		delete_option(Tsubakuro_Site_Strategy::OPTION);
+
+		$admin_id = self::factory()->user->create(array('role' => 'administrator'));
+		wp_set_current_user($admin_id);
+
+		Tsubakuro_Site_Strategy::save_strategy(
+			array(
+				'purpose'   => '初めての人でも失敗しない選び方を提供する',
+				'direction' => '一次情報にもとづく比較を増やす',
+			)
+		);
+
+		$stored = get_option(Tsubakuro_Site_Strategy::OPTION);
+		$this->assertIsArray($stored, 'Strategy is stored in the options table.');
+		$this->assertSame('初めての人でも失敗しない選び方を提供する', $stored['purpose']);
+
+		$strategy = Tsubakuro_Site_Strategy::get_strategy();
+		$this->assertSame('一次情報にもとづく比較を増やす', $strategy['direction']);
+		$this->assertSame('', $strategy['position'], 'Unset fields default to empty string.');
+		$this->assertNotEmpty($strategy['updated_at'], 'Update timestamp is recorded.');
+		$this->assertSame($admin_id, $strategy['updated_by'], 'Updating user is recorded.');
+	}
+
+	public function test_site_strategy_rest_route_is_registered(): void
+	{
+		do_action('rest_api_init');
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey('/tsubakuro/v1/site-strategy', $routes, 'Site strategy REST route is registered.');
+	}
+
+	public function test_site_strategy_rest_get_and_update_round_trip(): void
+	{
+		delete_option(Tsubakuro_Site_Strategy::OPTION);
+
+		$admin_id = self::factory()->user->create(array('role' => 'administrator'));
+		wp_set_current_user($admin_id);
+
+		do_action('rest_api_init');
+
+		// Update via PUT.
+		$update_request = new WP_REST_Request('PUT', '/tsubakuro/v1/site-strategy');
+		$update_request->set_body_params(
+			array(
+				'position' => '比較分野で最初に思い出されるメディア',
+				'audience' => '初めて検討する20〜30代',
+			)
+		);
+		$update_response = rest_get_server()->dispatch($update_request);
+		$this->assertSame(200, $update_response->get_status(), 'Update request succeeds.');
+
+		$updated = $update_response->get_data();
+		$this->assertSame('比較分野で最初に思い出されるメディア', $updated['position']);
+		$this->assertSame('初めて検討する20〜30代', $updated['audience']);
+
+		// Read back via GET.
+		$get_request  = new WP_REST_Request('GET', '/tsubakuro/v1/site-strategy');
+		$get_response = rest_get_server()->dispatch($get_request);
+		$this->assertSame(200, $get_response->get_status(), 'Get request succeeds.');
+
+		$strategy = $get_response->get_data();
+		$this->assertSame('比較分野で最初に思い出されるメディア', $strategy['position']);
+	}
+
+	public function test_site_strategy_rest_update_requires_capability(): void
+	{
+		wp_set_current_user(0);
+
+		do_action('rest_api_init');
+
+		$request = new WP_REST_Request('PUT', '/tsubakuro/v1/site-strategy');
+		$request->set_body_params(array('purpose' => 'should be rejected'));
+		$response = rest_get_server()->dispatch($request);
+
+		$this->assertSame(401, $response->get_status(), 'Anonymous users cannot update the site strategy.');
+	}
 }

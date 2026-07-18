@@ -738,6 +738,10 @@ function esc_attr($text)
 {
 	return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
 }
+function esc_textarea($text)
+{
+	return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+}
 function esc_attr_e($text, $domain = 'default')
 {
 	echo esc_attr($text);

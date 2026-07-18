@@ -32,8 +32,10 @@ require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-activator.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-post-types.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-evaluations.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-insights.php';
+require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-site-strategy.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-admin.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-evaluations-admin.php';
+require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-site-strategy-admin.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-rest-api.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-mcp.php';
 require_once TSUBAKURO_PLUGIN_DIR . 'includes/class-tsubakuro-frontend.php';
@@ -54,6 +56,7 @@ function tsubakuro_init() {
 	Tsubakuro_Insights::init();
 	Tsubakuro_Admin::init();
 	Tsubakuro_Evaluations_Admin::init();
+	Tsubakuro_Site_Strategy_Admin::init();
 	Tsubakuro_REST_API::init();
 	Tsubakuro_MCP::init();
 	Tsubakuro_Frontend::init();
