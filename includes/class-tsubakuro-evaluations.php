@@ -317,11 +317,11 @@ class Tsubakuro_Evaluations {
 	public static function get_evaluations( $args = array() ) {
 		$defaults = array(
 			'post_type'      => self::POST_TYPE,
-			// Users with edit_posts can access the admin screen, but contributors
-			// without publish_posts will have their submitted evaluations stored as
-			// pending by WordPress. Keep internal lists inclusive so a successful
-			// save remains visible to the author right away.
-			'post_status'    => 'any',
+			// Contributors can access the screen with the edit_posts capability,
+			// but WordPress stores their submitted evaluations as pending without
+			// the publish_posts capability.
+			// Keep internal lists inclusive without surfacing trash/auto-drafts.
+			'post_status'    => array( 'publish', 'pending', 'draft', 'future', 'private' ),
 			'posts_per_page' => 50,
 			'orderby'        => 'date',
 			'order'          => 'DESC',

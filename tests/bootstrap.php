@@ -195,7 +195,7 @@ class WP_Query
 						$allowed_statuses = is_array($args['post_status'])
 							? $args['post_status']
 							: array($args['post_status']);
-						if (! in_array($post_status, $allowed_statuses, true)) {
+						if ( ! in_array($post_status, $allowed_statuses, true) ) {
 							return false;
 						}
 					}
