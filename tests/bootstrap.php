@@ -190,6 +190,16 @@ class WP_Query
 						return false;
 					}
 
+					$post_status = $post->post_status ?? 'publish';
+					if (isset($args['post_status']) && 'any' !== $args['post_status']) {
+						$allowed_statuses = is_array($args['post_status'])
+							? $args['post_status']
+							: array($args['post_status']);
+						if (! in_array($post_status, $allowed_statuses, true)) {
+							return false;
+						}
+					}
+
 					if (! empty($args['s']) && false === stripos($post->post_title . ' ' . $post->post_content, $args['s'])) {
 						return false;
 					}
