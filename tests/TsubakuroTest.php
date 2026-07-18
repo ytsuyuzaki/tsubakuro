@@ -69,7 +69,7 @@ class TsubakuroTest extends TestCase
 		$this->assertContains('tsubakuro_init', $bootstrap_state['actions']['plugins_loaded']);
 		$this->assertContains(array('Tsubakuro_Updater', 'init'), $bootstrap_state['actions']['plugins_loaded']);
 		$this->assertSame(array('Tsubakuro_Activator', 'activate'), $bootstrap_state['activation_hooks'][0][1]);
-		$this->assertSame('0.0.2', TSUBAKURO_VERSION);
+		$this->assertSame('0.0.3', TSUBAKURO_VERSION);
 	}
 
 	public function test_updater_uses_github_release_zip(): void
