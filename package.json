@@ -75,6 +75,7 @@
     "@wordpress/env": {
       "js-yaml": "^4.2.0"
     },
+    "adm-zip": "^0.6.0",
     "uuid": "^14.0.0"
   }
 }
