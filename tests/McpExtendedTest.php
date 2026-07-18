@@ -843,4 +843,62 @@ class McpExtendedTest extends TestCase
 
 		$this->assertSame(-32003, $result['error']['code']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Site strategy tools
+	// -------------------------------------------------------------------------
+
+	public function test_tools_list_includes_site_strategy_tools(): void
+	{
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 70,
+				'method'  => 'tools/list',
+				'params'  => array(),
+			)
+		);
+
+		$tools = array_column($result['result']['tools'], 'name');
+
+		$this->assertContains('tsubakuro_get_site_strategy', $tools);
+		$this->assertContains('tsubakuro_update_site_strategy', $tools);
+	}
+
+	public function test_tools_call_get_site_strategy_returns_stored_values(): void
+	{
+		Tsubakuro_Site_Strategy::save_strategy(array( 'purpose' => 'MCP 目的' ));
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 71,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_get_site_strategy',
+					'arguments' => array(),
+				),
+			)
+		);
+
+		$this->assertSame('MCP 目的', $result['result']['structuredContent']['site_strategy']['purpose']);
+	}
+
+	public function test_tools_call_update_site_strategy_saves_provided_fields(): void
+	{
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 72,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_update_site_strategy',
+					'arguments' => array( 'direction' => 'MCP 方向性' ),
+				),
+			)
+		);
+
+		$this->assertSame('MCP 方向性', $result['result']['structuredContent']['site_strategy']['direction']);
+		$this->assertSame('MCP 方向性', $GLOBALS['tsubakuro_test']['options'][Tsubakuro_Site_Strategy::OPTION]['direction']);
+	}
 }

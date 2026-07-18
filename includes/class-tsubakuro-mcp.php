@@ -321,6 +321,24 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( false, false, true ),
 			),
+			'tsubakuro/get-site-strategy'          => array(
+				'label'               => 'Tsubakuro: Get Site Strategy',
+				'description'         => 'サイトの目的・期待するポジション・進む方向性などのサイト方針を取得します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_get_site_strategy_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_get_site_strategy_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( true, false, true ),
+			),
+			'tsubakuro/update-site-strategy'       => array(
+				'label'               => 'Tsubakuro: Update Site Strategy',
+				'description'         => 'サイト方針（目的・ポジション・方向性・ターゲット読者・提供価値）を更新します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_update_site_strategy_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_update_site_strategy_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, true ),
+			),
 		);
 	}
 
@@ -865,6 +883,35 @@ class Tsubakuro_MCP {
 		);
 	}
 
+	/**
+	 * Input schema for get-site-strategy ability (no arguments).
+	 *
+	 * @return array
+	 */
+	private static function get_get_site_strategy_input_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(),
+		);
+	}
+
+	/**
+	 * Input schema for update-site-strategy ability.
+	 *
+	 * @return array
+	 */
+	private static function get_update_site_strategy_input_schema() {
+		$properties = array();
+		foreach ( array_keys( Tsubakuro_Site_Strategy::FIELDS ) as $field ) {
+			$properties[ $field ] = array( 'type' => 'string' );
+		}
+
+		return array(
+			'type'       => 'object',
+			'properties' => $properties,
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// Shared evaluation/insight operations (used by both ability and JSON-RPC surfaces)
 	// -------------------------------------------------------------------------
@@ -1207,6 +1254,39 @@ class Tsubakuro_MCP {
 		);
 	}
 
+	/**
+	 * Get the site strategy singleton.
+	 *
+	 * @param array $arguments Raw arguments (unused).
+	 * @return array
+	 */
+	private static function op_get_site_strategy( $arguments = array() ) {
+		unset( $arguments );
+
+		return array(
+			'site_strategy' => Tsubakuro_Site_Strategy::get_strategy(),
+		);
+	}
+
+	/**
+	 * Update the site strategy singleton.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array
+	 */
+	private static function op_update_site_strategy( $arguments ) {
+		$data = array();
+		foreach ( array_keys( Tsubakuro_Site_Strategy::FIELDS ) as $field ) {
+			if ( isset( $arguments[ $field ] ) ) {
+				$data[ $field ] = $arguments[ $field ];
+			}
+		}
+
+		return array(
+			'site_strategy' => Tsubakuro_Site_Strategy::save_strategy( $data ),
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// Ability callbacks (evaluations/insights) – return array|WP_Error
 	// -------------------------------------------------------------------------
@@ -1319,6 +1399,26 @@ class Tsubakuro_MCP {
 	 */
 	public static function execute_link_evaluation_ability( $input = array() ) {
 		return self::op_link_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: get site strategy.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_get_site_strategy_ability( $input = array() ) {
+		return self::op_get_site_strategy( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: update site strategy.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_update_site_strategy_ability( $input = array() ) {
+		return self::op_update_site_strategy( is_array( $input ) ? $input : array() );
 	}
 
 	/**
@@ -1603,6 +1703,8 @@ class Tsubakuro_MCP {
 			'tsubakuro_update_insight'             => array( __CLASS__, 'tool_update_insight' ),
 			'tsubakuro_delete_insight'             => array( __CLASS__, 'tool_delete_insight' ),
 			'tsubakuro_link_evaluation_to_insight' => array( __CLASS__, 'tool_link_evaluation_to_insight' ),
+			'tsubakuro_get_site_strategy'          => array( __CLASS__, 'tool_get_site_strategy' ),
+			'tsubakuro_update_site_strategy'       => array( __CLASS__, 'tool_update_site_strategy' ),
 		);
 	}
 
@@ -1747,6 +1849,28 @@ class Tsubakuro_MCP {
 	 */
 	private static function tool_link_evaluation_to_insight( $id, $arguments ) {
 		return self::tool_response_from_op( $id, self::op_link_evaluation( $arguments ) );
+	}
+
+	/**
+	 * Tool: get the site strategy singleton.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_get_site_strategy( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_get_site_strategy( $arguments ) );
+	}
+
+	/**
+	 * Tool: update the site strategy singleton.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_update_site_strategy( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_update_site_strategy( $arguments ) );
 	}
 
 	/**
@@ -2204,6 +2328,16 @@ class Tsubakuro_MCP {
 				'name'        => 'tsubakuro_link_evaluation_to_insight',
 				'description' => '記事評価を改善知見の根拠として関連付けます。',
 				'inputSchema' => self::get_link_evaluation_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_get_site_strategy',
+				'description' => 'サイトの目的・期待するポジション・進む方向性・ターゲット読者・提供価値を定義したサイト方針を取得します。タスクの優先度判断の前提となる大元の方針です。',
+				'inputSchema' => self::get_get_site_strategy_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_update_site_strategy',
+				'description' => 'サイト方針を更新します。purpose / position / direction / audience / value を指定でき、渡した項目のみ更新されます。',
+				'inputSchema' => self::get_update_site_strategy_input_schema(),
 			),
 		);
 	}

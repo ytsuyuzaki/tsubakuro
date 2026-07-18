@@ -221,6 +221,35 @@ class Tsubakuro_REST_API {
 
 		self::register_evaluation_routes();
 		self::register_insight_routes();
+		self::register_site_strategy_routes();
+	}
+
+	/**
+	 * Register REST routes for the site strategy singleton.
+	 */
+	private static function register_site_strategy_routes() {
+		$write_args = array();
+		foreach ( array_keys( Tsubakuro_Site_Strategy::FIELDS ) as $field ) {
+			$write_args[ $field ] = array( 'type' => 'string' );
+		}
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/site-strategy',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_site_strategy' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( __CLASS__, 'update_site_strategy' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => $write_args,
+				),
+			)
+		);
 	}
 
 	/**
@@ -953,6 +982,36 @@ class Tsubakuro_REST_API {
 		}
 
 		return $meta;
+	}
+
+	// -------------------------------------------------------------------------
+	// Site strategy
+	// -------------------------------------------------------------------------
+
+	/**
+	 * GET /site-strategy – get the site strategy singleton.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function get_site_strategy() {
+		return rest_ensure_response( Tsubakuro_Site_Strategy::get_strategy() );
+	}
+
+	/**
+	 * PUT /site-strategy – update the site strategy singleton.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function update_site_strategy( $request ) {
+		$data = array();
+		foreach ( array_keys( Tsubakuro_Site_Strategy::FIELDS ) as $field ) {
+			if ( null !== $request->get_param( $field ) ) {
+				$data[ $field ] = $request->get_param( $field );
+			}
+		}
+
+		return rest_ensure_response( Tsubakuro_Site_Strategy::save_strategy( $data ) );
 	}
 
 	// -------------------------------------------------------------------------

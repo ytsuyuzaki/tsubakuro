@@ -579,4 +579,30 @@ class RestApiTest extends TestCase
 		$this->assertCount(1, $result);
 		$this->assertSame(50, $result[0]['id']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Site strategy
+	// -------------------------------------------------------------------------
+
+	public function test_get_site_strategy_returns_stored_values(): void
+	{
+		Tsubakuro_Site_Strategy::save_strategy(array('purpose' => 'REST 目的'));
+
+		$result = Tsubakuro_REST_API::get_site_strategy();
+
+		$this->assertSame('REST 目的', $result['purpose']);
+		$this->assertArrayHasKey('direction', $result);
+	}
+
+	public function test_update_site_strategy_saves_only_provided_fields(): void
+	{
+		Tsubakuro_Site_Strategy::save_strategy(array('purpose' => '元の目的'));
+
+		$req    = new WP_REST_Request(array('direction' => '新しい方向性'));
+		$result = Tsubakuro_REST_API::update_site_strategy($req);
+
+		$this->assertSame('元の目的', $result['purpose']);
+		$this->assertSame('新しい方向性', $result['direction']);
+		$this->assertSame('新しい方向性', $GLOBALS['tsubakuro_test']['options'][Tsubakuro_Site_Strategy::OPTION]['direction']);
+	}
 }
