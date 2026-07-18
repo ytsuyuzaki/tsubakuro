@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $is_edit         = ! empty( $insight );
-$page_title      = $is_edit ? '改善知見を編集' : '新規改善知見';
+$page_title      = $is_edit ? '改善知見を編集' : '改善知見を追加';
 $linked_ids      = $is_edit ? $insight['evaluation_ids'] : array();
 $field           = static function ( $key ) use ( $insight ) {
 	return $insight[ $key ] ?? '';

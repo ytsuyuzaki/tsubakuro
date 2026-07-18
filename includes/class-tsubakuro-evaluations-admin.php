@@ -49,8 +49,8 @@ class Tsubakuro_Evaluations_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
-			'新規記事評価',
-			'新規記事評価',
+			'記事評価を追加',
+			'記事評価を追加',
 			'edit_posts',
 			'tsubakuro-evaluation-form',
 			array( __CLASS__, 'render_evaluation_form' )
@@ -67,8 +67,8 @@ class Tsubakuro_Evaluations_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
-			'新規改善知見',
-			'新規改善知見',
+			'改善知見を追加',
+			'改善知見を追加',
 			'edit_posts',
 			'tsubakuro-insight-form',
 			array( __CLASS__, 'render_insight_form' )

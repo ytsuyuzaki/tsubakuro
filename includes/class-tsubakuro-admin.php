@@ -23,6 +23,7 @@ class Tsubakuro_Admin {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'reorder_submenu' ), 99 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
 		add_action( 'admin_post_tsubakuro_save_task', array( __CLASS__, 'handle_save_task' ) );
 		add_action( 'admin_post_tsubakuro_bulk_tasks', array( __CLASS__, 'handle_bulk_tasks' ) );
@@ -44,8 +45,8 @@ class Tsubakuro_Admin {
 	 */
 	public static function add_menu() {
 		add_menu_page(
-			'Tsubakuro タスク管理',
-			'タスク管理',
+			'tsubakuro',
+			'tsubakuro',
 			'edit_posts',
 			'tsubakuro-tasks',
 			array( __CLASS__, 'render_task_list' ),
@@ -64,8 +65,8 @@ class Tsubakuro_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
-			'新規タスク追加',
-			'新規タスク追加',
+			'タスクを追加',
+			'タスクを追加',
 			'edit_posts',
 			'tsubakuro-task-form',
 			array( __CLASS__, 'render_task_form' )
@@ -73,11 +74,46 @@ class Tsubakuro_Admin {
 
 		add_submenu_page(
 			'tsubakuro-tasks',
-			'ツバクロについて',
-			'ツバクロについて',
+			'tsubakuroについて',
+			'tsubakuroについて',
 			'edit_posts',
 			'tsubakuro-about',
 			array( __CLASS__, 'render_about' )
+		);
+	}
+
+	/**
+	 * Reorder submenu entries into the intended workflow order.
+	 */
+	public static function reorder_submenu() {
+		global $submenu;
+
+		if ( empty( $submenu['tsubakuro-tasks'] ) || ! is_array( $submenu['tsubakuro-tasks'] ) ) {
+			return;
+		}
+
+		$order = array(
+			'tsubakuro-site-strategy',
+			'tsubakuro-tasks',
+			'tsubakuro-task-form',
+			'tsubakuro-evaluations',
+			'tsubakuro-evaluation-form',
+			'tsubakuro-insights',
+			'tsubakuro-insight-form',
+			'tsubakuro-about',
+		);
+
+		$positions = array_flip( $order );
+		usort(
+			$submenu['tsubakuro-tasks'],
+			static function ( $a, $b ) use ( $positions ) {
+				$a_slug = $a[2] ?? '';
+				$b_slug = $b[2] ?? '';
+				$a_pos  = $positions[ $a_slug ] ?? PHP_INT_MAX;
+				$b_pos  = $positions[ $b_slug ] ?? PHP_INT_MAX;
+
+				return $a_pos <=> $b_pos;
+			}
 		);
 	}
 
@@ -407,12 +443,12 @@ class Tsubakuro_Admin {
 				'url'         => admin_url( 'admin.php?page=tsubakuro-tasks' ),
 			),
 			array(
-				'label'       => '新規タスク追加',
+				'label'       => 'タスクを追加',
 				'description' => '課題、依頼、改善案を登録する',
 				'url'         => admin_url( 'admin.php?page=tsubakuro-task-form' ),
 			),
 			array(
-				'label'       => 'タスク管理について',
+				'label'       => 'tsubakuroについて',
 				'description' => 'ツバクロの設計思想と運用の背景を確認する',
 				'url'         => admin_url( 'admin.php?page=tsubakuro-about' ),
 			),

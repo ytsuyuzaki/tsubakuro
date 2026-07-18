@@ -37,7 +37,7 @@ foreach ( $insights as $insight ) {
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline"><?php esc_html_e( '記事評価一覧', 'tsubakuro' ); ?></h1>
 	<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-evaluation-form' ) ); ?>" class="page-title-action">
-		<?php esc_html_e( '新規記事評価', 'tsubakuro' ); ?>
+		<?php esc_html_e( '記事評価を追加', 'tsubakuro' ); ?>
 	</a>
 	<hr class="wp-header-end">
 

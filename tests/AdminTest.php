@@ -23,6 +23,8 @@ class AdminTest extends TestCase
 	{
 		Tsubakuro_Admin::add_menu();
 
+		$this->assertSame('tsubakuro', $GLOBALS['tsubakuro_test']['menu_pages'][0]['menu_title']);
+
 		$slugs = array_column($GLOBALS['tsubakuro_test']['submenu_pages'], 'menu_slug');
 
 		$this->assertContains('tsubakuro-about', $slugs);
@@ -31,9 +33,29 @@ class AdminTest extends TestCase
 		$about_page  = $GLOBALS['tsubakuro_test']['submenu_pages'][$about_index];
 
 		$this->assertSame('tsubakuro-tasks', $about_page['parent_slug']);
-		$this->assertSame('ツバクロについて', $about_page['menu_title']);
+		$this->assertSame('tsubakuroについて', $about_page['menu_title']);
 		$this->assertSame('edit_posts', $about_page['capability']);
 		$this->assertSame(array('Tsubakuro_Admin', 'render_about'), $about_page['callback']);
+	}
+
+	public function test_reorder_submenu_places_site_strategy_first_and_about_last(): void
+	{
+		global $submenu;
+
+		Tsubakuro_Admin::add_menu();
+		Tsubakuro_Site_Strategy_Admin::add_menu();
+		Tsubakuro_Evaluations_Admin::add_menu();
+
+		Tsubakuro_Admin::reorder_submenu();
+
+		$slugs = array_column($submenu['tsubakuro-tasks'], 2);
+		$this->assertSame('tsubakuro-site-strategy', $slugs[0]);
+		$this->assertSame('tsubakuro-about', $slugs[count($slugs) - 1]);
+
+		$labels = array_column($submenu['tsubakuro-tasks'], 0);
+		$this->assertContains('タスクを追加', $labels);
+		$this->assertContains('記事評価を追加', $labels);
+		$this->assertContains('改善知見を追加', $labels);
 	}
 
 	public function test_about_page_data_is_filterable_and_contains_reference_links(): void
@@ -51,8 +73,8 @@ class AdminTest extends TestCase
 
 		$labels = array_column($reference_links, 'label');
 		$this->assertContains('タスク一覧', $labels);
-		$this->assertContains('新規タスク追加', $labels);
-		$this->assertContains('タスク管理について', $labels);
+		$this->assertContains('タスクを追加', $labels);
+		$this->assertContains('tsubakuroについて', $labels);
 		$this->assertContains('tsubakuro_about_reference_links', $GLOBALS['tsubakuro_test']['filters_applied']);
 	}
 

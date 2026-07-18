@@ -21,7 +21,7 @@ $search_query  = $list_args['s'] ?? '';
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline"><?php esc_html_e( '改善知見一覧', 'tsubakuro' ); ?></h1>
 	<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-insight-form' ) ); ?>" class="page-title-action">
-		<?php esc_html_e( '新規改善知見', 'tsubakuro' ); ?>
+		<?php esc_html_e( '改善知見を追加', 'tsubakuro' ); ?>
 	</a>
 	<hr class="wp-header-end">
 

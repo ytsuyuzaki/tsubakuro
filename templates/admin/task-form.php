@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $is_edit    = ! empty( $task );
-$page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
+$page_title = $is_edit ? 'タスクを編集' : 'タスクを追加';
 ?>
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline">

@@ -263,7 +263,7 @@ class WP_Query
 
 function tsubakuro_test_reset()
 {
-	global $wpdb;
+	global $menu, $submenu, $wpdb;
 	$GLOBALS['tsubakuro_test'] = array(
 		'actions'            => array(),
 		'filters'            => array(),
@@ -304,6 +304,8 @@ function tsubakuro_test_reset()
 		'sent_mails'         => array(),
 		'meta_boxes'         => array(),
 	);
+	$menu    = array();
+	$submenu = array();
 	$wpdb = new MockWpdb();
 }
 
@@ -590,11 +592,15 @@ function get_queried_object_id()
 }
 function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null)
 {
+	global $menu;
 	$GLOBALS['tsubakuro_test']['menu_pages'][] = compact('page_title', 'menu_title', 'capability', 'menu_slug', 'callback', 'icon_url', 'position');
+	$menu[]                                    = array($menu_title, $capability, $menu_slug, $page_title, '', '', $icon_url);
 }
 function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '')
 {
+	global $submenu;
 	$GLOBALS['tsubakuro_test']['submenu_pages'][] = compact('parent_slug', 'page_title', 'menu_title', 'capability', 'menu_slug', 'callback');
+	$submenu[$parent_slug][]                      = array($menu_title, $capability, $menu_slug, $page_title);
 }
 function check_ajax_referer() {}
 function check_admin_referer() {}

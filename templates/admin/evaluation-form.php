@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $is_edit    = ! empty( $evaluation );
-$page_title = $is_edit ? '記事評価を編集' : '新規記事評価';
+$page_title = $is_edit ? '記事評価を編集' : '記事評価を追加';
 $field      = static function ( $key ) use ( $evaluation ) {
 	return $evaluation[ $key ] ?? '';
 };

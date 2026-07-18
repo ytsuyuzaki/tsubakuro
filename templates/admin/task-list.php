@@ -37,10 +37,10 @@ $optional_columns = array( 'priority', 'assignee', 'date' );
 ?>
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline">
-		<?php esc_html_e( 'タスク管理', 'tsubakuro' ); ?>
+		<?php esc_html_e( 'タスク一覧', 'tsubakuro' ); ?>
 	</h1>
 	<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-task-form' ) ); ?>" class="page-title-action">
-		<?php esc_html_e( '新規タスク追加', 'tsubakuro' ); ?>
+		<?php esc_html_e( 'タスクを追加', 'tsubakuro' ); ?>
 	</a>
 	<hr class="wp-header-end">
 
