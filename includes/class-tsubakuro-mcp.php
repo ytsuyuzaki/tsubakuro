@@ -168,7 +168,7 @@ class Tsubakuro_MCP {
 	 */
 	private static function get_ability_definitions() {
 		return array(
-			'tsubakuro/list-tasks'  => array(
+			'tsubakuro/list-tasks'                 => array(
 				'label'               => 'Tsubakuro: List Tasks',
 				'description'         => 'タスク一覧を取得します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -177,7 +177,7 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( true, false, true ),
 			),
-			'tsubakuro/get-task'    => array(
+			'tsubakuro/get-task'                   => array(
 				'label'               => 'Tsubakuro: Get Task',
 				'description'         => '指定 ID のタスク詳細を取得します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -186,7 +186,7 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( true, false, true ),
 			),
-			'tsubakuro/create-task' => array(
+			'tsubakuro/create-task'                => array(
 				'label'               => 'Tsubakuro: Create Task',
 				'description'         => '新しいタスクを作成します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -195,7 +195,7 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( false, false, false ),
 			),
-			'tsubakuro/update-task' => array(
+			'tsubakuro/update-task'                => array(
 				'label'               => 'Tsubakuro: Update Task',
 				'description'         => '既存タスクを更新します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -204,7 +204,7 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( false, false, false ),
 			),
-			'tsubakuro/delete-task' => array(
+			'tsubakuro/delete-task'                => array(
 				'label'               => 'Tsubakuro: Delete Task',
 				'description'         => '指定したタスクを削除します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -213,7 +213,7 @@ class Tsubakuro_MCP {
 				'permission_callback' => array( __CLASS__, 'can_delete_mcp_tasks' ),
 				'meta'                => self::build_ability_meta( false, true, true ),
 			),
-			'tsubakuro/add-comment' => array(
+			'tsubakuro/add-comment'                => array(
 				'label'               => 'Tsubakuro: Add Comment',
 				'description'         => '指定したタスクにコメントを追加します。',
 				'category'            => self::ABILITY_CATEGORY,
@@ -221,6 +221,105 @@ class Tsubakuro_MCP {
 				'execute_callback'    => array( __CLASS__, 'execute_add_comment_ability' ),
 				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
 				'meta'                => self::build_ability_meta( false, false, false ),
+			),
+			'tsubakuro/list-evaluations'           => array(
+				'label'               => 'Tsubakuro: List Evaluations',
+				'description'         => '記事評価（変更タスク）一覧を取得します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_list_evaluations_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_list_evaluations_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( true, false, true ),
+			),
+			'tsubakuro/get-evaluation'             => array(
+				'label'               => 'Tsubakuro: Get Evaluation',
+				'description'         => '指定 ID の記事評価詳細を取得します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_single_id_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_get_evaluation_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( true, false, true ),
+			),
+			'tsubakuro/create-evaluation'          => array(
+				'label'               => 'Tsubakuro: Create Evaluation',
+				'description'         => '新しい記事評価を作成します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_create_evaluation_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_create_evaluation_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, false ),
+			),
+			'tsubakuro/update-evaluation'          => array(
+				'label'               => 'Tsubakuro: Update Evaluation',
+				'description'         => '既存の記事評価を更新します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_update_evaluation_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_update_evaluation_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, false ),
+			),
+			'tsubakuro/delete-evaluation'          => array(
+				'label'               => 'Tsubakuro: Delete Evaluation',
+				'description'         => '指定した記事評価を削除します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_single_id_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_delete_evaluation_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_delete_mcp_tasks' ),
+				'meta'                => self::build_ability_meta( false, true, true ),
+			),
+			'tsubakuro/list-insights'              => array(
+				'label'               => 'Tsubakuro: List Insights',
+				'description'         => 'サイト単位の改善知見一覧を取得します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_list_insights_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_list_insights_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( true, false, true ),
+			),
+			'tsubakuro/get-insight'                => array(
+				'label'               => 'Tsubakuro: Get Insight',
+				'description'         => '指定 ID の改善知見詳細を取得します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_single_id_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_get_insight_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( true, false, true ),
+			),
+			'tsubakuro/create-insight'             => array(
+				'label'               => 'Tsubakuro: Create Insight',
+				'description'         => '新しい改善知見を作成します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_create_insight_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_create_insight_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, false ),
+			),
+			'tsubakuro/update-insight'             => array(
+				'label'               => 'Tsubakuro: Update Insight',
+				'description'         => '既存の改善知見を更新します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_update_insight_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_update_insight_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, false ),
+			),
+			'tsubakuro/delete-insight'             => array(
+				'label'               => 'Tsubakuro: Delete Insight',
+				'description'         => '指定した改善知見を削除します。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_single_id_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_delete_insight_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_delete_mcp_tasks' ),
+				'meta'                => self::build_ability_meta( false, true, true ),
+			),
+			'tsubakuro/link-evaluation-to-insight' => array(
+				'label'               => 'Tsubakuro: Link Evaluation To Insight',
+				'description'         => '記事評価を改善知見の根拠として関連付けます。',
+				'category'            => self::ABILITY_CATEGORY,
+				'input_schema'        => self::get_link_evaluation_input_schema(),
+				'execute_callback'    => array( __CLASS__, 'execute_link_evaluation_ability' ),
+				'permission_callback' => array( __CLASS__, 'can_use_mcp_tools' ),
+				'meta'                => self::build_ability_meta( false, false, true ),
 			),
 		);
 	}
@@ -608,6 +707,621 @@ class Tsubakuro_MCP {
 	}
 
 	/**
+	 * Input schema for list-evaluations ability.
+	 *
+	 * @return array
+	 */
+	private static function get_list_evaluations_input_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'target_post' => array( 'type' => 'integer' ),
+				'change_item' => array( 'type' => 'string' ),
+				'judgment'    => array( 'type' => 'string' ),
+				'metric'      => array( 'type' => 'string' ),
+				'unevaluated' => array( 'type' => 'boolean' ),
+				'overdue'     => array( 'type' => 'boolean' ),
+				's'           => array( 'type' => 'string' ),
+				'per_page'    => array( 'type' => 'integer' ),
+			),
+		);
+	}
+
+	/**
+	 * Properties shared by evaluation create/update schemas.
+	 *
+	 * @return array
+	 */
+	private static function get_evaluation_field_properties() {
+		return array(
+			'title'          => array( 'type' => 'string' ),
+			'change_detail'  => array( 'type' => 'string' ),
+			'target_post'    => array( 'type' => 'integer' ),
+			'change_item'    => array( 'type' => 'string' ),
+			'purpose'        => array( 'type' => 'string' ),
+			'implemented_at' => array( 'type' => 'string' ),
+			'due_at'         => array( 'type' => 'string' ),
+			'metric'         => array( 'type' => 'string' ),
+			'before_value'   => array( 'type' => 'string' ),
+			'after_value'    => array( 'type' => 'string' ),
+			'result'         => array( 'type' => 'string' ),
+			'judgment'       => array( 'type' => 'string' ),
+			'note'           => array( 'type' => 'string' ),
+		);
+	}
+
+	/**
+	 * Input schema for create-evaluation ability.
+	 *
+	 * @return array
+	 */
+	private static function get_create_evaluation_input_schema() {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'title' ),
+			'properties' => self::get_evaluation_field_properties(),
+		);
+	}
+
+	/**
+	 * Input schema for update-evaluation ability.
+	 *
+	 * @return array
+	 */
+	private static function get_update_evaluation_input_schema() {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'id' ),
+			'properties' => array_merge(
+				array( 'id' => array( 'type' => 'integer' ) ),
+				self::get_evaluation_field_properties()
+			),
+		);
+	}
+
+	/**
+	 * Input schema for list-insights ability.
+	 *
+	 * @return array
+	 */
+	private static function get_list_insights_input_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'status'     => array( 'type' => 'string' ),
+				'action'     => array( 'type' => 'string' ),
+				'evaluation' => array( 'type' => 'integer' ),
+				's'          => array( 'type' => 'string' ),
+				'per_page'   => array( 'type' => 'integer' ),
+			),
+		);
+	}
+
+	/**
+	 * Properties shared by insight create/update schemas.
+	 *
+	 * @return array
+	 */
+	private static function get_insight_field_properties() {
+		return array(
+			'title'         => array( 'type' => 'string' ),
+			'site'          => array( 'type' => 'string' ),
+			'post_kind'     => array( 'type' => 'string' ),
+			'hypothesis'    => array( 'type' => 'string' ),
+			'conclusion'    => array( 'type' => 'string' ),
+			'total_count'   => array( 'type' => 'integer' ),
+			'success_count' => array( 'type' => 'integer' ),
+			'status'        => array( 'type' => 'string' ),
+			'action'        => array( 'type' => 'string' ),
+			'evaluations'   => array(
+				'type'  => 'array',
+				'items' => array( 'type' => 'integer' ),
+			),
+		);
+	}
+
+	/**
+	 * Input schema for create-insight ability.
+	 *
+	 * @return array
+	 */
+	private static function get_create_insight_input_schema() {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'title' ),
+			'properties' => self::get_insight_field_properties(),
+		);
+	}
+
+	/**
+	 * Input schema for update-insight ability.
+	 *
+	 * @return array
+	 */
+	private static function get_update_insight_input_schema() {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'id' ),
+			'properties' => array_merge(
+				array( 'id' => array( 'type' => 'integer' ) ),
+				self::get_insight_field_properties()
+			),
+		);
+	}
+
+	/**
+	 * Input schema for link-evaluation-to-insight ability.
+	 *
+	 * @return array
+	 */
+	private static function get_link_evaluation_input_schema() {
+		return array(
+			'type'       => 'object',
+			'required'   => array( 'insight_id', 'evaluation_id' ),
+			'properties' => array(
+				'insight_id'    => array( 'type' => 'integer' ),
+				'evaluation_id' => array( 'type' => 'integer' ),
+			),
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Shared evaluation/insight operations (used by both ability and JSON-RPC surfaces)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Build evaluation list query args from raw tool arguments.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_list_evaluations( $arguments ) {
+		$args = array();
+
+		if ( ! empty( $arguments['target_post'] ) ) {
+			$args['target_post'] = absint( $arguments['target_post'] );
+		}
+
+		foreach ( array( 'change_item', 'judgment', 'metric', 's' ) as $key ) {
+			if ( ! empty( $arguments[ $key ] ) ) {
+				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
+			}
+		}
+
+		if ( ! empty( $arguments['unevaluated'] ) ) {
+			$args['unevaluated'] = true;
+		}
+
+		if ( ! empty( $arguments['overdue'] ) ) {
+			$args['overdue'] = true;
+		}
+
+		if ( ! empty( $arguments['per_page'] ) ) {
+			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
+		}
+
+		return array(
+			'evaluations' => Tsubakuro_Evaluations::get_evaluations( $args ),
+		);
+	}
+
+	/**
+	 * Fetch a single evaluation with its linked insights.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_get_evaluation( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		$evaluation = Tsubakuro_Evaluations::get_evaluation( absint( $arguments['id'] ) );
+		if ( ! $evaluation ) {
+			return new WP_Error( 'not_found', 'Evaluation not found' );
+		}
+
+		$evaluation['insights'] = Tsubakuro_Insights::get_insights_for_evaluation( $evaluation['id'] );
+
+		return array(
+			'evaluation' => $evaluation,
+		);
+	}
+
+	/**
+	 * Create an evaluation.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_create_evaluation( $arguments ) {
+		if ( empty( $arguments['title'] ) ) {
+			return new WP_Error( 'invalid_input', 'title is required' );
+		}
+
+		$eval_id = wp_insert_post(
+			array(
+				'post_type'    => Tsubakuro_Evaluations::POST_TYPE,
+				'post_title'   => sanitize_text_field( $arguments['title'] ),
+				'post_content' => wp_kses_post( $arguments['change_detail'] ?? '' ),
+				'post_status'  => 'publish',
+			),
+			true
+		);
+
+		if ( is_wp_error( $eval_id ) ) {
+			return $eval_id;
+		}
+
+		Tsubakuro_Evaluations::save_meta( $eval_id, $arguments );
+
+		return array(
+			'evaluation' => Tsubakuro_Evaluations::get_evaluation( $eval_id ),
+		);
+	}
+
+	/**
+	 * Update an evaluation.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_update_evaluation( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		$eval_id = absint( $arguments['id'] );
+		if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+			return new WP_Error( 'not_found', 'Evaluation not found' );
+		}
+
+		$update = array( 'ID' => $eval_id );
+		if ( isset( $arguments['title'] ) ) {
+			$update['post_title'] = sanitize_text_field( $arguments['title'] );
+		}
+		if ( isset( $arguments['change_detail'] ) ) {
+			$update['post_content'] = wp_kses_post( $arguments['change_detail'] );
+		}
+		wp_update_post( $update );
+
+		Tsubakuro_Evaluations::save_meta( $eval_id, $arguments );
+
+		return array(
+			'evaluation' => Tsubakuro_Evaluations::get_evaluation( $eval_id ),
+		);
+	}
+
+	/**
+	 * Delete an evaluation.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_delete_evaluation( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		if ( ! current_user_can( 'delete_posts' ) ) {
+			return new WP_Error( 'forbidden', 'Permission denied' );
+		}
+
+		$eval_id = absint( $arguments['id'] );
+		if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+			return new WP_Error( 'not_found', 'Evaluation not found' );
+		}
+
+		wp_delete_post( $eval_id, true );
+
+		return array(
+			'deleted' => true,
+			'id'      => $eval_id,
+		);
+	}
+
+	/**
+	 * Build insight list query args from raw tool arguments.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_list_insights( $arguments ) {
+		$args = array();
+
+		foreach ( array( 'status', 'action', 's' ) as $key ) {
+			if ( ! empty( $arguments[ $key ] ) ) {
+				$args[ $key ] = sanitize_text_field( $arguments[ $key ] );
+			}
+		}
+
+		if ( ! empty( $arguments['evaluation'] ) ) {
+			$args['evaluation'] = absint( $arguments['evaluation'] );
+		}
+
+		if ( ! empty( $arguments['per_page'] ) ) {
+			$args['posts_per_page'] = min( 100, max( 1, absint( $arguments['per_page'] ) ) );
+		}
+
+		return array(
+			'insights' => Tsubakuro_Insights::get_insights( $args ),
+		);
+	}
+
+	/**
+	 * Fetch a single insight with its linked evaluations.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_get_insight( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		$insight = Tsubakuro_Insights::get_insight( absint( $arguments['id'] ) );
+		if ( ! $insight ) {
+			return new WP_Error( 'not_found', 'Insight not found' );
+		}
+
+		$insight['evaluations'] = array();
+		foreach ( $insight['evaluation_ids'] as $linked_id ) {
+			$linked = Tsubakuro_Evaluations::get_evaluation( $linked_id );
+			if ( $linked ) {
+				$insight['evaluations'][] = $linked;
+			}
+		}
+
+		return array(
+			'insight' => $insight,
+		);
+	}
+
+	/**
+	 * Create an insight.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_create_insight( $arguments ) {
+		if ( empty( $arguments['title'] ) ) {
+			return new WP_Error( 'invalid_input', 'title is required' );
+		}
+
+		$insight_id = wp_insert_post(
+			array(
+				'post_type'   => Tsubakuro_Insights::POST_TYPE,
+				'post_title'  => sanitize_text_field( $arguments['title'] ),
+				'post_status' => 'publish',
+			),
+			true
+		);
+
+		if ( is_wp_error( $insight_id ) ) {
+			return $insight_id;
+		}
+
+		Tsubakuro_Insights::save_meta( $insight_id, $arguments );
+
+		return array(
+			'insight' => Tsubakuro_Insights::get_insight( $insight_id ),
+		);
+	}
+
+	/**
+	 * Update an insight.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_update_insight( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		$insight_id = absint( $arguments['id'] );
+		if ( ! Tsubakuro_Insights::get_insight( $insight_id ) ) {
+			return new WP_Error( 'not_found', 'Insight not found' );
+		}
+
+		if ( isset( $arguments['title'] ) ) {
+			wp_update_post(
+				array(
+					'ID'         => $insight_id,
+					'post_title' => sanitize_text_field( $arguments['title'] ),
+				)
+			);
+		}
+
+		Tsubakuro_Insights::save_meta( $insight_id, $arguments );
+
+		return array(
+			'insight' => Tsubakuro_Insights::get_insight( $insight_id ),
+		);
+	}
+
+	/**
+	 * Delete an insight.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_delete_insight( $arguments ) {
+		if ( empty( $arguments['id'] ) ) {
+			return new WP_Error( 'invalid_input', 'id is required' );
+		}
+
+		if ( ! current_user_can( 'delete_posts' ) ) {
+			return new WP_Error( 'forbidden', 'Permission denied' );
+		}
+
+		$insight_id = absint( $arguments['id'] );
+		if ( ! Tsubakuro_Insights::get_insight( $insight_id ) ) {
+			return new WP_Error( 'not_found', 'Insight not found' );
+		}
+
+		wp_delete_post( $insight_id, true );
+
+		return array(
+			'deleted' => true,
+			'id'      => $insight_id,
+		);
+	}
+
+	/**
+	 * Link an evaluation to an insight as supporting evidence.
+	 *
+	 * @param array $arguments Raw arguments.
+	 * @return array|WP_Error
+	 */
+	private static function op_link_evaluation( $arguments ) {
+		if ( empty( $arguments['insight_id'] ) || empty( $arguments['evaluation_id'] ) ) {
+			return new WP_Error( 'invalid_input', 'insight_id and evaluation_id are required' );
+		}
+
+		$insight_id = absint( $arguments['insight_id'] );
+		$eval_id    = absint( $arguments['evaluation_id'] );
+
+		$insight = Tsubakuro_Insights::get_insight( $insight_id );
+		if ( ! $insight ) {
+			return new WP_Error( 'not_found', 'Insight not found' );
+		}
+
+		if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+			return new WP_Error( 'not_found', 'Evaluation not found' );
+		}
+
+		// Already linked: no-op so repeated calls stay idempotent (no extra writes).
+		if ( in_array( $eval_id, $insight['evaluation_ids'], true ) ) {
+			return array(
+				'insight' => $insight,
+			);
+		}
+
+		$linked   = $insight['evaluation_ids'];
+		$linked[] = $eval_id;
+		Tsubakuro_Insights::save_linked_evaluations( $insight_id, $linked );
+
+		return array(
+			'insight' => Tsubakuro_Insights::get_insight( $insight_id ),
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Ability callbacks (evaluations/insights) – return array|WP_Error
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Ability callback: list evaluations.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_list_evaluations_ability( $input = array() ) {
+		return self::op_list_evaluations( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: get evaluation.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_get_evaluation_ability( $input = array() ) {
+		return self::op_get_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: create evaluation.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_create_evaluation_ability( $input = array() ) {
+		return self::op_create_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: update evaluation.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_update_evaluation_ability( $input = array() ) {
+		return self::op_update_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: delete evaluation.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_delete_evaluation_ability( $input = array() ) {
+		return self::op_delete_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: list insights.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_list_insights_ability( $input = array() ) {
+		return self::op_list_insights( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: get insight.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_get_insight_ability( $input = array() ) {
+		return self::op_get_insight( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: create insight.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_create_insight_ability( $input = array() ) {
+		return self::op_create_insight( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: update insight.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_update_insight_ability( $input = array() ) {
+		return self::op_update_insight( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: delete insight.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_delete_insight_ability( $input = array() ) {
+		return self::op_delete_insight( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Ability callback: link evaluation to insight.
+	 *
+	 * @param mixed $input Ability input.
+	 * @return array|WP_Error
+	 */
+	public static function execute_link_evaluation_ability( $input = array() ) {
+		return self::op_link_evaluation( is_array( $input ) ? $input : array() );
+	}
+
+	/**
 	 * Register the MCP REST route.
 	 */
 	public static function register_routes() {
@@ -872,13 +1586,167 @@ class Tsubakuro_MCP {
 	 */
 	private static function get_tool_handlers() {
 		return array(
-			'tsubakuro_list_tasks'  => array( __CLASS__, 'tool_list_tasks' ),
-			'tsubakuro_get_task'    => array( __CLASS__, 'tool_get_task' ),
-			'tsubakuro_create_task' => array( __CLASS__, 'tool_create_task' ),
-			'tsubakuro_update_task' => array( __CLASS__, 'tool_update_task' ),
-			'tsubakuro_delete_task' => array( __CLASS__, 'tool_delete_task' ),
-			'tsubakuro_add_comment' => array( __CLASS__, 'tool_add_comment' ),
+			'tsubakuro_list_tasks'                 => array( __CLASS__, 'tool_list_tasks' ),
+			'tsubakuro_get_task'                   => array( __CLASS__, 'tool_get_task' ),
+			'tsubakuro_create_task'                => array( __CLASS__, 'tool_create_task' ),
+			'tsubakuro_update_task'                => array( __CLASS__, 'tool_update_task' ),
+			'tsubakuro_delete_task'                => array( __CLASS__, 'tool_delete_task' ),
+			'tsubakuro_add_comment'                => array( __CLASS__, 'tool_add_comment' ),
+			'tsubakuro_list_evaluations'           => array( __CLASS__, 'tool_list_evaluations' ),
+			'tsubakuro_get_evaluation'             => array( __CLASS__, 'tool_get_evaluation' ),
+			'tsubakuro_create_evaluation'          => array( __CLASS__, 'tool_create_evaluation' ),
+			'tsubakuro_update_evaluation'          => array( __CLASS__, 'tool_update_evaluation' ),
+			'tsubakuro_delete_evaluation'          => array( __CLASS__, 'tool_delete_evaluation' ),
+			'tsubakuro_list_insights'              => array( __CLASS__, 'tool_list_insights' ),
+			'tsubakuro_get_insight'                => array( __CLASS__, 'tool_get_insight' ),
+			'tsubakuro_create_insight'             => array( __CLASS__, 'tool_create_insight' ),
+			'tsubakuro_update_insight'             => array( __CLASS__, 'tool_update_insight' ),
+			'tsubakuro_delete_insight'             => array( __CLASS__, 'tool_delete_insight' ),
+			'tsubakuro_link_evaluation_to_insight' => array( __CLASS__, 'tool_link_evaluation_to_insight' ),
 		);
+	}
+
+	/**
+	 * Map a shared-op result (array|WP_Error) into a JSON-RPC tool response.
+	 *
+	 * @param mixed $id     JSON-RPC request id.
+	 * @param mixed $result Result from an op_* helper.
+	 * @return array
+	 */
+	private static function tool_response_from_op( $id, $result ) {
+		if ( is_wp_error( $result ) ) {
+			$code_map = array(
+				'invalid_input' => -32602,
+				'not_found'     => 404,
+				'forbidden'     => -32003,
+			);
+			$code     = $code_map[ $result->get_error_code() ] ?? 500;
+
+			return self::error_response( $id, $code, $result->get_error_message() );
+		}
+
+		return self::tool_success_response( $id, $result );
+	}
+
+	/**
+	 * Tool: list evaluations.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_list_evaluations( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_list_evaluations( $arguments ) );
+	}
+
+	/**
+	 * Tool: get a single evaluation.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_get_evaluation( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_get_evaluation( $arguments ) );
+	}
+
+	/**
+	 * Tool: create an evaluation.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_create_evaluation( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_create_evaluation( $arguments ) );
+	}
+
+	/**
+	 * Tool: update an evaluation.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_update_evaluation( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_update_evaluation( $arguments ) );
+	}
+
+	/**
+	 * Tool: delete an evaluation.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_delete_evaluation( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_delete_evaluation( $arguments ) );
+	}
+
+	/**
+	 * Tool: list insights.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_list_insights( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_list_insights( $arguments ) );
+	}
+
+	/**
+	 * Tool: get a single insight.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_get_insight( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_get_insight( $arguments ) );
+	}
+
+	/**
+	 * Tool: create an insight.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_create_insight( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_create_insight( $arguments ) );
+	}
+
+	/**
+	 * Tool: update an insight.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_update_insight( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_update_insight( $arguments ) );
+	}
+
+	/**
+	 * Tool: delete an insight.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_delete_insight( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_delete_insight( $arguments ) );
+	}
+
+	/**
+	 * Tool: link an evaluation to an insight.
+	 *
+	 * @param mixed $id        JSON-RPC request id.
+	 * @param array $arguments Tool arguments.
+	 * @return array
+	 */
+	private static function tool_link_evaluation_to_insight( $id, $arguments ) {
+		return self::tool_response_from_op( $id, self::op_link_evaluation( $arguments ) );
 	}
 
 	/**
@@ -1281,6 +2149,61 @@ class Tsubakuro_MCP {
 						),
 					),
 				),
+			),
+			array(
+				'name'        => 'tsubakuro_list_evaluations',
+				'description' => '記事評価（変更タスク）一覧を取得します。target_post、change_item、judgment、metric、unevaluated、overdue、s、per_page で絞り込みできます。',
+				'inputSchema' => self::get_list_evaluations_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_get_evaluation',
+				'description' => '指定 ID の記事評価詳細と関連する改善知見を取得します。',
+				'inputSchema' => self::get_single_id_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_create_evaluation',
+				'description' => '新しい記事評価を作成します。判定(judgment)は success / partial / no_change / failure / pending。',
+				'inputSchema' => self::get_create_evaluation_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_update_evaluation',
+				'description' => '既存の記事評価を更新します。判定を記録すると未評価から外れます。',
+				'inputSchema' => self::get_update_evaluation_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_delete_evaluation',
+				'description' => '指定した記事評価を削除します。',
+				'inputSchema' => self::get_single_id_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_list_insights',
+				'description' => 'サイト単位の改善知見一覧を取得します。status、action、evaluation、s、per_page で絞り込みできます。',
+				'inputSchema' => self::get_list_insights_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_get_insight',
+				'description' => '指定 ID の改善知見詳細と根拠の記事評価を取得します。',
+				'inputSchema' => self::get_single_id_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_create_insight',
+				'description' => '新しい改善知見を作成します。ステータス(status)は hypothesis / verifying / effective / unclear / ineffective / ruled。',
+				'inputSchema' => self::get_create_insight_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_update_insight',
+				'description' => '既存の改善知見を更新します。',
+				'inputSchema' => self::get_update_insight_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_delete_insight',
+				'description' => '指定した改善知見を削除します。',
+				'inputSchema' => self::get_single_id_input_schema(),
+			),
+			array(
+				'name'        => 'tsubakuro_link_evaluation_to_insight',
+				'description' => '記事評価を改善知見の根拠として関連付けます。',
+				'inputSchema' => self::get_link_evaluation_input_schema(),
 			),
 		);
 	}

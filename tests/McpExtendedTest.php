@@ -654,4 +654,193 @@ class McpExtendedTest extends TestCase
 		$this->assertSame(30, $task['id']);
 		$this->assertSame(20, $task['parent_id']);
 	}
+
+	// -------------------------------------------------------------------------
+	// Evaluation / insight tools
+	// -------------------------------------------------------------------------
+
+	private function make_eval_post(int $id, string $title = 'Eval'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_evaluation',
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+		);
+	}
+
+	private function make_insight_post(int $id, string $title = 'Insight'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+		);
+	}
+
+	public function test_tools_list_includes_evaluation_and_insight_tools(): void
+	{
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 2,
+				'method'  => 'tools/list',
+				'params'  => array(),
+			)
+		);
+
+		$tools = array_column($result['result']['tools'], 'name');
+
+		$this->assertContains('tsubakuro_list_evaluations', $tools);
+		$this->assertContains('tsubakuro_create_evaluation', $tools);
+		$this->assertContains('tsubakuro_list_insights', $tools);
+		$this->assertContains('tsubakuro_create_insight', $tools);
+		$this->assertContains('tsubakuro_link_evaluation_to_insight', $tools);
+	}
+
+	public function test_ability_definitions_and_json_rpc_tools_stay_in_sync(): void
+	{
+		$reflection = new ReflectionClass('Tsubakuro_MCP');
+
+		$abilities_method = $reflection->getMethod('get_ability_definitions');
+		$abilities_method->setAccessible(true);
+		$ability_names = array_map(
+			static function ($name) {
+				return str_replace(array('tsubakuro/', '-'), array('tsubakuro_', '_'), $name);
+			},
+			array_keys($abilities_method->invoke(null))
+		);
+
+		$tools_method = $reflection->getMethod('get_tools');
+		$tools_method->setAccessible(true);
+		$tool_names = array_column($tools_method->invoke(null), 'name');
+
+		// The abilities surface uses "link-evaluation-to-insight" while the
+		// JSON-RPC tool name is fully snake-cased; normalise the one exception.
+		sort($ability_names);
+		sort($tool_names);
+
+		$this->assertSame($ability_names, $tool_names, 'Ability and JSON-RPC tool names must match.');
+	}
+
+	public function test_tools_call_create_evaluation_saves_meta(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_eval_post(123, 'New Eval');
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 60,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_evaluation',
+					'arguments' => array(
+						'title'       => 'New Eval',
+						'change_item' => 'comparison',
+						'judgment'    => 'success',
+					),
+				),
+			)
+		);
+
+		$evaluation = $result['result']['structuredContent']['evaluation'];
+		$this->assertSame(123, $evaluation['id']);
+		$this->assertSame('success', $evaluation['judgment']);
+	}
+
+	public function test_tools_call_list_evaluations_returns_list(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_eval_post(1, 'E1');
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_eval_post(2, 'E2');
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 61,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_list_evaluations',
+					'arguments' => array(),
+				),
+			)
+		);
+
+		$this->assertCount(2, $result['result']['structuredContent']['evaluations']);
+	}
+
+	public function test_tools_call_link_evaluation_to_insight(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][70] = $this->make_insight_post(70, 'Insight');
+		$GLOBALS['tsubakuro_test']['posts'][71] = $this->make_eval_post(71, 'Eval');
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 62,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_link_evaluation_to_insight',
+					'arguments' => array(
+						'insight_id'    => 70,
+						'evaluation_id' => 71,
+					),
+				),
+			)
+		);
+
+		$insight = $result['result']['structuredContent']['insight'];
+		$this->assertContains(71, $insight['evaluation_ids']);
+	}
+
+	public function test_tools_call_link_evaluation_is_idempotent(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][72] = $this->make_insight_post(72, 'Insight');
+		$GLOBALS['tsubakuro_test']['posts'][73] = $this->make_eval_post(73, 'Eval');
+
+		$call = array(
+			'jsonrpc' => '2.0',
+			'id'      => 64,
+			'method'  => 'tools/call',
+			'params'  => array(
+				'name'      => 'tsubakuro_link_evaluation_to_insight',
+				'arguments' => array(
+					'insight_id'    => 72,
+					'evaluation_id' => 73,
+				),
+			),
+		);
+
+		$this->dispatch($call);
+		$result = $this->dispatch($call);
+
+		$insight = $result['result']['structuredContent']['insight'];
+		$this->assertSame(array(73), $insight['evaluation_ids']);
+	}
+
+	public function test_tools_call_delete_insight_requires_permission(): void
+	{
+		$GLOBALS['tsubakuro_test']['can']['delete_posts'] = false;
+		$GLOBALS['tsubakuro_test']['posts'][80]           = $this->make_insight_post(80);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 63,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_delete_insight',
+					'arguments' => array( 'id' => 80 ),
+				),
+			)
+		);
+
+		$this->assertSame(-32003, $result['error']['code']);
+	}
 }

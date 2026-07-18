@@ -102,6 +102,112 @@ class Tsubakuro_Reminders {
 				$task_id
 			);
 		}
+
+		self::process_evaluation_reminders( $now );
+	}
+
+	/**
+	 * Notify about evaluations whose evaluation-due date has passed while no
+	 * verdict has been recorded yet.
+	 *
+	 * @param int $now Current unix timestamp.
+	 */
+	public static function process_evaluation_reminders( $now ) {
+		if ( ! class_exists( 'Tsubakuro_Evaluations' ) ) {
+			return;
+		}
+
+		$evaluations = Tsubakuro_Evaluations::get_evaluations(
+			array(
+				'posts_per_page' => 200, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- cron batch processing needs broader scan window.
+			)
+		);
+
+		foreach ( $evaluations as $evaluation ) {
+			self::maybe_send_evaluation_reminder( $evaluation, $now );
+		}
+	}
+
+	/**
+	 * Send an overdue-evaluation reminder for one evaluation when required.
+	 *
+	 * Fires once the evaluation-due date has passed AND no verdict is recorded
+	 * AND no reminder has been sent yet. The sent flag is cleared by
+	 * Tsubakuro_Evaluations::save_meta() whenever the verdict changes, so an
+	 * evaluation re-enters the reminder pool if its verdict is later removed.
+	 *
+	 * @param array $evaluation Formatted evaluation data.
+	 * @param int   $now        Current unix timestamp.
+	 */
+	private static function maybe_send_evaluation_reminder( $evaluation, $now ) {
+		if ( ! empty( $evaluation['is_evaluated'] ) ) {
+			return;
+		}
+
+		$due_at = (string) ( $evaluation['due_at'] ?? '' );
+		if ( '' === $due_at ) {
+			return;
+		}
+
+		$eval_id = (int) $evaluation['id'];
+		$sent_at = get_post_meta( $eval_id, '_tsubakuro_eval_reminded_at', true );
+		if ( ! empty( $sent_at ) ) {
+			return;
+		}
+
+		$scheduled = strtotime( $due_at . ' 23:59:59' );
+		if ( false === $scheduled || $scheduled > $now ) {
+			return;
+		}
+
+		if ( self::send_evaluation_reminder_mail( $evaluation, $due_at ) ) {
+			update_post_meta( $eval_id, '_tsubakuro_eval_reminded_at', current_time( 'mysql' ) );
+		}
+	}
+
+	/**
+	 * Send the overdue-evaluation reminder mail for one evaluation.
+	 *
+	 * @param array  $evaluation Formatted evaluation data.
+	 * @param string $due_at     Evaluation due date.
+	 * @return bool
+	 */
+	private static function send_evaluation_reminder_mail( $evaluation, $due_at ) {
+		$recipient = self::resolve_author_recipient( (int) ( $evaluation['author_id'] ?? 0 ) );
+		if ( ! $recipient ) {
+			return false;
+		}
+
+		$eval_id   = (int) ( $evaluation['id'] ?? 0 );
+		$eval_link = admin_url( 'admin.php?page=tsubakuro-evaluation-form&evaluation_id=' . $eval_id );
+		$subject   = sprintf( '[Tsubakuro] 評価予定日リマインド: %s', (string) ( $evaluation['title'] ?? '' ) );
+		$body      = implode(
+			"\n",
+			array(
+				sprintf( '記事評価 #%d の評価予定日を過ぎましたが、判定が未登録です。', $eval_id ),
+				sprintf( 'タイトル: %s', (string) ( $evaluation['title'] ?? '' ) ),
+				sprintf( '評価予定日: %s', $due_at ),
+				sprintf( '編集URL: %s', $eval_link ),
+			),
+		);
+
+		return (bool) wp_mail( $recipient, $subject, $body );
+	}
+
+	/**
+	 * Resolve a recipient email from a user ID.
+	 *
+	 * @param int $author_id Author user ID.
+	 * @return string
+	 */
+	private static function resolve_author_recipient( $author_id ) {
+		$user = $author_id ? get_user_by( 'id', $author_id ) : false;
+
+		if ( ! $user || empty( $user->user_email ) ) {
+			return '';
+		}
+
+		return (string) $user->user_email;
 	}
 
 	/**
