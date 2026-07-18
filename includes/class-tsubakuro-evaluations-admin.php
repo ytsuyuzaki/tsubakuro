@@ -87,9 +87,10 @@ class Tsubakuro_Evaluations_Admin {
 			wp_die( '権限がありません。' );
 		}
 
-		$list_args   = self::get_evaluation_list_args_from_request();
-		$evaluations = Tsubakuro_Evaluations::get_evaluations( $list_args );
-		$insights    = Tsubakuro_Insights::get_insights( array( 'posts_per_page' => 200 ) ); // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- bounded related-insight lookup.
+		$list_args    = self::get_evaluation_list_args_from_request();
+		$evaluations  = Tsubakuro_Evaluations::get_evaluations( $list_args );
+		$insights     = Tsubakuro_Insights::get_insights( array( 'posts_per_page' => 200 ) ); // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- bounded related-insight lookup.
+		$post_choices = self::get_target_post_choices();
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice key.
 		$message = isset( $_GET['message'] ) ? sanitize_key( wp_unslash( $_GET['message'] ) ) : '';
 
@@ -121,14 +122,17 @@ class Tsubakuro_Evaluations_Admin {
 	public static function get_evaluation_list_args_from_request() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only list filters.
 		$args = array(
-			'target_post' => isset( $_GET['target_post'] ) ? absint( wp_unslash( $_GET['target_post'] ) ) : 0,
-			'change_item' => isset( $_GET['change_item'] ) ? sanitize_text_field( wp_unslash( $_GET['change_item'] ) ) : '',
-			'judgment'    => isset( $_GET['judgment'] ) ? sanitize_text_field( wp_unslash( $_GET['judgment'] ) ) : '',
-			'metric'      => isset( $_GET['metric'] ) ? sanitize_text_field( wp_unslash( $_GET['metric'] ) ) : '',
-			'unevaluated' => ! empty( $_GET['unevaluated'] ),
-			's'           => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
-			'orderby'     => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date',
-			'order'       => isset( $_GET['order'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) : 'DESC',
+			'target_post'    => isset( $_GET['target_post'] ) ? absint( wp_unslash( $_GET['target_post'] ) ) : 0,
+			'change_item'    => isset( $_GET['change_item'] ) ? sanitize_text_field( wp_unslash( $_GET['change_item'] ) ) : '',
+			'judgment'       => isset( $_GET['judgment'] ) ? sanitize_text_field( wp_unslash( $_GET['judgment'] ) ) : '',
+			'metric'         => isset( $_GET['metric'] ) ? sanitize_text_field( wp_unslash( $_GET['metric'] ) ) : '',
+			'implemented_at' => isset( $_GET['implemented_at'] ) ? sanitize_text_field( wp_unslash( $_GET['implemented_at'] ) ) : '',
+			'due_at'         => isset( $_GET['due_at'] ) ? sanitize_text_field( wp_unslash( $_GET['due_at'] ) ) : '',
+			'insight'        => isset( $_GET['insight'] ) ? absint( wp_unslash( $_GET['insight'] ) ) : 0,
+			'unevaluated'    => ! empty( $_GET['unevaluated'] ),
+			's'              => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
+			'orderby'        => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'date',
+			'order'          => isset( $_GET['order'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) : 'DESC',
 		);
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -141,13 +145,40 @@ class Tsubakuro_Evaluations_Admin {
 		if ( ! array_key_exists( $args['metric'], Tsubakuro_Evaluations::METRICS ) ) {
 			$args['metric'] = '';
 		}
+		foreach ( array( 'implemented_at', 'due_at' ) as $date_key ) {
+			if ( '' !== $args[ $date_key ] && ! self::is_valid_date_string( $args[ $date_key ] ) ) {
+				$args[ $date_key ] = '';
+			}
+		}
+		if ( $args['insight'] ) {
+			$insight = Tsubakuro_Insights::get_insight( $args['insight'] );
+			if ( $insight ) {
+				$args['include_ids'] = $insight['evaluation_ids'];
+			} else {
+				$args['insight'] = 0;
+			}
+		}
 
 		return array_filter(
 			$args,
 			static function ( $value ) {
-				return '' !== $value && 0 !== $value && false !== $value;
+				return is_array( $value ) || ( '' !== $value && 0 !== $value && false !== $value );
 			}
 		);
+	}
+
+	/**
+	 * Validate a display date filter.
+	 *
+	 * @param string $value Date string.
+	 * @return bool
+	 */
+	private static function is_valid_date_string( $value ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $matches ) ) {
+			return false;
+		}
+
+		return checkdate( (int) $matches[2], (int) $matches[3], (int) $matches[1] );
 	}
 
 	/**

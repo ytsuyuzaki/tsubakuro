@@ -8,6 +8,7 @@
  *   $parent_task          – array of parent task data (or null)
  *   $child_tasks          – array of child task data (edit mode only)
  *   $default_parent_id    – pre-selected parent_id for new task (int)
+ *   $task_defaults        – default new-task field values from request params
  *
  * @package Tsubakuro
  */
@@ -61,7 +62,7 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 					<span class="required">*</span>
 				</label>
 				<input type="text" id="tsubakuro-task-title" name="title" class="widefat"
-					value="<?php echo esc_attr( $task['title'] ?? '' ); ?>"
+					value="<?php echo esc_attr( $task['title'] ?? ( $task_defaults['title'] ?? '' ) ); ?>"
 					placeholder="<?php esc_attr_e( 'タスクのタイトル', 'tsubakuro' ); ?>"
 					required>
 			</div>
@@ -78,7 +79,7 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 				<div id="tsubakuro-content-preview" class="tsubakuro-content-preview" aria-live="polite"></div>
 
 				<textarea id="tsubakuro-task-content" name="content" class="widefat" rows="6"
-					placeholder="<?php esc_attr_e( 'タスクの詳細を入力してください', 'tsubakuro' ); ?>"><?php echo esc_textarea( $task['content'] ?? '' ); ?></textarea>
+					placeholder="<?php esc_attr_e( 'タスクの詳細を入力してください', 'tsubakuro' ); ?>"><?php echo esc_textarea( $task['content'] ?? ( $task_defaults['content'] ?? '' ) ); ?></textarea>
 			</div>
 
 			<div class="tsubakuro-form-row tsubakuro-form-row--half">
@@ -180,7 +181,7 @@ $page_title = $is_edit ? 'タスクを編集' : '新規タスク追加';
 			<div class="tsubakuro-form-row">
 				<label><?php esc_html_e( '関連ページ', 'tsubakuro' ); ?></label>
 				<input type="hidden" id="tsubakuro-task-related" name="related_pages"
-					value="<?php echo esc_attr( implode( ', ', $task['related_pages'] ?? array() ) ); ?>">
+					value="<?php echo esc_attr( implode( ', ', $task['related_pages'] ?? ( $task_defaults['related_pages'] ?? array() ) ) ); ?>">
 
 				<div id="tsubakuro-related-tags" class="tsubakuro-related-tags">
 					<?php foreach ( $related_page_objects as $rp ) : ?>

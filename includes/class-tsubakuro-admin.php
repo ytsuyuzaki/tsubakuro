@@ -155,6 +155,22 @@ class Tsubakuro_Admin {
 		$related_page_objects = array();
 		$parent_task          = null;
 		$child_tasks          = array();
+		$task_defaults        = array(
+			'title'         => '',
+			'content'       => '',
+			'related_pages' => array(),
+		);
+
+		if ( ! $task_id ) {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display defaults for the new-task form.
+			$task_defaults['title']   = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : '';
+			$task_defaults['content'] = isset( $_GET['content'] ) ? sanitize_textarea_field( wp_unslash( $_GET['content'] ) ) : '';
+			$related_page             = isset( $_GET['related_page'] ) ? absint( wp_unslash( $_GET['related_page'] ) ) : 0;
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
+			if ( $related_page ) {
+				$task_defaults['related_pages'] = array( $related_page );
+			}
+		}
 
 		if ( $task_id ) {
 			$task = Tsubakuro_Post_Types::get_task( $task_id );
@@ -177,6 +193,19 @@ class Tsubakuro_Admin {
 			}
 		} elseif ( $default_parent_id ) {
 			$parent_task = Tsubakuro_Post_Types::get_task( $default_parent_id );
+		}
+
+		if ( ! $task_id && ! empty( $task_defaults['related_pages'] ) ) {
+			foreach ( $task_defaults['related_pages'] as $page_id ) {
+				$post = get_post( $page_id );
+				if ( $post ) {
+					$related_page_objects[] = array(
+						'id'    => $post->ID,
+						'title' => $post->post_title ? $post->post_title : sprintf( '(ID: %d)', $post->ID ),
+						'url'   => (string) get_permalink( $post->ID ),
+					);
+				}
+			}
 		}
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/task-form.php';

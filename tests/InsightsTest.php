@@ -11,6 +11,7 @@ class InsightsTest extends TestCase
 	protected function setUp(): void
 	{
 		tsubakuro_test_reset();
+		$_GET = array();
 	}
 
 	private function make_post(int $id, string $title = 'Insight', string $type = 'tsubakuro_insight'): object
@@ -18,6 +19,19 @@ class InsightsTest extends TestCase
 		return (object) array(
 			'ID'            => $id,
 			'post_type'     => $type,
+			'post_title'    => $title,
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-03 11:00:00',
+			'post_author'   => 3,
+		);
+	}
+
+	private function make_evaluation_post(int $id, string $title = 'Evaluation'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_evaluation',
 			'post_title'    => $title,
 			'post_content'  => '',
 			'post_date'     => '2026-05-01 10:00:00',
@@ -125,5 +139,28 @@ class InsightsTest extends TestCase
 
 		$this->assertCount(1, $result);
 		$this->assertSame(30, $result[0]['id']);
+	}
+
+	public function test_insight_form_outputs_create_task_link_with_prefilled_context(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][70] = $this->make_post(70, '比較表の知見');
+		$GLOBALS['tsubakuro_test']['posts'][80] = $this->make_evaluation_post(80, '比較表追加の評価');
+		Tsubakuro_Insights::save_meta(70, array(
+			'hypothesis'  => '比較表で順位が上がる',
+			'conclusion'  => '比較記事で標準化する',
+			'action'      => 'standardize',
+			'evaluations' => array(80),
+		));
+		Tsubakuro_Evaluations::save_meta(80, array('target_post' => 100));
+		$_GET = array('insight_id' => '70');
+
+		ob_start();
+		Tsubakuro_Evaluations_Admin::render_insight_form();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString('この知見からタスク作成', $output);
+		$this->assertStringContainsString('page=tsubakuro-task-form', $output);
+		$this->assertStringContainsString('related_page=100', $output);
+		$this->assertStringContainsString(urlencode('改善知見を記事改善に反映: 比較表の知見'), $output);
 	}
 }

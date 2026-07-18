@@ -11,6 +11,7 @@ class EvaluationsTest extends TestCase
 	protected function setUp(): void
 	{
 		tsubakuro_test_reset();
+		$_GET = array();
 	}
 
 	private function make_post(int $id, string $title = 'Eval', string $content = '', string $type = 'tsubakuro_evaluation'): object
@@ -20,6 +21,19 @@ class EvaluationsTest extends TestCase
 			'post_type'     => $type,
 			'post_title'    => $title,
 			'post_content'  => $content,
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 3,
+		);
+	}
+
+	private function make_insight_post(int $id, string $title = 'Insight'): object
+	{
+		return (object) array(
+			'ID'            => $id,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => $title,
+			'post_content'  => '',
 			'post_date'     => '2026-05-01 10:00:00',
 			'post_modified' => '2026-05-01 11:00:00',
 			'post_author'   => 3,
@@ -163,5 +177,74 @@ class EvaluationsTest extends TestCase
 
 		$this->assertCount(1, $result);
 		$this->assertSame(1, $result[0]['id']);
+	}
+
+	public function test_get_evaluations_filters_by_implemented_and_due_dates(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post(1, 'A');
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post(2, 'B');
+		Tsubakuro_Evaluations::save_meta(1, array('implemented_at' => '2026-05-01', 'due_at' => '2026-05-15'));
+		Tsubakuro_Evaluations::save_meta(2, array('implemented_at' => '2026-05-02', 'due_at' => '2026-05-15'));
+
+		$result = Tsubakuro_Evaluations::get_evaluations(array(
+			'implemented_at' => '2026-05-01',
+			'due_at'         => '2026-05-15',
+		));
+
+		$this->assertCount(1, $result);
+		$this->assertSame(1, $result[0]['id']);
+	}
+
+	public function test_get_evaluations_filters_by_include_ids(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post(1, 'A');
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post(2, 'B');
+
+		$result = Tsubakuro_Evaluations::get_evaluations(array('include_ids' => array(2)));
+
+		$this->assertCount(1, $result);
+		$this->assertSame(2, $result[0]['id']);
+	}
+
+	public function test_get_evaluations_returns_empty_for_empty_include_ids(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post(1, 'A');
+
+		$result = Tsubakuro_Evaluations::get_evaluations(array('include_ids' => array()));
+
+		$this->assertSame(array(), $result);
+	}
+
+	public function test_evaluation_list_args_from_request_accepts_dates_and_related_insight(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][50] = $this->make_insight_post(50);
+		Tsubakuro_Insights::save_meta(50, array('evaluations' => array(1, 2)));
+		$_GET = array(
+			'target_post'    => '9',
+			'implemented_at' => '2026-05-01',
+			'due_at'         => '2026-05-15',
+			'insight'        => '50',
+		);
+
+		$args = Tsubakuro_Evaluations_Admin::get_evaluation_list_args_from_request();
+
+		$this->assertSame(9, $args['target_post']);
+		$this->assertSame('2026-05-01', $args['implemented_at']);
+		$this->assertSame('2026-05-15', $args['due_at']);
+		$this->assertSame(50, $args['insight']);
+		$this->assertSame(array(1, 2), $args['include_ids']);
+	}
+
+	public function test_evaluation_list_args_from_request_drops_invalid_dates(): void
+	{
+		$_GET = array(
+			'implemented_at' => '2026-99-01',
+			'due_at'         => 'not-a-date',
+		);
+
+		$args = Tsubakuro_Evaluations_Admin::get_evaluation_list_args_from_request();
+
+		$this->assertArrayNotHasKey('implemented_at', $args);
+		$this->assertArrayNotHasKey('due_at', $args);
 	}
 }

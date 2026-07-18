@@ -172,6 +172,33 @@ class AdminTest extends TestCase
 		$this->assertStringContainsString('Editor User', $output);
 	}
 
+	public function test_render_task_form_uses_request_defaults_for_new_task(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][77] = (object) array(
+			'ID'            => 77,
+			'post_type'     => 'post',
+			'post_title'    => 'Related Article',
+			'post_content'  => '',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-01 11:00:00',
+			'post_author'   => 1,
+		);
+		$_GET = array(
+			'title'        => '知見から作るタスク',
+			'content'      => "仮説\n結論",
+			'related_page' => '77',
+		);
+
+		ob_start();
+		Tsubakuro_Admin::render_task_form();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString('value="知見から作るタスク"', $output);
+		$this->assertStringContainsString("仮説\n結論", $output);
+		$this->assertStringContainsString('value="77"', $output);
+		$this->assertStringContainsString('Related Article', $output);
+	}
+
 	public function test_delete_tasks_sanitizes_ids_and_returns_deleted_count(): void
 	{
 		$deleted = Tsubakuro_Admin::delete_tasks(array('10', '10', '0', '-3', 'abc'));

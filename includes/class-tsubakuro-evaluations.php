@@ -308,8 +308,8 @@ class Tsubakuro_Evaluations {
 	 * Query evaluations with optional filters.
 	 *
 	 * Supported $args keys: target_post, change_item, judgment, metric,
-	 * unevaluated (bool), overdue (bool), s, per_page/posts_per_page,
-	 * orderby, order.
+	 * implemented_at, due_at, include_ids, unevaluated (bool), overdue (bool),
+	 * s, per_page/posts_per_page, orderby, order.
 	 *
 	 * @param array $args Optional filters.
 	 * @return array
@@ -346,6 +346,21 @@ class Tsubakuro_Evaluations {
 			}
 		}
 
+		foreach ( array( 'implemented_at', 'due_at' ) as $date_key ) {
+			if ( ! empty( $args[ $date_key ] ) ) {
+				$date = self::normalize_date( $args[ $date_key ] );
+				if ( '' !== $date ) {
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for date filters.
+					$meta_query[] = array(
+						'key'     => '_tsubakuro_eval_' . $date_key,
+						'value'   => $date,
+						'compare' => '=',
+						'type'    => 'DATE',
+					);
+				}
+			}
+		}
+
 		if ( ! empty( $args['overdue'] ) ) {
 			$today = current_time( 'Y-m-d' );
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for overdue filter.
@@ -364,6 +379,14 @@ class Tsubakuro_Evaluations {
 
 		if ( ! empty( $args['s'] ) ) {
 			$defaults['s'] = sanitize_text_field( $args['s'] );
+		}
+
+		if ( array_key_exists( 'include_ids', $args ) && is_array( $args['include_ids'] ) ) {
+			$include_ids = array_values( array_unique( array_filter( array_map( 'absint', $args['include_ids'] ) ) ) );
+			if ( empty( $include_ids ) ) {
+				return array();
+			}
+			$defaults['post__in'] = $include_ids;
 		}
 
 		$defaults = self::apply_orderby( $defaults, $args );

@@ -6,6 +6,7 @@
  *   $evaluations – array of evaluation data (Tsubakuro_Evaluations::get_evaluations)
  *   $list_args   – current list query args
  *   $insights    – all insights (for the related-insight lookup)
+ *   $post_choices – array of { id, title } target post choices
  *   $message     – current admin notice key
  *
  * @package Tsubakuro
@@ -15,11 +16,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$change_filter    = $list_args['change_item'] ?? '';
-$judgment_filter  = $list_args['judgment'] ?? '';
-$metric_filter    = $list_args['metric'] ?? '';
-$search_query     = $list_args['s'] ?? '';
-$unevaluated_only = ! empty( $list_args['unevaluated'] );
+$change_filter      = $list_args['change_item'] ?? '';
+$judgment_filter    = $list_args['judgment'] ?? '';
+$metric_filter      = $list_args['metric'] ?? '';
+$target_filter      = (int) ( $list_args['target_post'] ?? 0 );
+$implemented_filter = $list_args['implemented_at'] ?? '';
+$due_filter         = $list_args['due_at'] ?? '';
+$insight_filter     = (int) ( $list_args['insight'] ?? 0 );
+$search_query       = $list_args['s'] ?? '';
+$unevaluated_only   = ! empty( $list_args['unevaluated'] );
 
 // Build a map of evaluation_id => insight titles for the related-insight column.
 $insight_map = array();
@@ -53,6 +58,13 @@ foreach ( $insights as $insight ) {
 
 		<div class="tablenav top">
 			<div class="alignleft actions">
+				<select name="target_post">
+					<option value="0"><?php esc_html_e( 'すべての対象記事', 'tsubakuro' ); ?></option>
+					<?php foreach ( $post_choices as $choice ) : ?>
+						<option value="<?php echo esc_attr( $choice['id'] ); ?>" <?php selected( $target_filter, (int) $choice['id'] ); ?>><?php echo esc_html( $choice['title'] ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
 				<select name="change_item">
 					<option value=""><?php esc_html_e( 'すべての変更項目', 'tsubakuro' ); ?></option>
 					<?php foreach ( Tsubakuro_Evaluations::CHANGE_ITEMS as $key => $label ) : ?>
@@ -71,6 +83,17 @@ foreach ( $insights as $insight ) {
 					<option value=""><?php esc_html_e( 'すべての評価指標', 'tsubakuro' ); ?></option>
 					<?php foreach ( Tsubakuro_Evaluations::METRICS as $key => $label ) : ?>
 						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $metric_filter, $key ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<input type="date" name="implemented_at" value="<?php echo esc_attr( $implemented_filter ); ?>" aria-label="<?php esc_attr_e( '実施日', 'tsubakuro' ); ?>" />
+
+				<input type="date" name="due_at" value="<?php echo esc_attr( $due_filter ); ?>" aria-label="<?php esc_attr_e( '評価予定日', 'tsubakuro' ); ?>" />
+
+				<select name="insight">
+					<option value="0"><?php esc_html_e( 'すべての改善知見', 'tsubakuro' ); ?></option>
+					<?php foreach ( $insights as $insight ) : ?>
+						<option value="<?php echo esc_attr( $insight['id'] ); ?>" <?php selected( $insight_filter, (int) $insight['id'] ); ?>><?php echo esc_html( $insight['title'] ); ?></option>
 					<?php endforeach; ?>
 				</select>
 

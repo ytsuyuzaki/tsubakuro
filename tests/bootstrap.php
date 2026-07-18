@@ -194,9 +194,29 @@ class WP_Query
 
 					foreach ($args['meta_query'] ?? array() as $meta_filter) {
 						$values = $GLOBALS['tsubakuro_test']['post_meta'][$post->ID][$meta_filter['key']] ?? array();
-						if (! in_array($meta_filter['value'], $values, false)) {
+						$compare = $meta_filter['compare'] ?? '=';
+						$value   = $meta_filter['value'] ?? null;
+						if ('<=' === $compare) {
+							$matched = false;
+							foreach ($values as $stored) {
+								if ((string) $stored <= (string) $value) {
+									$matched = true;
+									break;
+								}
+							}
+							if (! $matched) {
+								return false;
+							}
+							continue;
+						}
+
+						if (! in_array($value, $values, false)) {
 							return false;
 						}
+					}
+
+					if (! empty($args['post__in']) && ! in_array((int) $post->ID, array_map('intval', $args['post__in']), true)) {
+						return false;
 					}
 
 					return true;

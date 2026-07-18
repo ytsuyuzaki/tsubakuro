@@ -13,18 +13,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$is_edit    = ! empty( $insight );
-$page_title = $is_edit ? '改善知見を編集' : '新規改善知見';
-$linked_ids = $is_edit ? $insight['evaluation_ids'] : array();
-$field      = static function ( $key ) use ( $insight ) {
+$is_edit         = ! empty( $insight );
+$page_title      = $is_edit ? '改善知見を編集' : '新規改善知見';
+$linked_ids      = $is_edit ? $insight['evaluation_ids'] : array();
+$field           = static function ( $key ) use ( $insight ) {
 	return $insight[ $key ] ?? '';
 };
+$task_create_url = '';
+if ( $is_edit ) {
+	$task_content_parts = array_filter(
+		array(
+			'改善知見: ' . (string) $field( 'title' ),
+			$field( 'hypothesis' ) ? '仮説: ' . (string) $field( 'hypothesis' ) : '',
+			$field( 'conclusion' ) ? '結論: ' . (string) $field( 'conclusion' ) : '',
+			$field( 'action_label' ) ? '今後の扱い: ' . (string) $field( 'action_label' ) : '',
+		)
+	);
+	$task_query         = array(
+		'page'    => 'tsubakuro-task-form',
+		'title'   => '改善知見を記事改善に反映: ' . (string) $field( 'title' ),
+		'content' => implode( "\n", $task_content_parts ),
+	);
+	foreach ( $all_evaluations as $evaluation ) {
+		if ( in_array( (int) $evaluation['id'], array_map( 'intval', $linked_ids ), true ) && ! empty( $evaluation['target_post_id'] ) ) {
+			$task_query['related_page'] = (int) $evaluation['target_post_id'];
+			break;
+		}
+	}
+	$task_create_url = add_query_arg( $task_query, admin_url( 'admin.php' ) );
+}
 ?>
 <div class="wrap tsubakuro-admin-wrap">
 	<h1 class="wp-heading-inline"><?php echo esc_html( $page_title ); ?></h1>
 	<a href="<?php echo esc_url( admin_url( 'admin.php?page=tsubakuro-insights' ) ); ?>" class="page-title-action">
 		<?php esc_html_e( '← 改善知見一覧に戻る', 'tsubakuro' ); ?>
 	</a>
+	<?php if ( $is_edit ) : ?>
+		<a href="<?php echo esc_url( $task_create_url ); ?>" class="page-title-action">
+			<?php esc_html_e( 'この知見からタスク作成', 'tsubakuro' ); ?>
+		</a>
+	<?php endif; ?>
 
 	<?php
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- displaying redirect error message set by the plugin.
