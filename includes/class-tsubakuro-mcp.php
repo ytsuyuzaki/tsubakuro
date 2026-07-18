@@ -776,7 +776,6 @@ class Tsubakuro_MCP {
 	private static function get_create_evaluation_input_schema() {
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'title' ),
 			'properties' => self::get_evaluation_field_properties(),
 		);
 	}
@@ -823,6 +822,7 @@ class Tsubakuro_MCP {
 	private static function get_insight_field_properties() {
 		return array(
 			'title'         => array( 'type' => 'string' ),
+			'detail'        => array( 'type' => 'string' ),
 			'site'          => array( 'type' => 'string' ),
 			'post_kind'     => array( 'type' => 'string' ),
 			'hypothesis'    => array( 'type' => 'string' ),
@@ -846,7 +846,6 @@ class Tsubakuro_MCP {
 	private static function get_create_insight_input_schema() {
 		return array(
 			'type'       => 'object',
-			'required'   => array( 'title' ),
 			'properties' => self::get_insight_field_properties(),
 		);
 	}
@@ -982,15 +981,14 @@ class Tsubakuro_MCP {
 	 * @return array|WP_Error
 	 */
 	private static function op_create_evaluation( $arguments ) {
-		if ( empty( $arguments['title'] ) ) {
-			return new WP_Error( 'invalid_input', 'title is required' );
-		}
+		$change_detail = wp_kses_post( $arguments['change_detail'] ?? '' );
+		$title         = self::resolve_evaluation_title_from_arguments( $arguments, $change_detail );
 
 		$eval_id = wp_insert_post(
 			array(
 				'post_type'    => Tsubakuro_Evaluations::POST_TYPE,
-				'post_title'   => sanitize_text_field( $arguments['title'] ),
-				'post_content' => wp_kses_post( $arguments['change_detail'] ?? '' ),
+				'post_title'   => $title,
+				'post_content' => $change_detail,
 				'post_status'  => 'publish',
 			),
 			true
@@ -1131,15 +1129,15 @@ class Tsubakuro_MCP {
 	 * @return array|WP_Error
 	 */
 	private static function op_create_insight( $arguments ) {
-		if ( empty( $arguments['title'] ) ) {
-			return new WP_Error( 'invalid_input', 'title is required' );
-		}
+		$detail = wp_kses_post( $arguments['detail'] ?? '' );
+		$title  = self::resolve_insight_title_from_arguments( $arguments, $detail );
 
 		$insight_id = wp_insert_post(
 			array(
-				'post_type'   => Tsubakuro_Insights::POST_TYPE,
-				'post_title'  => sanitize_text_field( $arguments['title'] ),
-				'post_status' => 'publish',
+				'post_type'    => Tsubakuro_Insights::POST_TYPE,
+				'post_title'   => $title,
+				'post_content' => $detail,
+				'post_status'  => 'publish',
 			),
 			true
 		);
@@ -1179,12 +1177,79 @@ class Tsubakuro_MCP {
 				)
 			);
 		}
+		if ( isset( $arguments['detail'] ) ) {
+			wp_update_post(
+				array(
+					'ID'           => $insight_id,
+					'post_content' => wp_kses_post( $arguments['detail'] ),
+				)
+			);
+		}
 
 		Tsubakuro_Insights::save_meta( $insight_id, $arguments );
 
 		return array(
 			'insight' => Tsubakuro_Insights::get_insight( $insight_id ),
 		);
+	}
+
+	/**
+	 * Resolve evaluation title from tool arguments.
+	 *
+	 * @param array  $arguments     Tool input arguments.
+	 * @param string $change_detail Sanitized detail body.
+	 * @return string
+	 */
+	private static function resolve_evaluation_title_from_arguments( $arguments, $change_detail ) {
+		$title = sanitize_text_field( $arguments['title'] ?? '' );
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$target_post = absint( $arguments['target_post'] ?? 0 );
+		$target      = $target_post ? get_post( $target_post ) : null;
+		$target_name = $target && ! empty( $target->post_title ) ? $target->post_title : '';
+		$change_item = sanitize_text_field( $arguments['change_item'] ?? '' );
+		$item_label  = Tsubakuro_Evaluations::CHANGE_ITEMS[ $change_item ] ?? '';
+		$parts       = array_filter( array( $target_name, $item_label ) );
+
+		if ( ! empty( $parts ) ) {
+			return implode( ' - ', $parts );
+		}
+
+		return self::summarize_title_candidate( $change_detail, '記事評価' );
+	}
+
+	/**
+	 * Resolve insight title from tool arguments.
+	 *
+	 * @param array  $arguments Tool input arguments.
+	 * @param string $detail    Sanitized detail body.
+	 * @return string
+	 */
+	private static function resolve_insight_title_from_arguments( $arguments, $detail ) {
+		$title = sanitize_text_field( $arguments['title'] ?? '' );
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		return self::summarize_title_candidate( $detail, '改善知見' );
+	}
+
+	/**
+	 * Build a short title from free-text input.
+	 *
+	 * @param string $text     Free-text source.
+	 * @param string $fallback Fallback title.
+	 * @return string
+	 */
+	private static function summarize_title_candidate( $text, $fallback ) {
+		$plain = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $text ) ) );
+		if ( '' === $plain ) {
+			return $fallback;
+		}
+
+		return function_exists( 'mb_substr' ) ? mb_substr( $plain, 0, 50 ) : substr( $plain, 0, 50 );
 	}
 
 	/**

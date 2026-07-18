@@ -77,6 +77,20 @@ $field      = static function ( $key ) use ( $evaluation ) {
 				<textarea id="tsubakuro-eval-detail" name="change_detail" class="widefat" rows="4"><?php echo esc_textarea( $field( 'change_detail' ) ); ?></textarea>
 			</div>
 
+			<?php if ( ! $is_edit ) : ?>
+				<div class="tsubakuro-form-row">
+					<label for="tsubakuro-eval-due"><?php esc_html_e( '評価予定日（リマインド）', 'tsubakuro' ); ?></label>
+					<input type="date" id="tsubakuro-eval-due" name="due_at" class="widefat" value="<?php echo esc_attr( $field( 'due_at' ) ); ?>">
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! $is_edit ) : ?>
+				<div class="tsubakuro-form-row">
+					<p class="description"><?php esc_html_e( '作成後に詳細項目を追記できます。進捗や追加情報はコメントで管理できます。', 'tsubakuro' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $is_edit ) : ?>
 			<div class="tsubakuro-form-row">
 				<label for="tsubakuro-eval-purpose"><?php esc_html_e( '目的', 'tsubakuro' ); ?></label>
 				<textarea id="tsubakuro-eval-purpose" name="purpose" class="widefat" rows="3"><?php echo esc_textarea( $field( 'purpose' ) ); ?></textarea>
@@ -134,6 +148,7 @@ $field      = static function ( $key ) use ( $evaluation ) {
 				<label for="tsubakuro-eval-note"><?php esc_html_e( '備考', 'tsubakuro' ); ?></label>
 				<textarea id="tsubakuro-eval-note" name="note" class="widefat" rows="2"><?php echo esc_textarea( $field( 'note' ) ); ?></textarea>
 			</div>
+			<?php endif; ?>
 
 			<?php if ( $is_edit && ! empty( $linked_insights ) ) : ?>
 				<div class="tsubakuro-form-row">
@@ -155,4 +170,30 @@ $field      = static function ( $key ) use ( $evaluation ) {
 			</div>
 		</div>
 	</form>
+
+	<?php if ( $is_edit ) : ?>
+		<div class="tsubakuro-form-card" style="margin-top:20px;">
+			<h2><?php esc_html_e( 'コメント', 'tsubakuro' ); ?></h2>
+			<div id="tsubakuro-comment-list">
+				<?php if ( empty( $comments ) ) : ?>
+					<p class="tsubakuro-no-comments" style="color:#888;font-size:13px;"><?php esc_html_e( 'コメントはありません。', 'tsubakuro' ); ?></p>
+				<?php else : ?>
+					<?php foreach ( $comments as $c ) : ?>
+						<div class="tsubakuro-comment-item">
+							<div class="tsubakuro-comment-meta">
+								<strong><?php echo esc_html( $c['user_name'] ); ?></strong>
+								&mdash; <?php echo esc_html( $c['created_at'] ); ?>
+							</div>
+							<div class="tsubakuro-comment-body"><?php echo esc_html( $c['comment'] ); ?></div>
+						</div>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</div>
+			<div class="tsubakuro-form-row" style="margin-top:12px;">
+				<input type="hidden" id="tsubakuro-comment-parent-id" value="<?php echo esc_attr( $evaluation['id'] ); ?>">
+				<textarea id="tsubakuro-new-comment" class="widefat" rows="2" placeholder="<?php esc_attr_e( 'コメントを入力...', 'tsubakuro' ); ?>"></textarea>
+				<button class="button button-secondary" id="tsubakuro-add-comment-btn"><?php esc_html_e( 'コメント追加', 'tsubakuro' ); ?></button>
+			</div>
+		</div>
+	<?php endif; ?>
 </div><!-- .wrap -->

@@ -437,6 +437,7 @@ class AdminTest extends TestCase
 		$result = Tsubakuro_Admin::get_comment(5);
 
 		$this->assertSame(5, $result['id']);
+		$this->assertSame(101, $result['post_id']);
 		$this->assertSame(101, $result['task_id']);
 		$this->assertSame(7, $result['user_id']);
 		$this->assertSame('Carol', $result['user_name']);
@@ -540,6 +541,22 @@ class AdminTest extends TestCase
 		$this->assertSame('Dave', $result[0]['user_name']);
 		$this->assertSame('不明', $result[1]['user_name']);
 		$this->assertSame('Second', $result[1]['comment']);
+	}
+
+	public function test_is_comment_target_post_id_accepts_evaluation_and_insight(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][210] = (object) array(
+			'ID'        => 210,
+			'post_type' => Tsubakuro_Evaluations::POST_TYPE,
+		);
+		$GLOBALS['tsubakuro_test']['posts'][211] = (object) array(
+			'ID'        => 211,
+			'post_type' => Tsubakuro_Insights::POST_TYPE,
+		);
+
+		$this->assertTrue(Tsubakuro_Admin::is_comment_target_post_id(210));
+		$this->assertTrue(Tsubakuro_Admin::is_comment_target_post_id(211));
+		$this->assertFalse(Tsubakuro_Admin::is_comment_target_post_id(999));
 	}
 
 	// -------------------------------------------------------------------------

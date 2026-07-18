@@ -367,6 +367,31 @@ class RestApiTest extends TestCase
 		$this->assertSame('Alice', $result['user_name']);
 	}
 
+	public function test_add_evaluation_comment_handler_returns_inserted_comment(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][130] = $this->make_eval_post(130, 'Eval');
+		$GLOBALS['tsubakuro_test']['users'][7]   = (object) array(
+			'ID'           => 7,
+			'display_name' => 'Alice',
+		);
+
+		$req    = new WP_REST_Request(array('id' => 130, 'comment' => '評価コメント'));
+		$result = Tsubakuro_REST_API::add_evaluation_comment($req);
+
+		$this->assertIsInt($result['id']);
+		$this->assertSame(130, $result['post_id']);
+		$this->assertSame('評価コメント', $result['comment']);
+	}
+
+	public function test_get_insight_comments_handler_returns_wp_error_when_not_found(): void
+	{
+		$req    = new WP_REST_Request(array('id' => 999));
+		$result = Tsubakuro_REST_API::get_insight_comments($req);
+
+		$this->assertInstanceOf(WP_Error::class, $result);
+		$this->assertSame('not_found', $result->get_error_code());
+	}
+
 	// -------------------------------------------------------------------------
 	// Parent / child task support
 	// -------------------------------------------------------------------------
@@ -486,6 +511,19 @@ class RestApiTest extends TestCase
 		$this->assertSame(array('success'), $GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_eval_judgment']);
 	}
 
+	public function test_create_evaluation_without_title_uses_detail_fallback_title(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_eval_post(123, '本文だけで作成');
+
+		$req = new WP_REST_Request(array(
+			'change_detail' => '本文だけで作成',
+		));
+
+		$result = Tsubakuro_REST_API::create_evaluation($req);
+
+		$this->assertSame(123, $result['id']);
+	}
+
 	public function test_get_evaluation_returns_not_found(): void
 	{
 		$req    = new WP_REST_Request(array('id' => 999));
@@ -564,6 +602,28 @@ class RestApiTest extends TestCase
 		$this->assertSame(123, $result['id']);
 		$this->assertSame(80.0, $result['success_rate']);
 		$this->assertSame(array(1, 2, 3), $GLOBALS['tsubakuro_test']['post_meta'][123]['_tsubakuro_insight_evaluation']);
+	}
+
+	public function test_create_insight_without_title_uses_detail_and_persists_content(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = (object) array(
+			'ID'            => 123,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => '知見本文',
+			'post_content'  => '知見本文',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-03 11:00:00',
+			'post_author'   => 7,
+		);
+
+		$req = new WP_REST_Request(array(
+			'detail' => '知見本文',
+		));
+
+		$result = Tsubakuro_REST_API::create_insight($req);
+
+		$this->assertSame(123, $result['id']);
+		$this->assertSame('知見本文', $result['detail']);
 	}
 
 	public function test_get_insights_filters_by_status(): void

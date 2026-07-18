@@ -278,14 +278,17 @@
 		}
 
 		const $commList = $( '#tsubakuro-comment-list' );
-		const taskId = $( '#tsubakuro-task-id' ).val();
+		const parentId =
+			$( '#tsubakuro-comment-parent-id' ).val() ||
+			$( '#tsubakuro-task-id' ).val();
 
 		$.post(
 			tsubakuroAdmin.ajaxUrl,
 			{
 				action: 'tsubakuro_add_comment',
 				nonce: tsubakuroAdmin.nonce,
-				task_id: taskId,
+				post_id: parentId,
+				task_id: parentId,
 				comment,
 			},
 			function ( response ) {

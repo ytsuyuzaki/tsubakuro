@@ -323,6 +323,39 @@ class Tsubakuro_REST_API {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/evaluations/(?P<id>\d+)/comments',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_evaluation_comments' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'add_evaluation_comment' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => array(
+						'id'      => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+						'comment' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -393,6 +426,39 @@ class Tsubakuro_REST_API {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/insights/(?P<id>\d+)/comments',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'get_insight_comments' ),
+					'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+					'args'                => array(
+						'id' => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'add_insight_comment' ),
+					'permission_callback' => array( __CLASS__, 'check_write_permission' ),
+					'args'                => array(
+						'id'      => array(
+							'required' => true,
+							'type'     => 'integer',
+						),
+						'comment' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -421,9 +487,7 @@ class Tsubakuro_REST_API {
 			'note'           => array( 'type' => 'string' ),
 		);
 
-		if ( $is_create ) {
-			$args['title']['required'] = true;
-		} else {
+		if ( ! $is_create ) {
 			$args['id'] = array(
 				'required' => true,
 				'type'     => 'integer',
@@ -445,6 +509,7 @@ class Tsubakuro_REST_API {
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
+			'detail'        => array( 'type' => 'string' ),
 			'site'          => array( 'type' => 'string' ),
 			'post_kind'     => array( 'type' => 'string' ),
 			'hypothesis'    => array( 'type' => 'string' ),
@@ -459,9 +524,7 @@ class Tsubakuro_REST_API {
 			),
 		);
 
-		if ( $is_create ) {
-			$args['title']['required'] = true;
-		} else {
+		if ( ! $is_create ) {
 			$args['id'] = array(
 				'required' => true,
 				'type'     => 'integer',
@@ -669,7 +732,89 @@ class Tsubakuro_REST_API {
 		$comment_id = Tsubakuro_Admin::insert_comment(
 			$task_id,
 			get_current_user_id(),
-			$request->get_param( 'comment' )
+			sanitize_textarea_field( (string) $request->get_param( 'comment' ) )
+		);
+
+		if ( false === $comment_id ) {
+			return new WP_Error( 'insert_failed', 'コメントの保存に失敗しました。', array( 'status' => 500 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Admin::get_comment( $comment_id ) );
+	}
+
+	/**
+	 * GET /evaluations/{id}/comments.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_evaluation_comments( $request ) {
+		$eval_id = (int) $request['id'];
+		if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+			return new WP_Error( 'not_found', '記事評価が見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Admin::get_task_comments( $eval_id ) );
+	}
+
+	/**
+	 * POST /evaluations/{id}/comments.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function add_evaluation_comment( $request ) {
+		$eval_id = (int) $request['id'];
+		if ( ! Tsubakuro_Evaluations::get_evaluation( $eval_id ) ) {
+			return new WP_Error( 'not_found', '記事評価が見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return self::create_comment_response_for_parent( $eval_id, $request );
+	}
+
+	/**
+	 * GET /insights/{id}/comments.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_insight_comments( $request ) {
+		$insight_id = (int) $request['id'];
+		if ( ! Tsubakuro_Insights::get_insight( $insight_id ) ) {
+			return new WP_Error( 'not_found', '改善知見が見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return rest_ensure_response( Tsubakuro_Admin::get_task_comments( $insight_id ) );
+	}
+
+	/**
+	 * POST /insights/{id}/comments.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function add_insight_comment( $request ) {
+		$insight_id = (int) $request['id'];
+		if ( ! Tsubakuro_Insights::get_insight( $insight_id ) ) {
+			return new WP_Error( 'not_found', '改善知見が見つかりません。', array( 'status' => 404 ) );
+		}
+
+		return self::create_comment_response_for_parent( $insight_id, $request );
+	}
+
+	/**
+	 * Insert a comment for a target post and return standardized REST payload.
+	 *
+	 * @param int             $post_id Parent post ID.
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private static function create_comment_response_for_parent( $post_id, $request ) {
+		$comment    = sanitize_textarea_field( (string) $request->get_param( 'comment' ) );
+		$comment_id = Tsubakuro_Admin::insert_comment(
+			$post_id,
+			get_current_user_id(),
+			$comment
 		);
 
 		if ( false === $comment_id ) {
@@ -737,11 +882,12 @@ class Tsubakuro_REST_API {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function create_evaluation( $request ) {
-		$eval_id = wp_insert_post(
+		$change_detail = wp_kses_post( (string) $request->get_param( 'change_detail' ) );
+		$eval_id       = wp_insert_post(
 			array(
 				'post_type'    => Tsubakuro_Evaluations::POST_TYPE,
-				'post_title'   => $request->get_param( 'title' ),
-				'post_content' => wp_kses_post( (string) $request->get_param( 'change_detail' ) ),
+				'post_title'   => self::resolve_evaluation_title( $request, $change_detail ),
+				'post_content' => $change_detail,
 				'post_status'  => 'publish',
 			),
 			true
@@ -875,11 +1021,13 @@ class Tsubakuro_REST_API {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function create_insight( $request ) {
+		$detail     = wp_kses_post( (string) $request->get_param( 'detail' ) );
 		$insight_id = wp_insert_post(
 			array(
-				'post_type'   => Tsubakuro_Insights::POST_TYPE,
-				'post_title'  => $request->get_param( 'title' ),
-				'post_status' => 'publish',
+				'post_type'    => Tsubakuro_Insights::POST_TYPE,
+				'post_title'   => self::resolve_insight_title( $request, $detail ),
+				'post_content' => $detail,
+				'post_status'  => 'publish',
 			),
 			true
 		);
@@ -938,6 +1086,14 @@ class Tsubakuro_REST_API {
 				)
 			);
 		}
+		if ( null !== $request->get_param( 'detail' ) ) {
+			wp_update_post(
+				array(
+					'ID'           => $insight_id,
+					'post_content' => wp_kses_post( (string) $request->get_param( 'detail' ) ),
+				)
+			);
+		}
 
 		Tsubakuro_Insights::save_meta( $insight_id, self::collect_insight_meta( $request ) );
 
@@ -982,6 +1138,65 @@ class Tsubakuro_REST_API {
 		}
 
 		return $meta;
+	}
+
+	/**
+	 * Resolve evaluation title from request params with safe fallbacks.
+	 *
+	 * @param WP_REST_Request $request       Request object.
+	 * @param string          $change_detail Sanitized change detail.
+	 * @return string
+	 */
+	private static function resolve_evaluation_title( $request, $change_detail ) {
+		$title = sanitize_text_field( (string) $request->get_param( 'title' ) );
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$target_post = absint( $request->get_param( 'target_post' ) );
+		$target      = $target_post ? get_post( $target_post ) : null;
+		$target_name = $target && ! empty( $target->post_title ) ? $target->post_title : '';
+		$change_item = sanitize_text_field( (string) $request->get_param( 'change_item' ) );
+		$item_label  = Tsubakuro_Evaluations::CHANGE_ITEMS[ $change_item ] ?? '';
+		$parts       = array_filter( array( $target_name, $item_label ) );
+
+		if ( ! empty( $parts ) ) {
+			return implode( ' - ', $parts );
+		}
+
+		return self::summarize_title_candidate( $change_detail, '記事評価' );
+	}
+
+	/**
+	 * Resolve insight title from request params with safe fallbacks.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @param string          $detail  Sanitized detail body.
+	 * @return string
+	 */
+	private static function resolve_insight_title( $request, $detail ) {
+		$title = sanitize_text_field( (string) $request->get_param( 'title' ) );
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		return self::summarize_title_candidate( $detail, '改善知見' );
+	}
+
+	/**
+	 * Build a short title from free text, with fallback.
+	 *
+	 * @param string $text     Free text source.
+	 * @param string $fallback Fallback title.
+	 * @return string
+	 */
+	private static function summarize_title_candidate( $text, $fallback ) {
+		$plain = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $text ) ) );
+		if ( '' === $plain ) {
+			return $fallback;
+		}
+
+		return function_exists( 'mb_substr' ) ? mb_substr( $plain, 0, 50 ) : substr( $plain, 0, 50 );
 	}
 
 	// -------------------------------------------------------------------------
