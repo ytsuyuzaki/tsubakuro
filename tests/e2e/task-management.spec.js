@@ -97,6 +97,62 @@ test.describe( 'Tsubakuro task management', () => {
 		await expect( page ).toHaveTitle( /タスク/ );
 	} );
 
+	test( 'can create, display, edit, and delete a task', async ( {
+		page,
+	} ) => {
+		const marker = Date.now();
+		const title = `E2E task ${ marker }`;
+		const updatedTitle = `E2E task updated ${ marker }`;
+
+		await page.goto( '/wp-admin/admin.php?page=tsubakuro-task-form' );
+		await page.fill( '#tsubakuro-task-title', title );
+		await page.fill( '#tsubakuro-task-content', 'Created by Playwright' );
+		await page.selectOption( '#tsubakuro-task-status', 'todo' );
+		await page.selectOption( '#tsubakuro-task-priority', 'high' );
+		await page.getByRole( 'button', { name: '保存' } ).click();
+
+		await expect( page ).toHaveURL( /page=tsubakuro-tasks/ );
+		await expect( page.locator( '.notice-success' ) ).toBeVisible();
+		const taskLink = page.getByRole( 'link', { name: title, exact: true } );
+		const taskRow = taskLink.locator( 'xpath=ancestor::tr' );
+		await expect( taskLink ).toBeVisible();
+		await expect( taskRow ).toContainText( 'ToDo' );
+
+		await taskLink.click();
+		await expect( page.locator( '#tsubakuro-task-title' ) ).toHaveValue(
+			title
+		);
+		await expect( page.locator( '#tsubakuro-task-content' ) ).toHaveValue(
+			'Created by Playwright'
+		);
+
+		await page.fill( '#tsubakuro-task-title', updatedTitle );
+		await page
+			.locator( '.tsubakuro-content-tab[data-mode="edit"]' )
+			.click();
+		await page.fill( '#tsubakuro-task-content', 'Updated by Playwright' );
+		await page.selectOption( '#tsubakuro-task-status', 'in_progress' );
+		await page.selectOption( '#tsubakuro-task-priority', 'medium' );
+		await page.getByRole( 'button', { name: '保存' } ).click();
+		await page
+			.locator( '.tsubakuro-filter-tabs a[href*="status=all"]' )
+			.click();
+
+		const updatedLink = page.getByRole( 'link', {
+			name: updatedTitle,
+			exact: true,
+		} );
+		const updatedRow = updatedLink.locator( 'xpath=ancestor::tr' );
+		await expect( updatedLink ).toBeVisible();
+		await expect( updatedRow ).toContainText( '実行中' );
+		await expect( taskLink ).toHaveCount( 0 );
+
+		page.once( 'dialog', ( dialog ) => dialog.accept() );
+		await updatedRow.locator( '.column-title' ).hover();
+		await updatedRow.getByRole( 'button', { name: '削除' } ).click();
+		await expect( updatedLink ).toHaveCount( 0 );
+	} );
+
 	test( 'REST API tasks endpoint returns an array', async () => {
 		const tasks = await rest( {
 			method: 'GET',

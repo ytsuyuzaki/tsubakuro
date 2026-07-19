@@ -121,17 +121,50 @@ test.describe( 'Tsubakuro site strategy', () => {
 		expect( reread.direction ).toBe( marker );
 	} );
 
-	test( 'saving the strategy form persists values', async ( { page } ) => {
-		const marker = `E2E purpose ${ Date.now() }`;
-
+	test( 'saving the strategy form persists values and restores them', async ( {
+		page,
+	} ) => {
+		const fields = [
+			'purpose',
+			'position',
+			'direction',
+			'audience',
+			'value',
+		];
+		const marker = Date.now();
 		await page.goto( '/wp-admin/admin.php?page=tsubakuro-site-strategy' );
-		await page.fill( '#tsubakuro-site-strategy-purpose', marker );
-		await page.click( 'button.button-primary' );
+		const original = {};
+		for ( const field of fields ) {
+			original[ field ] = await page
+				.locator( `#tsubakuro-site-strategy-${ field }` )
+				.inputValue();
+		}
 
-		// Redirected back with a success notice and the saved value retained.
-		await expect( page.locator( '.notice-success' ) ).toBeVisible();
-		await expect(
-			page.locator( '#tsubakuro-site-strategy-purpose' )
-		).toHaveValue( marker );
+		try {
+			for ( const field of fields ) {
+				await page.fill(
+					`#tsubakuro-site-strategy-${ field }`,
+					`E2E ${ field } ${ marker }`
+				);
+			}
+			await page.getByRole( 'button', { name: '保存' } ).click();
+			await expect( page.locator( '.notice-success' ) ).toBeVisible();
+
+			await page.reload();
+			for ( const field of fields ) {
+				await expect(
+					page.locator( `#tsubakuro-site-strategy-${ field }` )
+				).toHaveValue( `E2E ${ field } ${ marker }` );
+			}
+		} finally {
+			for ( const field of fields ) {
+				await page.fill(
+					`#tsubakuro-site-strategy-${ field }`,
+					original[ field ]
+				);
+			}
+			await page.getByRole( 'button', { name: '保存' } ).click();
+			await expect( page.locator( '.notice-success' ) ).toBeVisible();
+		}
 	} );
 } );
