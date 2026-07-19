@@ -14,11 +14,12 @@ class EvaluationsTest extends TestCase
 		$_GET = array();
 	}
 
-	private function make_post(int $id, string $title = 'Eval', string $content = '', string $type = 'tsubakuro_evaluation'): object
+	private function make_post(int $id, string $title = 'Eval', string $content = '', string $type = 'tsubakuro_evaluation', string $status = 'publish'): object
 	{
 		return (object) array(
 			'ID'            => $id,
 			'post_type'     => $type,
+			'post_status'   => $status,
 			'post_title'    => $title,
 			'post_content'  => $content,
 			'post_date'     => '2026-05-01 10:00:00',
@@ -136,6 +137,18 @@ class EvaluationsTest extends TestCase
 		$ids = array_column($unevaluated, 'id');
 		$this->assertContains(2, $ids);
 		$this->assertNotContains(1, $ids);
+	}
+
+	public function test_get_evaluations_includes_pending_posts_in_internal_lists(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_post(1, 'Published');
+		$GLOBALS['tsubakuro_test']['posts'][2] = $this->make_post(2, 'Pending Review', '', 'tsubakuro_evaluation', 'pending');
+
+		$result = Tsubakuro_Evaluations::get_evaluations();
+
+		$ids = array_column($result, 'id');
+		$this->assertContains(1, $ids);
+		$this->assertContains(2, $ids);
 	}
 
 	public function test_empty_change_item_clears_previously_set_value(): void

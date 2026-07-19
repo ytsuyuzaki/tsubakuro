@@ -317,7 +317,11 @@ class Tsubakuro_Evaluations {
 	public static function get_evaluations( $args = array() ) {
 		$defaults = array(
 			'post_type'      => self::POST_TYPE,
-			'post_status'    => 'publish',
+			// Contributors can access the screen with the edit_posts capability,
+			// but WordPress stores their submitted evaluations as pending without
+			// the publish_posts capability.
+			// Keep internal lists inclusive without surfacing trash/auto-drafts.
+			'post_status'    => array( 'publish', 'pending', 'draft', 'future', 'private' ),
 			'posts_per_page' => 50,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
