@@ -43,6 +43,7 @@
 
 /* Task table */
 .tsubakuro-table-scroll {
+	clear: both;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 }
