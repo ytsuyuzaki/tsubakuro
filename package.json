@@ -19,8 +19,9 @@
     "@wordpress/env": "^11.7.0",
     "@wordpress/scripts": "^32.1.0"
   },
-  "scripts": {
-    "lint": "npm run lint:css && npm run lint:js && npm run lint:md:docs && npm run lint:pkg-json && npm run lint:php",
+    "scripts": {
+		"seed": "wp-env run cli --env-cwd='wp-content/plugins/tsubakuro/' wp eval-file scripts/seed-wp-env.php",
+        "lint": "npm run lint:css && npm run lint:js && npm run lint:md:docs && npm run lint:pkg-json && npm run lint:php",
     "format": "wp-scripts format",
     "packages-update": "wp-scripts packages-update",
     "check-engines": "wp-scripts check-engines",
