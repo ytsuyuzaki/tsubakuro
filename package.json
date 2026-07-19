@@ -17,11 +17,12 @@
     "@playwright/test": "^1.60.0",
     "@wordpress/e2e-test-utils-playwright": "^1.47.0",
     "@wordpress/env": "^11.7.0",
-    "@wordpress/scripts": "^32.1.0"
+    "@wordpress/scripts": "^32.1.0",
+    "adm-zip": "^0.6.0"
   },
-    "scripts": {
-		"seed": "wp-env run cli --env-cwd='wp-content/plugins/tsubakuro/' wp eval-file scripts/seed-wp-env.php",
-        "lint": "npm run lint:css && npm run lint:js && npm run lint:md:docs && npm run lint:pkg-json && npm run lint:php",
+  "scripts": {
+    "seed": "wp-env run cli --env-cwd='wp-content/plugins/tsubakuro/' wp eval-file scripts/seed-wp-env.php",
+    "lint": "npm run lint:css && npm run lint:js && npm run lint:md:docs && npm run lint:pkg-json && npm run lint:php",
     "format": "wp-scripts format",
     "packages-update": "wp-scripts packages-update",
     "check-engines": "wp-scripts check-engines",
@@ -44,7 +45,7 @@
     "test:release": "node --test scripts/release-tools.test.mjs",
     "test:package": "node scripts/validate-package.mjs dist/tsubakuro.zip",
     "validate:release": "node scripts/validate-release.mjs",
-    "build:zip": "npm run validate:release && wp-scripts plugin-zip && mkdir -p dist && mv tsubakuro.zip dist/ && npm run test:package"
+    "build:zip": "npm run validate:release && wp-scripts plugin-zip && node scripts/stamp-package-version.mjs tsubakuro.zip dist/tsubakuro.zip && npm run test:package"
   },
   "overrides": {
     "@wp-playground/blueprints": {

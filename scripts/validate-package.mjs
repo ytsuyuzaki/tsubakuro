@@ -1,13 +1,26 @@
-import { execFileSync } from 'node:child_process';
-import { resolve } from 'node:path';
-import { validatePackageEntries } from './release-tools.mjs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import AdmZip from 'adm-zip';
+import {
+	readPackageVersion,
+	readStampedMetadata,
+	validatePackageEntries,
+	validateStampedMetadata,
+} from './release-tools.mjs';
 
+const scriptDirectory = dirname( fileURLToPath( import.meta.url ) );
+const rootDirectory = resolve( scriptDirectory, '..' );
 const archivePath = resolve( process.argv[ 2 ] ?? 'dist/tsubakuro.zip' );
-const entries = execFileSync( 'unzip', [ '-Z1', archivePath ], {
-	encoding: 'utf8',
-} )
-	.split( '\n' )
-	.filter( Boolean );
+const archive = new AdmZip( archivePath );
+const entries = archive.getEntries().map( ( entry ) => entry.entryName );
 
 validatePackageEntries( entries );
-process.stdout.write( `Release ZIP is valid: ${ archivePath }\n` );
+
+const pluginSource = archive.readAsText( 'tsubakuro/tsubakuro.php', 'utf8' );
+const readme = archive.readAsText( 'tsubakuro/readme.txt', 'utf8' );
+const version = readPackageVersion( rootDirectory );
+
+validateStampedMetadata( readStampedMetadata( pluginSource, readme ), version );
+process.stdout.write(
+	`Release ZIP is valid and stamped with v${ version }: ${ archivePath }\n`
+);

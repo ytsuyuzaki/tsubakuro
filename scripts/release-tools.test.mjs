@@ -1,30 +1,99 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+	readStampedMetadata,
+	stampReleaseFiles,
 	validatePackageEntries,
-	validateReleaseMetadata,
+	validateReleaseVersion,
+	validateStampedMetadata,
 } from './release-tools.mjs';
 
-const validMetadata = {
-	headerVersion: '1.2.3',
-	constantVersion: '1.2.3',
-	packageVersion: '1.2.3',
-	stableTag: '1.2.3',
+const sourceFiles = {
+	'tsubakuro/tsubakuro.php': `<?php
+/**
+ * Version:     {{TSUBAKURO_VERSION}}
+ */
+define( 'TSUBAKURO_VERSION', '{{TSUBAKURO_VERSION}}' );
+`,
+	'tsubakuro/readme.txt': `Stable tag: {{TSUBAKURO_VERSION}}
+
+== Changelog ==
+
+= 1.2.2 =
+`,
 };
 
-test( 'release metadata versions and tag must match', () => {
-	assert.equal( validateReleaseMetadata( validMetadata, 'v1.2.3' ), '1.2.3' );
+test( 'package release version and tag must be valid', () => {
+	assert.equal( validateReleaseVersion( '1.2.3', 'v1.2.3' ), '1.2.3' );
 	assert.throws(
-		() =>
-			validateReleaseMetadata(
-				{ ...validMetadata, packageVersion: '1.2.4' },
-				'v1.2.3'
-			),
-		/versions do not match/
+		() => validateReleaseVersion( '1.2', 'v1.2' ),
+		/must use X.Y.Z/
 	);
 	assert.throws(
-		() => validateReleaseMetadata( validMetadata, '1.2.3' ),
+		() => validateReleaseVersion( '1.2.3', 'v1.2.4' ),
 		/does not match version/
+	);
+} );
+
+test( 'release files are stamped without changing the changelog heading', () => {
+	const stamped = stampReleaseFiles( sourceFiles, '1.2.3' );
+
+	assert.doesNotMatch(
+		stamped[ 'tsubakuro/tsubakuro.php' ],
+		/{{TSUBAKURO_VERSION}}/
+	);
+	assert.match( stamped[ 'tsubakuro/readme.txt' ], /Stable tag: 1.2.3/ );
+	assert.match( stamped[ 'tsubakuro/readme.txt' ], /= 1.2.2 =/ );
+	assert.equal(
+		validateStampedMetadata(
+			readStampedMetadata(
+				stamped[ 'tsubakuro/tsubakuro.php' ],
+				stamped[ 'tsubakuro/readme.txt' ]
+			),
+			'1.2.3'
+		),
+		'1.2.3'
+	);
+} );
+
+test( 'stamping fails when a placeholder is missing or duplicated', () => {
+	assert.throws(
+		() =>
+			stampReleaseFiles(
+				{
+					...sourceFiles,
+					'tsubakuro/readme.txt': 'Stable tag: 1.2.3',
+				},
+				'1.2.3'
+			),
+		/expected 1 version placeholders/i
+	);
+	assert.throws(
+		() =>
+			stampReleaseFiles(
+				{
+					...sourceFiles,
+					'tsubakuro/readme.txt':
+						'Stable tag: {{TSUBAKURO_VERSION}} {{TSUBAKURO_VERSION}}',
+				},
+				'1.2.3'
+			),
+		/expected 1 version placeholders/i
+	);
+} );
+
+test( 'stamped metadata must match the package version', () => {
+	assert.throws(
+		() =>
+			validateStampedMetadata(
+				{
+					headerVersion: '1.2.4',
+					constantVersion: '1.2.4',
+					stableTag: '1.2.4',
+				},
+				'1.2.3'
+			),
+		/does not match package version/
 	);
 } );
 
