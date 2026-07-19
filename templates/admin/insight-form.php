@@ -73,12 +73,22 @@ if ( $is_edit ) {
 
 		<div class="tsubakuro-form-card">
 			<div class="tsubakuro-form-row">
-				<label for="tsubakuro-insight-title">
-					<?php esc_html_e( '知見のタイトル', 'tsubakuro' ); ?> <span class="required">*</span>
-				</label>
-				<input type="text" id="tsubakuro-insight-title" name="title" class="widefat" required value="<?php echo esc_attr( $field( 'title' ) ); ?>">
+				<label for="tsubakuro-insight-title"><?php esc_html_e( '知見のタイトル', 'tsubakuro' ); ?></label>
+				<input type="text" id="tsubakuro-insight-title" name="title" class="widefat" value="<?php echo esc_attr( $field( 'title' ) ); ?>" placeholder="<?php esc_attr_e( '未入力の場合は本文から自動生成します', 'tsubakuro' ); ?>">
 			</div>
 
+			<div class="tsubakuro-form-row">
+				<label for="tsubakuro-insight-detail"><?php esc_html_e( '本文', 'tsubakuro' ); ?></label>
+				<textarea id="tsubakuro-insight-detail" name="detail" class="widefat" rows="5"><?php echo esc_textarea( $field( 'detail' ) ); ?></textarea>
+			</div>
+
+			<?php if ( ! $is_edit ) : ?>
+				<div class="tsubakuro-form-row">
+					<p class="description"><?php esc_html_e( '作成後に詳細項目を追記できます。進捗や追加情報はコメントで管理できます。', 'tsubakuro' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $is_edit ) : ?>
 			<div class="tsubakuro-form-row tsubakuro-form-row--half">
 				<div>
 					<label for="tsubakuro-insight-site"><?php esc_html_e( '対象サイト', 'tsubakuro' ); ?></label>
@@ -111,7 +121,7 @@ if ( $is_edit ) {
 				</div>
 			</div>
 
-			<?php if ( $is_edit && null !== $insight['success_rate'] ) : ?>
+				<?php if ( $is_edit && null !== $insight['success_rate'] ) : ?>
 				<div class="tsubakuro-form-row">
 					<label><?php esc_html_e( '成功率', 'tsubakuro' ); ?></label>
 					<span class="tsubakuro-success-rate"><?php echo esc_html( $insight['success_rate'] . '%' ); ?></span>
@@ -150,10 +160,37 @@ if ( $is_edit ) {
 				</select>
 				<p class="description"><?php esc_html_e( 'Ctrl / Cmd キーで複数選択できます。', 'tsubakuro' ); ?></p>
 			</div>
+			<?php endif; ?>
 
 			<div class="tsubakuro-form-actions">
 				<button type="submit" class="button button-primary"><?php esc_html_e( '保存', 'tsubakuro' ); ?></button>
 			</div>
 		</div>
 	</form>
+
+	<?php if ( $is_edit ) : ?>
+		<div class="tsubakuro-form-card" style="margin-top:20px;">
+			<h2><?php esc_html_e( 'コメント', 'tsubakuro' ); ?></h2>
+			<div id="tsubakuro-comment-list">
+				<?php if ( empty( $comments ) ) : ?>
+					<p class="tsubakuro-no-comments" style="color:#888;font-size:13px;"><?php esc_html_e( 'コメントはありません。', 'tsubakuro' ); ?></p>
+				<?php else : ?>
+					<?php foreach ( $comments as $c ) : ?>
+						<div class="tsubakuro-comment-item">
+							<div class="tsubakuro-comment-meta">
+								<strong><?php echo esc_html( $c['user_name'] ); ?></strong>
+								&mdash; <?php echo esc_html( $c['created_at'] ); ?>
+							</div>
+							<div class="tsubakuro-comment-body"><?php echo esc_html( $c['comment'] ); ?></div>
+						</div>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</div>
+			<div class="tsubakuro-form-row" style="margin-top:12px;">
+				<input type="hidden" id="tsubakuro-comment-parent-id" value="<?php echo esc_attr( $insight['id'] ); ?>">
+				<textarea id="tsubakuro-new-comment" class="widefat" rows="2" placeholder="<?php esc_attr_e( 'コメントを入力...', 'tsubakuro' ); ?>"></textarea>
+				<button class="button button-secondary" id="tsubakuro-add-comment-btn"><?php esc_html_e( 'コメント追加', 'tsubakuro' ); ?></button>
+			</div>
+		</div>
+	<?php endif; ?>
 </div><!-- .wrap -->

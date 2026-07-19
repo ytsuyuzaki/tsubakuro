@@ -110,6 +110,7 @@ class Tsubakuro_Evaluations_Admin {
 		$evaluation      = $evaluation_id ? Tsubakuro_Evaluations::get_evaluation( $evaluation_id ) : null;
 		$linked_insights = $evaluation ? Tsubakuro_Insights::get_insights_for_evaluation( $evaluation['id'] ) : array();
 		$post_choices    = self::get_target_post_choices();
+		$comments        = $evaluation ? Tsubakuro_Admin::get_task_comments( $evaluation['id'] ) : array();
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/evaluation-form.php';
 	}
@@ -195,7 +196,7 @@ class Tsubakuro_Evaluations_Admin {
 		$change_detail = wp_kses_post( wp_unslash( $_POST['change_detail'] ?? '' ) );
 		$target_post   = absint( $_POST['target_post'] ?? 0 );
 		$change_item   = sanitize_text_field( wp_unslash( $_POST['change_item'] ?? '' ) );
-		$title         = self::resolve_evaluation_title( $_POST, $target_post, $change_item );
+		$title         = self::resolve_evaluation_title( $_POST, $target_post, $change_item, $change_detail );
 
 		$meta = self::collect_evaluation_meta_from_post();
 
@@ -291,10 +292,11 @@ class Tsubakuro_Evaluations_Admin {
 	 *
 	 * @param array  $data        Submitted form data.
 	 * @param int    $target_post Target post ID.
-	 * @param string $change_item Change item slug.
+	 * @param string $change_item   Change item slug.
+	 * @param string $change_detail Change detail body.
 	 * @return string
 	 */
-	private static function resolve_evaluation_title( $data, $target_post, $change_item ) {
+	private static function resolve_evaluation_title( $data, $target_post, $change_item, $change_detail ) {
 		$title = sanitize_text_field( wp_unslash( $data['title'] ?? '' ) );
 		if ( '' !== $title ) {
 			return $title;
@@ -311,7 +313,11 @@ class Tsubakuro_Evaluations_Admin {
 		$item_label = Tsubakuro_Evaluations::CHANGE_ITEMS[ $change_item ] ?? '';
 		$parts      = array_filter( array( $target_label, $item_label ) );
 
-		return $parts ? implode( ' - ', $parts ) : '記事評価';
+		if ( $parts ) {
+			return implode( ' - ', $parts );
+		}
+
+		return self::summarize_title_candidate( $change_detail, '記事評価' );
 	}
 
 	// -------------------------------------------------------------------------
@@ -346,6 +352,7 @@ class Tsubakuro_Evaluations_Admin {
 		$insight_id      = absint( $_GET['insight_id'] ?? 0 );
 		$insight         = $insight_id ? Tsubakuro_Insights::get_insight( $insight_id ) : null;
 		$all_evaluations = Tsubakuro_Evaluations::get_evaluations( array( 'posts_per_page' => 200 ) ); // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- bounded evidence picker list.
+		$comments        = $insight ? Tsubakuro_Admin::get_task_comments( $insight['id'] ) : array();
 
 		include TSUBAKURO_PLUGIN_DIR . 'templates/admin/insight-form.php';
 	}
@@ -390,16 +397,8 @@ class Tsubakuro_Evaluations_Admin {
 		}
 
 		$insight_id = absint( $_POST['insight_id'] ?? 0 );
-		$title      = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
-
-		if ( '' === $title ) {
-			$back = admin_url( 'admin.php?page=tsubakuro-insight-form' );
-			if ( $insight_id ) {
-				$back .= '&insight_id=' . $insight_id;
-			}
-			wp_safe_redirect( add_query_arg( 'error', rawurlencode( 'タイトルは必須です。' ), $back ) );
-			exit;
-		}
+		$detail     = wp_kses_post( wp_unslash( $_POST['detail'] ?? '' ) );
+		$title      = self::resolve_insight_title( $_POST, $detail );
 
 		$meta = self::collect_insight_meta_from_post();
 
@@ -417,17 +416,19 @@ class Tsubakuro_Evaluations_Admin {
 
 			wp_update_post(
 				array(
-					'ID'         => $insight_id,
-					'post_title' => $title,
+					'ID'           => $insight_id,
+					'post_title'   => $title,
+					'post_content' => $detail,
 				)
 			);
 			Tsubakuro_Insights::save_meta( $insight_id, $meta );
 		} else {
 			$insight_id = wp_insert_post(
 				array(
-					'post_type'   => Tsubakuro_Insights::POST_TYPE,
-					'post_title'  => $title,
-					'post_status' => 'publish',
+					'post_type'    => Tsubakuro_Insights::POST_TYPE,
+					'post_title'   => $title,
+					'post_content' => $detail,
+					'post_status'  => 'publish',
 				),
 				true
 			);
@@ -489,6 +490,38 @@ class Tsubakuro_Evaluations_Admin {
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		return $meta;
+	}
+
+	/**
+	 * Resolve insight title with a fallback from free-text body.
+	 *
+	 * @param array  $data   Submitted form data.
+	 * @param string $detail Insight body.
+	 * @return string
+	 */
+	private static function resolve_insight_title( $data, $detail ) {
+		$title = sanitize_text_field( wp_unslash( $data['title'] ?? '' ) );
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		return self::summarize_title_candidate( $detail, '改善知見' );
+	}
+
+	/**
+	 * Build a short title candidate from free text.
+	 *
+	 * @param string $text     Free-text source.
+	 * @param string $fallback Fallback title.
+	 * @return string
+	 */
+	private static function summarize_title_candidate( $text, $fallback ) {
+		$plain = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( (string) $text ) ) );
+		if ( '' === $plain ) {
+			return $fallback;
+		}
+
+		return function_exists( 'mb_substr' ) ? mb_substr( $plain, 0, 50 ) : substr( $plain, 0, 50 );
 	}
 
 	// -------------------------------------------------------------------------

@@ -86,7 +86,7 @@ class Tsubakuro_Insights {
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
-			'supports'           => array( 'title', 'author' ),
+			'supports'           => array( 'title', 'editor', 'author' ),
 			'show_in_rest'       => true,
 			'rest_base'          => 'tsubakuro-insights',
 		);
@@ -204,6 +204,7 @@ class Tsubakuro_Insights {
 		return array(
 			'id'             => $post->ID,
 			'title'          => $post->post_title,
+			'detail'         => $post->post_content,
 			'site'           => (string) get_post_meta( $post->ID, '_tsubakuro_insight_site', true ),
 			'post_kind'      => (string) get_post_meta( $post->ID, '_tsubakuro_insight_post_kind', true ),
 			'hypothesis'     => (string) get_post_meta( $post->ID, '_tsubakuro_insight_hypothesis', true ),

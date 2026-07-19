@@ -755,6 +755,59 @@ class McpExtendedTest extends TestCase
 		$this->assertSame('success', $evaluation['judgment']);
 	}
 
+	public function test_tools_call_create_evaluation_allows_missing_title(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = $this->make_eval_post(123, '本文だけの評価');
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 601,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_evaluation',
+					'arguments' => array(
+						'change_detail' => '本文だけの評価',
+					),
+				),
+			)
+		);
+
+		$evaluation = $result['result']['structuredContent']['evaluation'];
+		$this->assertSame(123, $evaluation['id']);
+	}
+
+	public function test_tools_call_create_insight_allows_missing_title_and_uses_detail(): void
+	{
+		$GLOBALS['tsubakuro_test']['posts'][123] = (object) array(
+			'ID'            => 123,
+			'post_type'     => 'tsubakuro_insight',
+			'post_title'    => '知見本文',
+			'post_content'  => '知見本文',
+			'post_date'     => '2026-05-01 10:00:00',
+			'post_modified' => '2026-05-03 11:00:00',
+			'post_author'   => 7,
+		);
+
+		$result = $this->dispatch(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 602,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'tsubakuro_create_insight',
+					'arguments' => array(
+						'detail' => '知見本文',
+					),
+				),
+			)
+		);
+
+		$insight = $result['result']['structuredContent']['insight'];
+		$this->assertSame(123, $insight['id']);
+		$this->assertSame('知見本文', $insight['detail']);
+	}
+
 	public function test_tools_call_list_evaluations_returns_list(): void
 	{
 		$GLOBALS['tsubakuro_test']['posts'][1] = $this->make_eval_post(1, 'E1');

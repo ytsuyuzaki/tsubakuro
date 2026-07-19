@@ -602,7 +602,7 @@ class Tsubakuro_Admin {
 	}
 
 	/**
-	 * AJAX handler: add a comment to a task.
+	 * AJAX handler: add a comment to a task/evaluation/insight.
 	 */
 	public static function ajax_add_comment() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
@@ -611,18 +611,21 @@ class Tsubakuro_Admin {
 			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
 		}
 
-		$task_id = absint( $_POST['task_id'] ?? 0 );
+		$post_id = absint( $_POST['post_id'] ?? 0 );
+		if ( ! $post_id ) {
+			$post_id = absint( $_POST['task_id'] ?? 0 );
+		}
 		$comment = sanitize_textarea_field( wp_unslash( $_POST['comment'] ?? '' ) );
 
-		if ( ! $task_id || ! $comment ) {
-			wp_send_json_error( array( 'message' => 'タスクIDとコメントは必須です。' ), 400 );
+		if ( ! $post_id || ! $comment ) {
+			wp_send_json_error( array( 'message' => '対象IDとコメントは必須です。' ), 400 );
 		}
 
-		if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
-			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
+		if ( ! self::is_comment_target_post_id( $post_id ) ) {
+			wp_send_json_error( array( 'message' => 'コメント対象が見つかりません。' ), 404 );
 		}
 
-		$result = self::insert_comment( $task_id, get_current_user_id(), $comment );
+		$result = self::insert_comment( $post_id, get_current_user_id(), $comment );
 		if ( false === $result ) {
 			wp_send_json_error( array( 'message' => 'コメントの保存に失敗しました。' ), 500 );
 		}
@@ -631,7 +634,7 @@ class Tsubakuro_Admin {
 	}
 
 	/**
-	 * AJAX handler: retrieve all comments for a task.
+	 * AJAX handler: retrieve all comments for a task/evaluation/insight.
 	 */
 	public static function ajax_get_comments() {
 		check_ajax_referer( 'tsubakuro_admin', 'nonce' );
@@ -640,16 +643,20 @@ class Tsubakuro_Admin {
 			wp_send_json_error( array( 'message' => '権限がありません。' ), 403 );
 		}
 
-		$task_id = absint( $_GET['task_id'] ?? 0 );
-		if ( ! $task_id ) {
-			wp_send_json_error( array( 'message' => 'タスクIDが必要です。' ), 400 );
+		$post_id = absint( $_GET['post_id'] ?? 0 );
+		if ( ! $post_id ) {
+			$post_id = absint( $_GET['task_id'] ?? 0 );
 		}
 
-		if ( ! Tsubakuro_Post_Types::get_task( $task_id ) ) {
-			wp_send_json_error( array( 'message' => 'タスクが見つかりません。' ), 404 );
+		if ( ! $post_id ) {
+			wp_send_json_error( array( 'message' => '対象IDが必要です。' ), 400 );
 		}
 
-		wp_send_json_success( self::get_task_comments( $task_id ) );
+		if ( ! self::is_comment_target_post_id( $post_id ) ) {
+			wp_send_json_error( array( 'message' => 'コメント対象が見つかりません。' ), 404 );
+		}
+
+		wp_send_json_success( self::get_task_comments( $post_id ) );
 	}
 
 	/**
@@ -838,11 +845,35 @@ class Tsubakuro_Admin {
 
 		return array(
 			'id'         => (int) $comment->ID,
+			'post_id'    => $task_id,
 			'task_id'    => $task_id,
 			'user_id'    => $user_id,
 			'user_name'  => $user ? $user->display_name : '不明',
 			'comment'    => $comment->post_content,
 			'created_at' => $comment->post_date,
+		);
+	}
+
+	/**
+	 * Whether the given post ID can accept plugin comments.
+	 *
+	 * @param int $post_id Parent post ID.
+	 * @return bool
+	 */
+	public static function is_comment_target_post_id( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return false;
+		}
+
+		return in_array(
+			$post->post_type,
+			array(
+				Tsubakuro_Post_Types::TASK_POST_TYPE,
+				Tsubakuro_Evaluations::POST_TYPE,
+				Tsubakuro_Insights::POST_TYPE,
+			),
+			true
 		);
 	}
 
